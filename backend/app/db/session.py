@@ -1,0 +1,26 @@
+from sqlalchemy import create_engine
+from sqlmodel import SQLModel, Session
+from sqlalchemy.orm import sessionmaker
+from app.core.config import settings
+
+engine = create_engine(
+    settings.DATABASE_URL,
+    echo=True
+)
+
+SessionLocal = sessionmaker(
+    autocommit=False,
+    autoflush=False,
+    bind=engine,
+    class_=Session
+)
+
+def get_session():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+def init_db():
+    SQLModel.metadata.create_all(bind=engine)

@@ -1,0 +1,55 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.pkl
+*.log
+
+# Virtual environments
+.venv/
+env/
+venv/
+
+# IDE/editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# SQLite database
+*.db
+*.sqlite3
+
+# Pydantic env config / secrets
+.env
+.env.*
+
+# macOS
+.DS_Store
+
+# Uvicorn reload
+*.pid
+
+# Coverage / testing
+htmlcov/
+.tox/
+.coverage
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.pytest_cache/
+
+# Mypy / type hints
+.mypy_cache/
+
+# Frontend / build artifacts
+dist/
+build/
+node_modules/
+
+# Alembic cache (migrations ARE kept)
+alembic/__pycache__/
+alembic/versions/__pycache__/
