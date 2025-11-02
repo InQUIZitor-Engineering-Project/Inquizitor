@@ -2,6 +2,8 @@
 from typing import List, Optional, Literal
 from pydantic import BaseModel, field_validator, model_validator
 from datetime import datetime
+from typing import List, Optional
+import json
 
 class FileUploadResponse(BaseModel):
     file_id: int
@@ -17,7 +19,6 @@ class TestOut(BaseModel):
 
     class Config:
         from_attributes = True
-
 
 class GenerateParams(BaseModel):
     num_closed: int
@@ -49,3 +50,33 @@ class TestGenerateRequest(GenerateParams):
 class TestGenerateResponse(BaseModel):
     test_id: int
     num_questions: int
+
+class QuestionOut(BaseModel):
+    id: int
+    text: str
+    is_closed: bool
+    difficulty: int
+    choices: Optional[List[str]] = None
+    correct_choices: Optional[List[str]] = None
+
+    @field_validator("choices", "correct_choices", mode="before")
+    @classmethod
+    def coerce_list(cls, v):
+        if v is None:
+            return None
+        if isinstance(v, list):
+            return v
+        if isinstance(v, str):
+            try:
+                j = json.loads(v)
+                if isinstance(j, list):
+                    return j
+                return [str(j)]
+            except Exception:
+                return [v.strip().strip('"').strip("'")]
+        return [str(v)]
+
+class TestDetailOut(BaseModel):
+    test_id: int
+    title: str
+    questions: List[QuestionOut]

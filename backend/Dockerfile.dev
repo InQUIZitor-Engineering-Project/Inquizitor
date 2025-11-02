@@ -7,6 +7,14 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 # System dependencies for WeasyPrint, OCR (tesseract), PDF (poppler), and common libs
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl ca-certificates fontconfig \
+    texlive-xetex \
+    texlive-latex-recommended \
+    texlive-latex-extra \
+    texlive-fonts-recommended \
+    texlive-lang-polish \
+    fonts-dejavu-core \
+    fontconfig \
     libmagic1 \
     tesseract-ocr \
     poppler-utils \

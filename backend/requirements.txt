@@ -87,3 +87,4 @@ pypdf~=4.2
 python-docx~=1.1
 chardet~=5.2
 python-magic~=0.4.27
+Jinja2~=3.1
