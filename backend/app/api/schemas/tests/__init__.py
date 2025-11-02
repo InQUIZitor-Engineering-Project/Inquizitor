@@ -49,3 +49,13 @@ class TestGenerateRequest(GenerateParams):
 class TestGenerateResponse(BaseModel):
     test_id: int
     num_questions: int
+
+
+__all__ = [
+    "FileUploadResponse",
+    "TextInput",
+    "TestOut",
+    "GenerateParams",
+    "TestGenerateRequest",
+    "TestGenerateResponse",
+]

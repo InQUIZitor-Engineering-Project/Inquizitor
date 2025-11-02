@@ -7,10 +7,10 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
-from app.core.config import settings
+from app.api.schemas.auth import TokenData
+from app.core.config import get_settings
 from app.db.models import User
 from app.db.session import get_session
-from app.schemas.user import TokenData
 from sqlmodel import select
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -27,6 +27,7 @@ def get_password_hash(password: str) -> str:
 # JWT
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     to_encode = data.copy()
+    settings = get_settings()
     expire = datetime.utcnow() + (
         expires_delta if expires_delta else timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     )
@@ -37,6 +38,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
 
 def decode_access_token(token: str) -> dict:
     try:
+        settings = get_settings()
         return jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
     except JWTError:
         return {}

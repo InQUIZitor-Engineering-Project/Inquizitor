@@ -1,15 +1,18 @@
 # app/schemas/user.py
-from typing import Optional
 from datetime import datetime
+
 from pydantic import BaseModel, EmailStr
+
 
 class UserBase(BaseModel):
     email: EmailStr
+
 
 class UserCreate(UserBase):
     password: str
     first_name: str
     last_name: str
+
 
 class UserRead(UserBase):
     id: int
@@ -20,9 +23,9 @@ class UserRead(UserBase):
     class Config:
         from_attributes = True
 
-class Token(BaseModel):
-    access_token: str
-    token_type: str
 
-class TokenData(BaseModel):
-    email: Optional[str] = None
+__all__ = [
+    "UserBase",
+    "UserCreate",
+    "UserRead",
+]

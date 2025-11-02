@@ -1,15 +1,14 @@
 import os
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config, pool
-from alembic import context
-
-import os
 import sys
-sys.path.append(os.getcwd())
-import sqlmodel
 
-from app.core.config import settings
+from alembic import context
+from sqlalchemy import engine_from_config, pool
+
+sys.path.append(os.getcwd())
+
+from app.core.config import get_settings
 from app.db.models import SQLModel
 
 config = context.config
@@ -19,6 +18,7 @@ if config.config_file_name is not None:
 
 target_metadata = SQLModel.metadata
 
+settings = get_settings()
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
 
 
