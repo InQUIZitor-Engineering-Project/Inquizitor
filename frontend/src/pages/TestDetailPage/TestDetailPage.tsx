@@ -16,6 +16,19 @@ import {
   ChoiceItem,
 } from "./TestDetailPage.styles";
 
+function toArray<T = string>(v: any): T[] {
+  if (Array.isArray(v)) return v as T[];
+  if (v == null) return [];
+  if (typeof v === "string") {
+    try {
+      const j = JSON.parse(v);
+      if (Array.isArray(j)) return j as T[];
+    } catch {/* ignore */}
+    return v.trim() ? [v as unknown as T] : [];
+  }
+  return [v as T];
+}
+
 const TestDetailPage: React.FC = () => {
   const { testId } = useParams<{ testId: string }>();
   const [data, setData] = useState<TestDetail | null>(null);
@@ -28,15 +41,15 @@ const TestDetailPage: React.FC = () => {
 
   useEffect(() => {
     if (!testId) return;
-    getTestDetail(Number(testId))
-      .then(setData)
+    setLoading(true);
+    Promise.all([getTestDetail(Number(testId)), getMyTests()])
+      .then(([detail, testsList]) => {
+        setData(detail);
+        setTests(testsList);
+        setError(null);
+      })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
-
-    getMyTests()
-          .then((data) => setTests(data))
-          .catch(console.error)
-          .finally(() => setLoading(false));
   }, [testId]);
 
   if (loading) return <PageWrapper>Ładowanie…</PageWrapper>;
@@ -77,16 +90,12 @@ const TestDetailPage: React.FC = () => {
                 {idx + 1}. {q.text}
               </div>
 
-              {q.is_closed && q.choices && (
+              {q.is_closed && (
                 <ChoiceList>
-                  {q.choices.map((choice, ci) => {
-                    const isCorrect =
-                      q.correct_choices?.includes(choice)
+                  {toArray(q.choices).map((choice, ci) => {
+                    const isCorrect = toArray(q.correct_choices).includes(choice);
                     return (
-                      <ChoiceItem
-                        key={ci}
-                        $correct={isCorrect}
-                      >
+                      <ChoiceItem key={ci} $correct={isCorrect}>
                         {String.fromCharCode(65 + ci)}. {choice}
                       </ChoiceItem>
                     );
