@@ -40,9 +40,15 @@ class TestGenerateRequest(GenerateParams):
     file_id: Optional[int] = None
 
     @model_validator(mode="after")
-    def exactly_one_source(self):
-        if bool(self.text) == bool(self.file_id):
-            raise ValueError("Podaj albo text, albo file_id, ale nie oba na raz")
+    def validate_source(self):
+        text_value = (self.text or "").strip() if self.text else ""
+        has_text = bool(text_value)
+        has_file = self.file_id is not None
+
+        if not has_text and not has_file:
+            raise ValueError("Please provide text or file_id")
+
+        self.text = text_value or None
         return self
 
 

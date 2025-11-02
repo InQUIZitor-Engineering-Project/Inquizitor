@@ -106,9 +106,23 @@ const DashboardPage: React.FC = () => {
 
     const num_closed = questionScope === "closed" ? easyCount + mediumCount + hardCount : 0;
     const num_open = questionScope === "open" ? easyCount + mediumCount + hardCount : 0;
+    const textPayload = sourceContent.trim();
 
-    if (sourceType === "material" && (!materialData || !materialData.file_id)) {
-      setGenError("Najpierw wgraj materiał dydaktyczny.");
+    if (sourceType === "material") {
+      if (!materialData || !materialData.file_id) {
+        setGenError("Najpierw wgraj materiał dydaktyczny.");
+        setGenLoading(false);
+        return;
+      }
+      if (!textPayload) {
+        setGenError("Tekst materiału jest pusty – uzupełnij go przed generowaniem.");
+        setGenLoading(false);
+        return;
+      }
+    }
+
+    if (sourceType === "text" && !textPayload) {
+      setGenError("Wklej lub wpisz treść, na podstawie której wygenerujemy test.");
       setGenLoading(false);
       return;
     }
@@ -151,7 +165,7 @@ const DashboardPage: React.FC = () => {
         easy: easyCount,
         medium: mediumCount,
         hard: hardCount,
-        text: sourceType === "text" ? sourceContent : undefined,
+        text: textPayload || undefined,
         file_id: sourceType === "material" ? materialData?.file_id : undefined,
       });
 

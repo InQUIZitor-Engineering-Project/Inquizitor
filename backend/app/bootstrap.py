@@ -19,8 +19,8 @@ from app.infrastructure import (
     SqlModelTestRepository,
     SqlModelUserRepository,
 )
-from app.routers import auth, files, materials, tests, users
-from services.extract import extract_text_from_file
+from app.api.routers import auth, files, materials, tests, users
+from app.infrastructure.extractors import extract_text_from_file
 
 try:  # pragma: no cover - optional dependency
     import magic

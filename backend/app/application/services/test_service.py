@@ -18,7 +18,11 @@ from app.application.interfaces import OCRService, QuestionGenerator, UnitOfWork
 from app.domain.events import TestGenerated
 from app.domain.models import Test as TestDomain
 from app.db.models import Question as QuestionRow
-from services.export import compile_tex_to_pdf, render_test_to_tex, test_to_xml_bytes
+from app.infrastructure.exporting import (
+    compile_tex_to_pdf,
+    render_test_to_tex,
+    test_to_xml_bytes,
+)
 
 
 class TestService:
@@ -46,9 +50,19 @@ class TestService:
         owner_id: int,
     ) -> TestGenerateResponse:
         with self._uow_factory() as uow:
-            if request.text:
-                source_text = request.text
-                title = "From raw text"
+            normalized_text = request.text.strip() if request.text else ""
+            source_text: str
+            title: str
+
+            if normalized_text:
+                source_text = normalized_text
+                if request.file_id is not None:
+                    source_file = uow.files.get(request.file_id)
+                    if not source_file or source_file.owner_id != owner_id:
+                        raise ValueError("File not found")
+                    title = source_file.filename
+                else:
+                    title = "From raw text"
             else:
                 if request.file_id is None:
                     raise ValueError("file_id is required when text is not provided")
