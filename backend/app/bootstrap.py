@@ -29,7 +29,7 @@ except Exception:  # noqa: B902 - best effort fallback if libmagic unavailable
 
 
 class AppContainer:
-    """Minimal container na potrzeby DI w obrębie aplikacji."""
+    """Minimal container for application-wide dependency injection."""
 
     def __init__(self, settings: Settings):
         self._settings = settings

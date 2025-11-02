@@ -31,7 +31,7 @@ class GenerateParams(BaseModel):
     def check_difficulty_sum(self):
         total = self.easy + self.medium + self.hard
         if total != self.num_closed + self.num_open:
-            raise ValueError("Sum(a,b,c) musi równać się num_closed + num_open")
+            raise ValueError("The sum of easy, medium, and hard must equal num_closed + num_open")
         return self
 
 

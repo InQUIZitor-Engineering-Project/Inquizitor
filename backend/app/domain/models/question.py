@@ -8,7 +8,7 @@ from .enums import QuestionDifficulty
 
 @dataclass(slots=True)
 class Question:
-    """Encja pytania, niezależna od warstwy persystencji."""
+    """Domain question entity decoupled from persistence."""
 
     id: Optional[int]
     text: str

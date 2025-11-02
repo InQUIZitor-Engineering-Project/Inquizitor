@@ -9,7 +9,7 @@ from .file import File
 
 @dataclass(slots=True)
 class Material:
-    """Encja reprezentująca materiał źródłowy do generowania treści."""
+    """Domain entity representing source material for generating content."""
 
     id: Optional[int]
     owner_id: int

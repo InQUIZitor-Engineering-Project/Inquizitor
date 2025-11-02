@@ -25,7 +25,7 @@ config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.
 
-    Konfiguruje context z samym URL, bez konieczności importowania DBAPI.
+    Configure the context with just the URL; no DBAPI connection is needed.
     """
     url = config.get_main_option("sqlalchemy.url")
     context.configure(
@@ -44,7 +44,7 @@ def run_migrations_offline() -> None:
 def run_migrations_online() -> None:
     """Run migrations in 'online' mode.
 
-    Tworzymy silnik i łączymy się z bazą, aby wykonać migracje.
+    Create an engine and connect to the database to apply migrations.
     """
     connectable = engine_from_config(
         config.get_section(config.config_ini_section, {}),

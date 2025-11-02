@@ -20,16 +20,16 @@ Prerequisites: Docker Desktop 4.x
 - Run migrations: `make migrate`
 
 ### Backend bootstrap
-- Aplikacja FastAPI jest tworzona poprzez `create_app()` w `app/bootstrap.py`.
-- `app/main.py` eksportuje gotową instancję (`app = create_app()`), więc uruchamianie `uvicorn app.main:app` działa bez dodatkowej konfiguracji.
-- Testy mogą tworzyć własną instancję, wywołując `create_app(settings_override=...)` i podając np. zmodyfikowane ustawienia.
+- The FastAPI app is built via `create_app()` in `app/bootstrap.py`.
+- `app/main.py` exports the ready-to-use instance (`app = create_app()`), so running `uvicorn app.main:app` works without extra steps.
+- Tests can instantiate their own app by calling `create_app(settings_override=...)` with custom settings.
 
 ### Backend architecture
-- **Warstwa API** (`app/routers`, `app/api/dependencies.py`): odpowiada za walidację żądań i zależności FastAPI; całą logikę przekazuje do serwisów application.
-- **Warstwa application** (`app/application/services/`, `unit_of_work.py`, `dto.py`): implementuje use-case’y (auth, tests, files, materials), mapuje domenę na DTO i zarządza transakcjami przez `SqlAlchemyUnitOfWork`.
-- **Warstwa domain** (`app/domain/`): encje, interfejsy repozytoriów, zdarzenia domenowe, kontrakty usług zewnętrznych.
-- **Warstwa infrastructure** (`app/infrastructure/`): adaptery SQLModel, LLM, OCR, storage i ich rejestracja w `AppContainer`.
-- **DI**: `AppContainer` udostępnia UnitOfWork i serwisy, a wstrzykiwanie odbywa się przez `Depends(get_*_service)`; `app/api/dependencies.py` zapewnia spójne źródło zależności.
+- **API layer** (`app/routers`, `app/api/dependencies.py`): validates requests and resolves FastAPI dependencies, delegating business logic to application services.
+- **Application layer** (`app/application/services/`, `unit_of_work.py`, `dto.py`): implements use cases (auth, tests, files, materials), maps domain models to DTOs, and manages transactions through `SqlAlchemyUnitOfWork`.
+- **Domain layer** (`app/domain/`): contains entities, repository interfaces, domain events, and external service contracts.
+- **Infrastructure layer** (`app/infrastructure/`): provides adapters for SQLModel persistence, LLM, OCR, storage, and registers them in `AppContainer`.
+- **Dependency Injection**: `AppContainer` exposes the UnitOfWork and services, while FastAPI injects them using `Depends(get_*_service)` with helpers from `app/api/dependencies.py`.
 
 ### Notes
 - Backend hot‑reload: mounted `

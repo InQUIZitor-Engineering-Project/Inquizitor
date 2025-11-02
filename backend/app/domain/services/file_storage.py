@@ -5,7 +5,7 @@ from typing import Protocol
 
 class FileStorage(Protocol):
     def save(self, *, owner_id: int, filename: str, content: bytes) -> str:
-        """Zapisuje plik i zwraca ścieżkę przechowywania."""
+        """Persist the file and return the storage path."""
 
         ...
 

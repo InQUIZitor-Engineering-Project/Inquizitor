@@ -40,7 +40,5 @@ def upload_text(
     payload: dict,
     current_user: User = Depends(get_current_user),
 ):
-    """
-    Na razie zwracamy ten sam payload – będziemy podawać text do generowania testu.
-    """
+    """Temporary endpoint returning the provided text payload."""
     return {"text": payload.get("text", "")}

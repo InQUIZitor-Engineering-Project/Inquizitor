@@ -16,9 +16,7 @@ router = APIRouter()
 
 @router.get("/me", response_model=UserRead)
 def read_profile(current_user: User = Depends(get_current_user)):
-    """
-    Zwraca dane aktualnie zalogowanego użytkownika.
-    """
+    """Return data for the currently authenticated user."""
     return current_user
 
 
@@ -27,9 +25,7 @@ def list_my_tests(
     current_user: User = Depends(get_current_user),
     test_service: TestService = Depends(get_test_service),
 ):
-    """
-    Zwraca listę testów należących do aktualnie zalogowanego użytkownika.
-    """
+    """Return tests owned by the currently authenticated user."""
     return test_service.list_tests_for_user(owner_id=current_user.id)
 
 
@@ -39,9 +35,7 @@ def delete_my_test(
     current_user: User = Depends(get_current_user),
     test_service: TestService = Depends(get_test_service),
 ):
-    """
-    Usuwa test o zadanym ID, jeśli należy do aktualnego użytkownika.
-    """
+    """Delete a test by ID if it belongs to the current user."""
     try:
         test_service.delete_test(owner_id=current_user.id, test_id=test_id)
     except ValueError as exc:

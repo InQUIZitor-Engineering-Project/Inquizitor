@@ -11,7 +11,7 @@ EMAIL_REGEX = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 @dataclass(slots=True)
 class User:
-    """Encja domenowa reprezentująca użytkownika."""
+    """Domain entity representing an application user."""
 
     id: Optional[int]
     email: str

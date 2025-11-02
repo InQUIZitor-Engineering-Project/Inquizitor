@@ -30,7 +30,7 @@ def extract_text_from_file(path: Path, mime: Optional[str]) -> Optional[str]:
             return _read_pdf(path)
         if ext in [".docx"]:
             return _read_docx(path)
-        # obrazów (jpg/png) na razie nie OCR-ujemy – zwróć None
+        # Images (jpg/png) are not OCR'd here, return None for now
         return None
     except Exception:
         return None

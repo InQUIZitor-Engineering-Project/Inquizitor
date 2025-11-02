@@ -15,28 +15,29 @@ from app.domain.services import QuestionGenerator
 
 def _build_prompt(text: str, params: GenerateParams) -> str:
     parts = [
-        f"Na podstawie tekstu:\n{text}\n\nStwórz {params.num_closed} pytania zamknięte i {params.num_open} pytania otwarte."
+        f"Based on the text below, create {params.num_closed} closed questions and {params.num_open} open questions."
+        f"\n\nText:\n{text}\n"
     ]
 
     if params.closed_types:
         closed_types_str = ", ".join(params.closed_types)
-        parts.append(f"Dla pytań zamkniętych użyj tylko typów: {closed_types_str}")
+        parts.append(f"For closed questions, use only the following types: {closed_types_str}.")
 
     parts.append(
-        f"Poziomy trudności rozdaj tak: {params.easy} łatwych, {params.medium} średnich, {params.hard} trudnych."
+        f"Distribute difficulty levels as follows: {params.easy} easy, {params.medium} medium, {params.hard} hard."
     )
 
     parts.append(
         """
-Każde pytanie wypisz jako JSON-owy obiekt ze strukturą:
+Each question must be returned as a JSON object with the structure:
 {
   "text": "...",
-  "is_closed": true lub false,
-  "difficulty": 1|2|3,
-  "choices": [..] lub null,
-  "correct_choices": [..] lub null
+  "is_closed": true | false,
+  "difficulty": 1 | 2 | 3,
+  "choices": [ ... ] or null,
+  "correct_choices": [ ... ] or null
 }
-Zwróć WYŁĄCZNIE listę takich obiektów w JSON (bez dodatkowego tekstu).
+Return ONLY a JSON array of such objects with no extra commentary.
 """
     )
 
@@ -73,13 +74,13 @@ class GeminiQuestionGenerator(QuestionGenerator):
         try:
             questions_payload = json.loads(raw_output)
         except json.JSONDecodeError as exc:  # noqa: B904
-            raise ValueError(f"Nie udało się sparsować odpowiedzi Gemini jako JSON:\n{raw_output}") from exc
+            raise ValueError(f"Failed to parse Gemini response as JSON:\n{raw_output}") from exc
 
         questions: List[Question] = []
         for item in questions_payload:
             missing = {"text", "is_closed", "difficulty", "choices", "correct_choices"} - item.keys()
             if missing:
-                raise ValueError(f"Brakuje pól w wygenerowanym pytaniu: {missing}")
+                raise ValueError(f"Missing fields in the generated question: {missing}")
 
             difficulty = QuestionDifficulty(int(item["difficulty"]))
             choices = item["choices"] or []

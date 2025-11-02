@@ -10,7 +10,7 @@ from .question import Question
 
 @dataclass(slots=True)
 class Test:
-    """Agregat testu, zarządza kolekcją pytań."""
+    """Aggregate root for a test with an associated question collection."""
 
     id: Optional[int]
     owner_id: int

@@ -8,7 +8,7 @@ from typing import Optional
 
 @dataclass(slots=True)
 class File:
-    """Encja domenowa reprezentująca plik użytkownika."""
+    """Domain entity representing a file stored by a user."""
 
     id: Optional[int]
     owner_id: int

@@ -59,10 +59,10 @@ export const CreateNewButton = styled.button`
 export const ContentArea = styled.section`
   display: flex;
   flex-direction: column;
-  align-items: center;       /* poziome wyśrodkowanie */
+  align-items: center;       /* horizontal centering */
   padding: 40px;
   overflow-y: auto;
-  gap: 32px;                  /* odstęp między sekcjami */
+  gap: 32px;                  /* spacing between sections */
 `;
 
 export const Heading = styled.h1`

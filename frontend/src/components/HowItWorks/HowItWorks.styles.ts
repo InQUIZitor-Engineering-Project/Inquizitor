@@ -86,5 +86,5 @@ export const CardsGrid = styled.div`
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: ${({ theme }) => theme.grid.gutter};
   width: 100%;
-  max-width: calc(12 * 1fr); // używamy 12 kolumn analogicznie – w praktyce to „full width” z paddingiem
+  max-width: calc(12 * 1fr); // use 12 columns just like layout – effectively full width with padding
 `;
