@@ -6,7 +6,7 @@ const HomePage: React.FC = () => {
   return (
     <>
       <Hero />
-      <HowItWorks />
+      <HowItWorks id="how-it-works"/>
     </>
   );
 };

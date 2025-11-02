@@ -11,6 +11,8 @@ import LoginPage from "./pages/LoginPage/LoginPage";
 import DashboardPage from "./pages/DashboardPage/DashboardPage";
 import ProfilePage from "./pages/ProfilePage/ProfilePage";
 import TestDetailPage from "./pages/TestDetailPage/TestDetailPage";
+import AboutUsPage from './pages/AboutUsPage/AboutUsPage';
+import FAQPage from './pages/FAQPage/FAQPage';
 
 
 const ProtectedRoute: React.FC<{ children: JSX.Element }> = ({ children }) => {
@@ -33,7 +35,8 @@ const App: React.FC = () => {
             // </ProtectedRoute>
           }>
           </Route>
-
+          <Route path="/about" element={<AboutUsPage />} />
+          <Route path="/faq" element={<FAQPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/login" element={<LoginPage />} />
 

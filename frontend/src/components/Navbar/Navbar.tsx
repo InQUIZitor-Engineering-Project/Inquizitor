@@ -10,6 +10,7 @@ import {
 } from "./Navbar.styles";
 import { Logo, LogosWrapper } from "../../styles/common";
 import { useAuth } from "../../context/AuthContext";
+import { HashLink } from "react-router-hash-link";
 
 const Navbar: React.FC = () => {
   const { user, logout } = useAuth();
@@ -26,9 +27,15 @@ const Navbar: React.FC = () => {
 
       <NavLinks>
         <StyledLink to="/">Strona główna</StyledLink>
-        <StyledLink to="/">O nas</StyledLink>
-        <StyledLink to="/">Jak to działa?</StyledLink>
-        <StyledLink to="/">FAQ</StyledLink>
+        <StyledLink to="/about">O nas</StyledLink>
+        <StyledLink 
+          as={HashLink}
+          to="/#how-it-works"
+          smooth
+        >
+          Jak to działa?
+        </StyledLink>
+        <StyledLink to="/faq">FAQ</StyledLink>
       </NavLinks>
 
       <ButtonGroup>

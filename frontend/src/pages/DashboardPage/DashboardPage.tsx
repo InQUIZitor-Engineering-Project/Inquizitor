@@ -128,7 +128,7 @@ const DashboardPage: React.FC = () => {
       <Sidebar
         tests={tests}
         onSelect={(testId) => navigate(`/dashboard/${testId}`)}
-        onCreateNew={() => console.log("czyszczenie formularza")}
+        onCreateNew={() => navigate(`/dashboard`)}
       />
 
       <ContentArea>
