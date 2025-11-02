@@ -7,6 +7,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 # System dependencies for WeasyPrint, OCR (tesseract), PDF (poppler), and common libs
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    libmagic1 \
     tesseract-ocr \
     poppler-utils \
     libcairo2 \
