@@ -50,6 +50,9 @@ dist/
 build/
 node_modules/
 
+# Uploaded files
+backend/uploads/
+
 # Alembic cache (migrations ARE kept)
 alembic/__pycache__/
 alembic/versions/__pycache__/

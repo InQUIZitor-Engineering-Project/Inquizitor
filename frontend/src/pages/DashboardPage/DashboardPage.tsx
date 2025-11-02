@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { getMyTests, generateTest } from "../../services/test";
+import { uploadMaterial, type MaterialUploadResponse } from "../../services/materials";
 import type { TestOut } from "../../services/test";
 
 import Sidebar from "../../components/Sidebar/Sidebar";
@@ -21,6 +22,11 @@ import {
   DifficultyGroup,
   DifficultyField,
   GenerateButton,
+  UploadSection,
+  UploadButton,
+  UploadInfo,
+  UploadError,
+  HiddenFileInput,
 } from "./DashboardPage.styles";
 
 const EMPTY_ILLUSTRATION = "/src/assets/dashboard_welcome.png";
@@ -43,6 +49,50 @@ const DashboardPage: React.FC = () => {
   const [genError, setGenError] = useState<string | null>(null);
   const [genLoading, setGenLoading] = useState(false);
 
+  const [materialData, setMaterialData] = useState<MaterialUploadResponse | null>(null);
+  const [materialUploading, setMaterialUploading] = useState(false);
+  const [materialError, setMaterialError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleMaterialButtonClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleMaterialChange = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    setMaterialError(null);
+    setMaterialUploading(true);
+    try {
+      const uploaded = await uploadMaterial(file);
+      if (uploaded.processing_status === "done") {
+        setMaterialData(uploaded);
+        setGenError(null);
+        if (uploaded.extracted_text) {
+          setSourceContent(uploaded.extracted_text);
+        }
+      } else {
+        setMaterialData(null);
+        setMaterialError(
+          uploaded.processing_error || "Nie udało się wyodrębnić tekstu z pliku.",
+        );
+      }
+    } catch (error: any) {
+      setMaterialData(null);
+      setMaterialError(error.message || "Nie udało się wgrać materiału.");
+    } finally {
+      setMaterialUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
   useEffect(() => {
     getMyTests()
       .then((data) => setTests(data))
@@ -56,6 +106,12 @@ const DashboardPage: React.FC = () => {
 
     const num_closed = questionScope === "closed" ? easyCount + mediumCount + hardCount : 0;
     const num_open = questionScope === "open" ? easyCount + mediumCount + hardCount : 0;
+
+    if (sourceType === "material" && (!materialData || !materialData.file_id)) {
+      setGenError("Najpierw wgraj materiał dydaktyczny.");
+      setGenLoading(false);
+      return;
+    }
 
     const closed_types =
       questionScope === "closed"
@@ -96,7 +152,7 @@ const DashboardPage: React.FC = () => {
         medium: mediumCount,
         hard: hardCount,
         text: sourceType === "text" ? sourceContent : undefined,
-        file_id: sourceType === "material" ? /* TODO: podaj ID pliku */ undefined : undefined,
+        file_id: sourceType === "material" ? materialData?.file_id : undefined,
       });
 
       navigate(`/dashboard/${resp.test_id}`);
@@ -149,6 +205,33 @@ const DashboardPage: React.FC = () => {
             Materiał dydaktyczny
           </button>
         </ToggleGroup>
+
+        {sourceType === "material" && (
+          <UploadSection>
+            <HiddenFileInput
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf,.docx,.txt,.md"
+              onChange={handleMaterialChange}
+            />
+
+            <UploadButton
+              type="button"
+              onClick={handleMaterialButtonClick}
+              disabled={materialUploading}
+            >
+              {materialUploading ? "Wgrywam…" : "Wgraj plik"}
+            </UploadButton>
+
+            {materialData && materialData.processing_status === "done" && (
+              <UploadInfo>
+                Tekst z pliku "{materialData.filename}" został dodany do formularza.
+              </UploadInfo>
+            )}
+
+            {materialError && <UploadError>{materialError}</UploadError>}
+          </UploadSection>
+        )}
 
         <Subheading>Wpisz treść, na podstawie której powstanie Twój test</Subheading>
         <TextArea
@@ -227,7 +310,10 @@ const DashboardPage: React.FC = () => {
           </DifficultyField>
         </DifficultyGroup>
 
-        <GenerateButton onClick={handleGenerate} disabled={genLoading}>
+        <GenerateButton
+          onClick={handleGenerate}
+          disabled={genLoading || materialUploading}
+        >
           {genLoading ? "Generuję…" : "Generuj test"}
         </GenerateButton>
         {genError && <Subheading style={{ color: "red" }}>{genError}</Subheading>}

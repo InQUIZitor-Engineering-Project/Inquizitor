@@ -46,6 +46,8 @@ services:
     environment:
       - VITE_API_URL=http://localhost:8000
       - NODE_ENV=development
+    env_file:
+      - ./frontend/.env
     volumes:
       - ./frontend:/usr/src/app:delegated
       - node_modules:/usr/src/app/node_modules

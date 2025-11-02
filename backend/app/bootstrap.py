@@ -155,7 +155,7 @@ def create_app(settings_override: Optional[Settings] = None) -> FastAPI:
     app.include_router(users.router, prefix="/users", tags=["users"])
     app.include_router(files.router, prefix="/files", tags=["files"])
     app.include_router(tests.router, prefix="/tests", tags=["tests"])
-    app.include_router(materials.router, prefix="/materials", tags=["materials"])
+    app.include_router(materials.router)
 
     return app
 

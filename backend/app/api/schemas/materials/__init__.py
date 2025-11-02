@@ -12,6 +12,8 @@ class MaterialOut(BaseModel):
     checksum: Optional[str] = None
     processing_status: str
     created_at: datetime
+    extracted_text: Optional[str] = None
+    processing_error: Optional[str] = None
 
     class Config:
         from_attributes = True

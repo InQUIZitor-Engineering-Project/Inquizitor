@@ -66,6 +66,8 @@ def to_material_out(material: Material) -> MaterialOut:
         checksum=material.checksum,
         processing_status=material.status.value,
         created_at=material.file.uploaded_at,
+        extracted_text=material.extracted_text,
+        processing_error=material.processing_error,
     )
 
 
