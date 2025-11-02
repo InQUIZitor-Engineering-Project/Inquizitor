@@ -2,7 +2,6 @@
 from typing import List, Optional, Literal
 from pydantic import BaseModel, field_validator, model_validator
 from datetime import datetime
-from typing import List, Optional
 import json
 
 class FileUploadResponse(BaseModel):
@@ -32,7 +31,7 @@ class GenerateParams(BaseModel):
     def check_difficulty_sum(self):
         total = self.easy + self.medium + self.hard
         if total != self.num_closed + self.num_open:
-            raise ValueError("Sum(a,b,c) musi równać się num_closed + num_open")
+            raise ValueError("The sum of easy, medium, and hard must equal num_closed + num_open")
         return self
 
 
@@ -51,6 +50,7 @@ class TestGenerateResponse(BaseModel):
     test_id: int
     num_questions: int
 
+
 class QuestionOut(BaseModel):
     id: int
     text: str
@@ -65,18 +65,31 @@ class QuestionOut(BaseModel):
         if v is None:
             return None
         if isinstance(v, list):
-            return v
+            return [str(item) for item in v]
         if isinstance(v, str):
             try:
-                j = json.loads(v)
-                if isinstance(j, list):
-                    return j
-                return [str(j)]
+                parsed = json.loads(v)
+                if isinstance(parsed, list):
+                    return [str(item) for item in parsed]
+                return [str(parsed)]
             except Exception:
                 return [v.strip().strip('"').strip("'")]
         return [str(v)]
+
 
 class TestDetailOut(BaseModel):
     test_id: int
     title: str
     questions: List[QuestionOut]
+
+
+__all__ = [
+    "FileUploadResponse",
+    "TextInput",
+    "TestOut",
+    "GenerateParams",
+    "TestGenerateRequest",
+    "TestGenerateResponse",
+    "QuestionOut",
+    "TestDetailOut",
+]

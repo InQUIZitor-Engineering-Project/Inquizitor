@@ -1,52 +1,43 @@
 # app/routers/users.py
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
-from sqlmodel import select
 from typing import List
 
-from app.db.models import User, Test
-from app.db.session import get_session
-from app.schemas.user import UserRead
-from app.schemas.test import TestOut 
+from fastapi import APIRouter, Depends, HTTPException, Response, status
+
+from app.api.dependencies import get_test_service
+from app.api.schemas.tests import TestOut
+from app.api.schemas.users import UserRead
+from app.application.services import TestService
 from app.core.security import get_current_user
+from app.db.models import User
 
 router = APIRouter()
 
 
 @router.get("/me", response_model=UserRead)
 def read_profile(current_user: User = Depends(get_current_user)):
-    """
-    Zwraca dane aktualnie zalogowanego użytkownika.
-    """
+    """Return data for the currently authenticated user."""
     return current_user
 
 
 @router.get("/me/tests", response_model=List[TestOut])
 def list_my_tests(
-    db: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    test_service: TestService = Depends(get_test_service),
 ):
-    """
-    Zwraca listę testów należących do aktualnie zalogowanego użytkownika.
-    """
-    stmt = select(Test).where(Test.owner_id == current_user.id)
-    tests = db.exec(stmt).all()
-    return tests
+    """Return tests owned by the currently authenticated user."""
+    return test_service.list_tests_for_user(owner_id=current_user.id)
 
 
 @router.delete("/me/tests/{test_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_my_test(
     test_id: int,
-    db: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    test_service: TestService = Depends(get_test_service),
 ):
-    """
-    Usuwa test o zadanym ID, jeśli należy do aktualnego użytkownika.
-    """
-    test = db.get(Test, test_id)
-    if not test or test.owner_id != current_user.id:
-        raise HTTPException(status_code=404, detail="Test not found")
-    db.delete(test)
-    db.commit()
-    return None
+    """Delete a test by ID if it belongs to the current user."""
+    try:
+        test_service.delete_test(owner_id=current_user.id, test_id=test_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

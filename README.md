@@ -19,14 +19,17 @@ Prerequisites: Docker Desktop 4.x
 - Logs (follow): `make logs`
 - Run migrations: `make migrate`
 
-### Notes
-- Backend hot‑reload: mounted `./backend:/app`
-- Frontend hot‑reload: mounted `./frontend:/usr/src/app`
-- Postgres data persists in volume `pgdata`
+### Backend bootstrap
+- The FastAPI app is built via `create_app()` in `app/bootstrap.py`.
+- `app/main.py` exports the ready-to-use instance (`app = create_app()`), so running `uvicorn app.main:app` works without extra steps.
+- Tests can instantiate their own app by calling `create_app(settings_override=...)` with custom settings.
 
-### Troubleshooting
-- If dependency changes are not picked up, rebuild images:
-  - `make rebuild`
-- If Vite dev server can’t resolve deps after first run:
-  - remove `node_modules` volume: `docker volume rm inquizitor_node_modules`
-- On macOS, if file change latency is high, consider disabling file indexing (Spotlight) on the repo directory.
+### Backend architecture
+- **API layer** (`app/routers`, `app/api/dependencies.py`): validates requests and resolves FastAPI dependencies, delegating business logic to application services.
+- **Application layer** (`app/application/services/`, `unit_of_work.py`, `dto.py`): implements use cases (auth, tests, files, materials), maps domain models to DTOs, and manages transactions through `SqlAlchemyUnitOfWork`.
+- **Domain layer** (`app/domain/`): contains entities, repository interfaces, domain events, and external service contracts.
+- **Infrastructure layer** (`app/infrastructure/`): provides adapters for SQLModel persistence, LLM, OCR, storage, and registers them in `AppContainer`.
+- **Dependency Injection**: `AppContainer` exposes the UnitOfWork and services, while FastAPI injects them using `Depends(get_*_service)` with helpers from `app/api/dependencies.py`.
+
+### Notes
+- Backend hot‑reload: mounted `

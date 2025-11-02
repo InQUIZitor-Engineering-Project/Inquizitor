@@ -14,7 +14,7 @@ export const Card = styled.div`
   border-radius: 16px;
   box-shadow: ${({ theme }) => theme.shadows["8px"]};
   padding: 40px;
-  max-width: 900px; /* szerokość panelu */
+  max-width: 900px; /* panel width */
   width: 100%;
   display: grid;
   grid-template-columns: 1fr 1fr; /* dwie kolumny: lewa=formularz, prawa=ilustracja */

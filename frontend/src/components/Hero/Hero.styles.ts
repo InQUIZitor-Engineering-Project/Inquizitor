@@ -11,7 +11,7 @@ export const ContentWrapper = styled.div`
   grid-template-columns: repeat(12, 1fr);
   align-items: center;
   gap: ${({ theme }) => theme.grid.gutter};
-  max-width: calc(12 * 1fr); /* To zostawiamy, bo kolumny liczą się w proporcjach */
+  max-width: calc(12 * 1fr); /* keep proportions consistent with our column layout */
   margin: 0 auto;
 `;
 

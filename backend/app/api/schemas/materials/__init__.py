@@ -19,3 +19,9 @@ class MaterialOut(BaseModel):
 class MaterialUpdate(BaseModel):
     extracted_text: Optional[str] = None
     processing_status: Optional[Literal["pending", "done", "failed"]] = None
+
+
+__all__ = [
+    "MaterialOut",
+    "MaterialUpdate",
+]

@@ -1,55 +1,44 @@
 # app/routers/files.py
 import os
-import uuid
-from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, status
-from sqlalchemy.orm import Session
-from app.db.session import get_session
-from app.db.models import File as FileModel, User
-from app.routers.users import get_current_user
-from app.schemas.test import FileUploadResponse
+
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+
+from app.api.dependencies import get_file_service
+from app.api.schemas.tests import FileUploadResponse
+from app.application.services import FileService
+from app.core.security import get_current_user
+from app.db.models import User
 
 router = APIRouter()
 
-UPLOAD_DIR = "uploads"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
+_ALLOWED_EXTENSIONS = [".pdf", ".png", ".jpg", ".jpeg"]
+
 
 @router.post("/upload-file", response_model=FileUploadResponse)
 def upload_file(
     uploaded_file: UploadFile = File(...),
-    db: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    file_service: FileService = Depends(get_file_service),
 ):
     ext = os.path.splitext(uploaded_file.filename)[1].lower()
-    if ext not in [".pdf", ".png", ".jpg", ".jpeg"]:
+    if ext not in _ALLOWED_EXTENSIONS:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Allowed file types: .pdf, .png, .jpg, .jpeg"
+            detail=f"Allowed file types: {', '.join(sorted(_ALLOWED_EXTENSIONS))}",
         )
-    unique_name = f"{uuid.uuid4().hex}{ext}"
-    file_path = os.path.join(UPLOAD_DIR, unique_name)
-
-    with open(file_path, "wb") as f:
-        content = uploaded_file.file.read()
-        f.write(content)
-
-    db_file = FileModel(
+    content = uploaded_file.file.read()
+    return file_service.upload_file(
         owner_id=current_user.id,
         filename=uploaded_file.filename,
-        filepath=file_path
+        content=content,
+        allowed_extensions=_ALLOWED_EXTENSIONS,
     )
-    db.add(db_file)
-    db.commit()
-    db.refresh(db_file)
 
-    return FileUploadResponse(file_id=db_file.id, filename=db_file.filename)
 
 @router.post("/upload-text")
 def upload_text(
     payload: dict,
-    db: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
-    """
-    Na razie zwracamy ten sam payload – będziemy podawać text do generowania testu.
-    """
+    """Temporary endpoint returning the provided text payload."""
     return {"text": payload.get("text", "")}
