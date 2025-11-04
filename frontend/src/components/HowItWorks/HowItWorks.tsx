@@ -7,9 +7,13 @@ import {
 } from "./HowItWorks.styles";
 import StepCard from "./StepCard";
 
-const HowItWorks: React.FC = () => {
+interface HowItWorksProps {
+  id?: string;
+}
+
+const HowItWorks: React.FC<HowItWorksProps> = ({ id }) => {
   return (
-    <SectionWrapper>
+    <SectionWrapper id={id}>
       <SectionHeader>Jak to działa?</SectionHeader>
       <SectionSubheader>Tworzenie quizu krok po kroku</SectionSubheader>
       <CardsGrid>

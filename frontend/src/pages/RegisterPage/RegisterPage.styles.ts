@@ -5,8 +5,17 @@ export const PageWrapper = styled.div`
   width: 100%;
   background-color: ${({ theme }) => theme.colors.tint.t4};
   display: flex;
+  flex-direction: column; 
+`;
+
+
+export const MainContent = styled.main`
+  flex-grow: 1;
+  display: flex;
   align-items: center;
   justify-content: center;
+  padding: 40px;
+  box-sizing: border-box;
 `;
 
 export const Card = styled.div`

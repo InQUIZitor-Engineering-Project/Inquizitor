@@ -30,7 +30,7 @@ const Hero: React.FC = () => {
   const buttonText = !user
     ? "Rozpocznij za darmo"
     : hasTests
-    ? "Przejdź do dashboardu"
+    ? "Przejdź dalej"
     : "Utwórz pierwszy test";
 
   const handleStart = () => {
@@ -45,7 +45,7 @@ const Hero: React.FC = () => {
     <HeroSection>
       <ContentWrapper>
         <TextContent>
-          <Title>Stwórz własny quiz w mgnieniu oka</Title>
+          <Title>Stwórz quiz w mgnieniu oka</Title>
           <Subtitle>
             Inteligentna platforma do tworzenia quizów z treści książek i dokumentów.
           </Subtitle>

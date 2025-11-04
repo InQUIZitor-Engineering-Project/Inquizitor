@@ -3,7 +3,7 @@ import styled from "styled-components";
 export const PageWrapper = styled.div`
   display: grid;
   grid-template-columns: 280px 1fr;
-  min-height: calc(100vh - 80px);
+  height: calc(100vh - 80px);
   background-color: ${({ theme }) => theme.colors.neutral.silver};
 `;
 

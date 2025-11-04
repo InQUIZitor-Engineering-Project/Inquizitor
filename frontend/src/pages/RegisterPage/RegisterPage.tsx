@@ -14,12 +14,14 @@ import {
   SubmitButtonWrapper,
   RightColumn,
   Illustration,
-  ErrorMessage
+  ErrorMessage,
+  MainContent
 } from "./RegisterPage.styles";
 import { Logo, LogosWrapper } from "../../styles/common.ts"
 import { Link, useNavigate } from "react-router-dom";
 import Button from "../../components/Button/Button";
 import { registerUser } from "../../services/auth";
+import Footer from "../../components/Footer/Footer.tsx";
 
 const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
@@ -62,7 +64,8 @@ const RegisterPage: React.FC = () => {
 
     return (
     <PageWrapper>
-      <Card>
+      <MainContent>
+        <Card>
         <LeftColumn>
           <LogosWrapper>
             <Logo src="/src/assets/logo_book.png" alt="Inquizitor Full Logo" />
@@ -154,6 +157,8 @@ const RegisterPage: React.FC = () => {
           <Illustration src="/src/assets/login.png" alt="Rejestracja Illustration" />
         </RightColumn>
       </Card>
+      </MainContent>
+      <Footer/>
     </PageWrapper>
   );
 };
