@@ -1,8 +1,10 @@
 import React, { type JSX } from "react";
+import styled from "styled-components";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 
 import Navbar from "./components/Navbar/Navbar";
+import { NAVBAR_HEIGHT } from "./components/Navbar/Navbar.styles";
 
 import HomePage from "./pages/HomePage";
 import RegisterPage from "./pages/RegisterPage/RegisterPage";
@@ -20,11 +22,16 @@ const ProtectedRoute: React.FC<{ children: JSX.Element }> = ({ children }) => {
   return user ? children : <Navigate to="/login" replace />;
 };
 
+const NavbarSpacer = styled.div`
+  height: ${NAVBAR_HEIGHT}px;
+`;
+
 const App: React.FC = () => {
   return (
     <AuthProvider>
       <BrowserRouter>
         <Navbar />
+        <NavbarSpacer />
 
         <Routes>
           <Route path="/" element={<HomePage />} />

@@ -1,6 +1,8 @@
 import styled from "styled-components";
 import { Link } from "react-router-dom";
 
+export const NAVBAR_HEIGHT = 80;
+
 export const NavbarContainer = styled.nav`
   width: 100%;
   display: flex;
@@ -9,8 +11,12 @@ export const NavbarContainer = styled.nav`
   padding: 24px ${({ theme }) => theme.grid.margin};
   background-color: ${({ theme }) => theme.colors.neutral.white};
   box-shadow: ${({ theme }) => theme.shadows["2px"]};
-  position: sticky;
+  height: ${NAVBAR_HEIGHT}px;
+  box-sizing: border-box;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 100;
 `;
 

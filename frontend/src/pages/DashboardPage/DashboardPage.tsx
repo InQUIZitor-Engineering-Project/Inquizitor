@@ -1,9 +1,6 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getMyTests } from "../../services/test";
-import { useAuth } from "../../context/AuthContext";
-import { getMyTests, generateTest } from "../../services/test";
-import { uploadMaterial, type MaterialUploadResponse } from "../../services/materials";
 import type { TestOut } from "../../services/test";
 import Sidebar from "../../components/Sidebar/Sidebar";
 
@@ -14,19 +11,7 @@ import {
   EmptyStateImage,
   EmptyStateHeading,
   EmptyStateButton,
-  Heading,
   Subheading,
-  ToggleGroup,
-  TextArea,
-  QuestionTypeGroup,
-  DifficultyGroup,
-  DifficultyField,
-  GenerateButton,
-  UploadSection,
-  UploadButton,
-  UploadInfo,
-  UploadError,
-  HiddenFileInput,
 } from "./DashboardPage.styles";
 import Footer from "../../components/Footer/Footer";
 
@@ -38,50 +23,6 @@ const DashboardPage: React.FC = () => {
 
   const [tests, setTests] = useState<TestOut[]>([]);
   const [loading, setLoading] = useState(true);
-
-  const [materialData, setMaterialData] = useState<MaterialUploadResponse | null>(null);
-  const [materialUploading, setMaterialUploading] = useState(false);
-  const [materialError, setMaterialError] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-
-  const handleMaterialButtonClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleMaterialChange = async (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    const file = event.target.files?.[0];
-    if (!file) {
-      return;
-    }
-
-    setMaterialError(null);
-    setMaterialUploading(true);
-    try {
-      const uploaded = await uploadMaterial(file);
-      if (uploaded.processing_status === "done") {
-        setMaterialData(uploaded);
-        setGenError(null);
-        if (uploaded.extracted_text) {
-          setSourceContent(uploaded.extracted_text);
-        }
-      } else {
-        setMaterialData(null);
-        setMaterialError(
-          uploaded.processing_error || "Nie udało się wyodrębnić tekstu z pliku.",
-        );
-      }
-    } catch (error: any) {
-      setMaterialData(null);
-      setMaterialError(error.message || "Nie udało się wgrać materiału.");
-    } finally {
-      setMaterialUploading(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-    }
-  };
 
   useEffect(() => {
     getMyTests()
