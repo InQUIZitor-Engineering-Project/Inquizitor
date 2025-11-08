@@ -10,11 +10,24 @@ export const CreateTestWrapper = styled.div`
 
 export const ContentWrapper = styled.div`
     padding: 40px;
-    overflow-y: visible;
+    overflow-y: auto;
+    // display: flex;
+    // flex-direction: column;
+    // align-items: center;
+    // justify-content: flex-start;
+`;
+
+export const InnerWrapper = styled.div`
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
+    
+    /* Opcjonalnie: Ustaw minimalną wysokość, aby "wypchnąć" treść
+     w górę, jeśli jest jej bardzo mało. Jeśli treść ma być
+     po prostu na górze, możesz to pominąć.
+    */
+    // min-height: 100%; 
 `;
 
 export const Heading = styled.h1`
@@ -71,6 +84,58 @@ export const TextArea = styled.textarea`
   border: 1px solid ${({ theme }) => theme.colors.neutral.greyBlue};
   border-radius: 8px;
   resize: vertical;
+  max-height: 320px;
+  overflow-y: auto;
+`;
+
+export const UploadSection = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+`;
+
+export const UploadButton = styled.button`
+  ${({ theme }) => `
+    font-family: ${theme.typography.body.medium.body2.fontFamily};
+    font-size: ${theme.typography.body.medium.body2.fontSize};
+    font-weight: ${theme.typography.body.medium.body2.fontWeight};
+  `}
+  background-color: ${({ theme }) => theme.colors.brand.primary};
+  color: ${({ theme }) => theme.colors.neutral.white};
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: ${({ theme }) => theme.shadows["2px"]};
+
+  &:disabled {
+    background-color: ${({ theme }) => theme.colors.neutral.greyBlue};
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+`;
+
+export const UploadInfo = styled.p`
+  ${({ theme }) => `
+    font-family: ${theme.typography.body.regular.body3.fontFamily};
+    font-size: ${theme.typography.body.regular.body3.fontSize};
+  `}
+  color: ${({ theme }) => theme.colors.neutral.grey};
+  text-align: center;
+`;
+
+export const UploadError = styled.p`
+  ${({ theme }) => `
+    font-family: ${theme.typography.body.regular.body3.fontFamily};
+    font-size: ${theme.typography.body.regular.body3.fontSize};
+  `}
+  color: ${({ theme }) => theme.colors.action.error};
+  text-align: center;
+`;
+
+export const HiddenFileInput = styled.input`
+  display: none;
 `;
 
 export const QuestionTypeGroup = styled.div`

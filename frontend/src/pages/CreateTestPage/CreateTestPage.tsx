@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getMyTests, generateTest } from "../../services/test";
+import { uploadMaterial, type MaterialUploadResponse } from "../../services/materials";
 import type { TestOut } from "../../services/test";
 import Footer from "../../components/Footer/Footer";
 import Sidebar from "../../components/Sidebar/Sidebar";
@@ -8,6 +9,7 @@ import Sidebar from "../../components/Sidebar/Sidebar";
 import {
   CreateTestWrapper,
   ContentWrapper,
+  InnerWrapper,
   Heading,
   Subheading,
   ToggleGroup,
@@ -16,6 +18,11 @@ import {
   DifficultyGroup,
   DifficultyField,
   GenerateButton,
+  UploadSection,
+  UploadButton,
+  UploadInfo,
+  UploadError,
+  HiddenFileInput,
 } from "./CreateTestPage.styles";
 
 const CreateTestPage: React.FC = () => {
@@ -37,6 +44,51 @@ const CreateTestPage: React.FC = () => {
   const [genError, setGenError] = useState<string | null>(null);
   const [genLoading, setGenLoading] = useState(false);
 
+  const [materialData, setMaterialData] = useState<MaterialUploadResponse | null>(null);
+  const [materialUploading, setMaterialUploading] = useState(false);
+  const [materialError, setMaterialError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleMaterialButtonClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleMaterialChange = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    setMaterialError(null);
+    setMaterialUploading(true);
+    try {
+      const uploaded = await uploadMaterial(file);
+      if (uploaded.processing_status === "done") {
+        setMaterialData(uploaded);
+        setGenError(null);
+        if (uploaded.extracted_text) {
+          setSourceContent(uploaded.extracted_text);
+        }
+      } else {
+        setMaterialData(null);
+        setMaterialError(
+          uploaded.processing_error || "Nie udało się wyodrębnić tekstu z pliku.",
+        );
+      }
+    } catch (error: any) {
+      setMaterialData(null);
+      setMaterialError(error.message || "Nie udało się wgrać materiału.");
+    } finally {
+      setMaterialUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
+
   // Effect to load tests for the sidebar
   useEffect(() => {
     getMyTests()
@@ -51,6 +103,28 @@ const CreateTestPage: React.FC = () => {
 
     const num_closed = questionScope === "closed" ? easyCount + mediumCount + hardCount : 0;
     const num_open = questionScope === "open" ? easyCount + mediumCount + hardCount : 0;
+    const textPayload = sourceContent.trim();
+
+
+
+    if (sourceType === "material") {
+      if (!materialData || !materialData.file_id) {
+        setGenError("Najpierw wgraj materiał dydaktyczny.");
+        setGenLoading(false);
+        return;
+      }
+      if (!textPayload) {
+        setGenError("Tekst materiału jest pusty – uzupełnij go przed generowaniem.");
+        setGenLoading(false);
+        return;
+      }
+    }
+
+    if (sourceType === "text" && !textPayload) {
+      setGenError("Wklej lub wpisz treść, na podstawie której wygenerujemy test.");
+      setGenLoading(false);
+      return;
+    }
 
     const closed_types =
       questionScope === "closed"
@@ -88,8 +162,8 @@ const CreateTestPage: React.FC = () => {
         easy: easyCount,
         medium: mediumCount,
         hard: hardCount,
-        text: sourceType === "text" ? sourceContent : undefined,
-        file_id: sourceType === "material" ? /* TODO: podaj ID pliku */ undefined : undefined,
+        text: textPayload || undefined,
+        file_id: sourceType === "material" ? materialData?.file_id : undefined,
       });
 
       navigate(`/tests/${resp.test_id}`);
@@ -113,105 +187,136 @@ const CreateTestPage: React.FC = () => {
 
       {/* This is the form content, moved from DashboardPage */}
       <ContentWrapper>
-        <Heading>Utwórz test dopasowany do swoich potrzeb</Heading>
+        <InnerWrapper>
+          <Heading>Utwórz test dopasowany do swoich potrzeb</Heading>
 
-        <Subheading>Z jakich materiałów chcesz skorzystać?</Subheading>
-        <ToggleGroup>
-          <button
-            className={sourceType === "text" ? "active" : ""}
-            onClick={() => setSourceType("text")}
-          >
-            Własny tekst
-          </button>
-          <button
-            className={sourceType === "material" ? "active" : ""}
-            onClick={() => setSourceType("material")}
-          >
-            Materiał dydaktyczny
-          </button>
-        </ToggleGroup>
+          <Subheading>Z jakich materiałów chcesz skorzystać?</Subheading>
+          <ToggleGroup>
+            <button
+              className={sourceType === "text" ? "active" : ""}
+              onClick={() => setSourceType("text")}
+            >
+              Własny tekst
+            </button>
+            <button
+              className={sourceType === "material" ? "active" : ""}
+              onClick={() => setSourceType("material")}
+            >
+              Materiał dydaktyczny
+            </button>
+          </ToggleGroup>
 
-        <Subheading>Wpisz treść, na podstawie której powstanie Twój test</Subheading>
-        <TextArea
-          value={sourceContent}
-          onChange={(e) => setSourceContent(e.target.value)}
-          placeholder="Wklej treść..."
-        />
+          {sourceType === "material" && (
+            <UploadSection>
+              <HiddenFileInput
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf,.docx,.txt,.md"
+                onChange={handleMaterialChange}
+              />
 
-        <Subheading>Wybierz typ pytań</Subheading>
-        <ToggleGroup>
-          <button
-            className={questionScope === "closed" ? "active" : ""} 
-            onClick={() => setQuestionScope("closed")}
-          >
-            Pytania zamknięte
-          </button>
-          <button
-            className={questionScope === "open" ? "active" : ""}
-            onClick={() => setQuestionScope("open")}
-          >
-            Pytania otwarte
-          </button>
-        </ToggleGroup>
-
-        {questionScope === "closed" && (
-          <>
-            <Subheading>Rodzaj pytań zamkniętych</Subheading>
-            <QuestionTypeGroup>
-              <button
-                className={closedType === "tf" ? "active" : ""}
-                onClick={() => setClosedType("tf")}
+              <UploadButton
+                type="button"
+                onClick={handleMaterialButtonClick}
+                disabled={materialUploading}
               >
-                Prawda / Fałsz
-              </button>
-              <button
-                className={closedType === "multi" ? "active" : ""}
-                onClick={() => setClosedType("multi")}
-              >
-                Wielokrotnego wyboru
-              </button>
-              <button
-                className={closedType === "single" ? "active" : ""}
-                onClick={() => setClosedType("single")}
-              >
-                Jednokrotnego wyboru
-              </button>
-            </QuestionTypeGroup>
-          </>
-        )}
+                {materialUploading ? "Wgrywam…" : "Wgraj plik"}
+              </UploadButton>
 
-        <Subheading>Ustal liczbę pytań oraz poziom trudności</Subheading>
-        <DifficultyGroup>
-          <DifficultyField>
-            <label>Pytania łatwe:</label>
-            <input
-              type="number"
-              value={easyCount}
-              onChange={(e) => setEasyCount(Number(e.target.value))}
-            />
-          </DifficultyField>
-          <DifficultyField>
-            <label>Pytania średnie:</label>
-            <input
-              type="number"
-              value={mediumCount}
-              onChange={(e) => setMediumCount(Number(e.target.value))}
-            />
-          </DifficultyField>
-          <DifficultyField>
-            <label>Pytania trudne:</label>
-            <input
-              type="number"
-              value={hardCount}
-              onChange={(e) => setHardCount(Number(e.target.value))}
-            />
-          </DifficultyField>
-        </DifficultyGroup>
+              {materialData && materialData.processing_status === "done" && (
+                <UploadInfo>
+                  Tekst z pliku "{materialData.filename}" został dodany do formularza.
+                </UploadInfo>
+              )}
 
-        <GenerateButton onClick={handleGenerate} disabled={genLoading}>
-          {genLoading ? "Generuję…" : "Generuj test"}
-        </GenerateButton>
-        {genError && <Subheading style={{ color: "red" }}>{genError}</Subheading>}
+              {materialError && <UploadError>{materialError}</UploadError>}
+            </UploadSection>
+          )}
+
+          <Subheading>Wpisz treść, na podstawie której powstanie Twój test</Subheading>
+          <TextArea
+            value={sourceContent}
+            onChange={(e) => setSourceContent(e.target.value)}
+            placeholder="Wklej treść..."
+          />
+
+          <Subheading>Wybierz typ pytań</Subheading>
+          <ToggleGroup>
+            <button
+              className={questionScope === "closed" ? "active" : ""} 
+              onClick={() => setQuestionScope("closed")}
+            >
+              Pytania zamknięte
+            </button>
+            <button
+              className={questionScope === "open" ? "active" : ""}
+              onClick={() => setQuestionScope("open")}
+            >
+              Pytania otwarte
+            </button>
+          </ToggleGroup>
+
+          {questionScope === "closed" && (
+            <>
+              <Subheading>Rodzaj pytań zamkniętych</Subheading>
+              <QuestionTypeGroup>
+                <button
+                  className={closedType === "tf" ? "active" : ""}
+                  onClick={() => setClosedType("tf")}
+                >
+                  Prawda / Fałsz
+                </button>
+                <button
+                  className={closedType === "multi" ? "active" : ""}
+                  onClick={() => setClosedType("multi")}
+                >
+                  Wielokrotnego wyboru
+                </button>
+                <button
+                  className={closedType === "single" ? "active" : ""}
+                  onClick={() => setClosedType("single")}
+                >
+                  Jednokrotnego wyboru
+                </button>
+              </QuestionTypeGroup>
+            </>
+          )}
+
+          <Subheading>Ustal liczbę pytań oraz poziom trudności</Subheading>
+          <DifficultyGroup>
+            <DifficultyField>
+              <label>Pytania łatwe:</label>
+              <input
+                type="number"
+                value={easyCount}
+                onChange={(e) => setEasyCount(Number(e.target.value))}
+              />
+            </DifficultyField>
+            <DifficultyField>
+              <label>Pytania średnie:</label>
+              <input
+                type="number"
+                value={mediumCount}
+                onChange={(e) => setMediumCount(Number(e.target.value))}
+              />
+            </DifficultyField>
+            <DifficultyField>
+              <label>Pytania trudne:</label>
+              <input
+                type="number"
+                value={hardCount}
+                onChange={(e) => setHardCount(Number(e.target.value))}
+              />
+            </DifficultyField>
+          </DifficultyGroup>
+
+          <GenerateButton
+            onClick={handleGenerate}
+            disabled={genLoading || materialUploading}
+          >          {genLoading ? "Generuję…" : "Generuj test"}
+          </GenerateButton>
+          {genError && <Subheading style={{ color: "red" }}>{genError}</Subheading>}
+        </InnerWrapper>
         <Footer/>
       </ContentWrapper>
     </CreateTestWrapper>
