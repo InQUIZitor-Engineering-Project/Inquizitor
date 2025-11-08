@@ -82,6 +82,56 @@ class QuestionOut(BaseModel):
                 return [v.strip().strip('"').strip("'")]
         return [str(v)]
 
+class QuestionCreate(BaseModel):
+    text: str
+    is_closed: bool = True
+    difficulty: int = 1
+    choices: Optional[List[str]] = None
+    correct_choices: Optional[List[str]] = None
+
+    @field_validator("choices", "correct_choices", mode="before")
+    @classmethod
+    def coerce_list(cls, v):
+        return QuestionOut.coerce_list(v)
+
+    @model_validator(mode="after")
+    def validate_closed_open(self):
+        if not self.is_closed:
+            self.choices = None
+            self.correct_choices = None
+
+        if self.is_closed and self.correct_choices and self.choices:
+            invalid = set(self.correct_choices) - set(self.choices)
+            if invalid:
+                raise ValueError("correct_choices must be a subset of choices")
+        return self
+
+
+class QuestionUpdate(BaseModel):
+    text: Optional[str] = None
+    is_closed: Optional[bool] = None
+    difficulty: Optional[int] = None
+    choices: Optional[List[str]] = None
+    correct_choices: Optional[List[str]] = None
+
+    @field_validator("choices", "correct_choices", mode="before")
+    @classmethod
+    def coerce_list(cls, v):
+        return QuestionOut.coerce_list(v)
+
+    @model_validator(mode="after")
+    def validate_closed_open(self):
+        if self.is_closed is False:
+            self.choices = None
+            self.correct_choices = None
+
+        if self.choices is not None and self.correct_choices is not None:
+            invalid = set(self.correct_choices) - set(self.choices)
+            if invalid:
+                raise ValueError("correct_choices must be a subset of choices")
+        return self
+
+
 
 class TestDetailOut(BaseModel):
     test_id: int
@@ -98,4 +148,6 @@ __all__ = [
     "TestGenerateResponse",
     "QuestionOut",
     "TestDetailOut",
+    "QuestionCreate",
+    "QuestionUpdate"
 ]

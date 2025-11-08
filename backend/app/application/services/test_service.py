@@ -12,6 +12,9 @@ from app.api.schemas.tests import (
     TestGenerateRequest,
     TestGenerateResponse,
     TestOut,
+    QuestionOut,
+    QuestionCreate,
+    QuestionUpdate
 )
 from app.application import dto
 from app.application.interfaces import OCRService, QuestionGenerator, UnitOfWork
@@ -160,8 +163,8 @@ class TestService:
         owner_id: int,
         test_id: int,
         question_id: int,
-        payload: Dict,
-    ) -> None:
+        payload: QuestionUpdate | Dict,
+    ) -> QuestionOut:
         with self._uow_factory() as uow:
             test = uow.tests.get(test_id)
             if not test or test.owner_id != owner_id:
@@ -175,8 +178,20 @@ class TestService:
             if not question_row or question_row.test_id != test_id:
                 raise ValueError("Question not found")
 
+            # ogarniamy payload niezależnie czy to Pydantic czy dict
+            if isinstance(payload, QuestionUpdate):
+                data = payload.model_dump(exclude_unset=True)
+            else:
+                data = payload
+
             allowed_fields = {"text", "is_closed", "difficulty", "choices", "correct_choices"}
-            for field, value in payload.items():
+
+            # jeśli w update dostajemy is_closed == False → czyścimy choices/correct
+            if data.get("is_closed") is False:
+                data["choices"] = None
+                data["correct_choices"] = None
+
+            for field, value in data.items():
                 if field in allowed_fields:
                     if field in {"choices", "correct_choices"}:
                         setattr(question_row, field, self._coerce_to_list(value))
@@ -184,6 +199,97 @@ class TestService:
                         setattr(question_row, field, value)
 
             session.add(question_row)
+            session.flush()
+
+            return QuestionOut(
+                id=question_row.id,
+                text=question_row.text,
+                is_closed=question_row.is_closed,
+                difficulty=question_row.difficulty,
+                choices=question_row.choices,
+                correct_choices=question_row.correct_choices,
+            )
+
+
+    def add_question(
+        self,
+        *,
+        owner_id: int,
+        test_id: int,
+        payload: QuestionCreate,
+    ) -> QuestionOut:
+        """
+        Dodaje nowe pytanie do testu użytkownika.
+        Zwraca QuestionOut, żeby endpoint mógł od razu odesłać aktualne dane.
+        """
+        with self._uow_factory() as uow:
+            test = uow.tests.get(test_id)
+            if not test or test.owner_id != owner_id:
+                raise ValueError("Test not found")
+
+            session = getattr(uow, "session", None)
+            if session is None:
+                raise RuntimeError("UnitOfWork session is not initialized")
+
+            # Bezpieczne ogarnięcie choices / correct_choices
+            choices = self._coerce_to_list(payload.choices) if payload.choices is not None else None
+            correct_choices = (
+                self._coerce_to_list(payload.correct_choices)
+                if payload.correct_choices is not None
+                else None
+            )
+
+            # Dla otwartych pytań pola zamykamy
+            if not payload.is_closed:
+                choices = None
+                correct_choices = None
+
+            # Tworzymy rekord w DB
+            new_question = QuestionRow(
+                test_id=test_id,
+                text=payload.text,
+                is_closed=payload.is_closed,
+                difficulty=payload.difficulty,
+                choices=choices,
+                correct_choices=correct_choices,
+            )
+
+            session.add(new_question)
+            session.flush()  # żeby mieć new_question.id
+
+            return QuestionOut(
+                id=new_question.id,
+                text=new_question.text,
+                is_closed=new_question.is_closed,
+                difficulty=new_question.difficulty,
+                choices=new_question.choices,
+                correct_choices=new_question.correct_choices,
+            )
+
+    def delete_question(
+        self,
+        *,
+        owner_id: int,
+        test_id: int,
+        question_id: int,
+    ) -> None:
+        """
+        Usuwa pytanie z testu użytkownika.
+        """
+        with self._uow_factory() as uow:
+            test = uow.tests.get(test_id)
+            if not test or test.owner_id != owner_id:
+                raise ValueError("Test not found")
+
+            session = getattr(uow, "session", None)
+            if session is None:
+                raise RuntimeError("UnitOfWork session is not initialized")
+
+            question_row = session.get(QuestionRow, question_id)
+            if not question_row or question_row.test_id != test_id:
+                raise ValueError("Question not found")
+
+            session.delete(question_row)
 
     @staticmethod
     def _coerce_to_list(value):
