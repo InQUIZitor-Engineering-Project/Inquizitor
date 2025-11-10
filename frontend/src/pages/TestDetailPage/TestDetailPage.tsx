@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import styled from "styled-components";
 import { useParams, useNavigate } from "react-router-dom";
 import Sidebar from "../../components/Sidebar/Sidebar";
+import { useLoader } from "../../components/Loader/GlobalLoader";
+
 import {
   getMyTests,
   getTestDetail,
@@ -73,6 +75,7 @@ const TestDetailPage: React.FC = () => {
   const { testId } = useParams<{ testId: string }>();
   const testIdNum = Number(testId);
   const navigate = useNavigate();
+  const { withLoader } = useLoader();
 
   const [data, setData] = useState<TestDetail | null>(null);
   const [tests, setTests] = useState<TestOut[]>([]);
@@ -86,19 +89,26 @@ const TestDetailPage: React.FC = () => {
   const token = localStorage.getItem("access_token");
 
   const download = (url: string, filename: string) => {
-    fetch(url, { headers: { Authorization: `Bearer ${token}` } })
-      .then((r) => {
-        if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
-        return r.blob();
-      })
-      .then((blob) => {
+    withLoader(async () => {
+      try {
+        const res = await fetch(url, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!res.ok) {
+          throw new Error(`${res.status} ${res.statusText}`);
+        }
+
+        const blob = await res.blob();
         const a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
         a.download = filename;
         a.click();
         URL.revokeObjectURL(a.href);
-      })
-      .catch((e) => alert(`Nie udało się pobrać pliku: ${e.message}`));
+      } catch (e: any) {
+        alert(`Nie udało się pobrać pliku: ${e.message || e}`);
+      }
+    });
   };
 
   useEffect(() => {
