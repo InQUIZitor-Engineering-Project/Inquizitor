@@ -1,7 +1,9 @@
 """Service handling test generation and management use-cases."""
 
 from __future__ import annotations
+import logging
 
+logger = logging.getLogger(__name__)
 import json
 from typing import Callable, Dict, List, Tuple
 
@@ -56,6 +58,7 @@ class TestService:
         with self._uow_factory() as uow:
             normalized_text = request.text.strip() if request.text else ""
             source_text: str
+            base_title: str
 
             if normalized_text:
                 source_text = normalized_text
@@ -72,14 +75,13 @@ class TestService:
                 source_file = uow.files.get(request.file_id)
                 if not source_file or source_file.owner_id != owner_id:
                     raise ValueError("File not found")
-
                 source_text = self._ocr_service.extract_text(
                     file_path=str(source_file.stored_path)
                 )
                 base_title = source_file.filename
 
             try:
-                questions = self._question_generator.generate(
+                llm_title, questions = self._question_generator.generate(
                     source_text=source_text,
                     params=request,
                 )
@@ -89,15 +91,15 @@ class TestService:
                 raise HTTPException(status_code=500, detail=f"LLM error: {exc}") from exc
 
             if not questions:
-                raise HTTPException(
-                    status_code=500,
-                    detail="LLM zwrócił pustą listę pytań.",
-                )
+                raise ValueError("LLM zwrócił pustą listę pytań.")
 
-            llm_title = getattr(self._question_generator, "last_title", None)
-            final_title = (llm_title or base_title or "").strip() or "Wygenerowany test"
+            final_title = (llm_title or "").strip() or base_title
 
-            test = TestDomain(id=None, owner_id=owner_id, title=final_title)
+            test = TestDomain(
+                id=None,
+                owner_id=owner_id,
+                title=final_title,
+            )
             persisted_test = uow.tests.create(test)
 
             for question in questions:

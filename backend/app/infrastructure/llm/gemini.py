@@ -64,7 +64,6 @@ def _build_prompt(text: str, params: GenerateParams) -> str:
 class GeminiQuestionGenerator(QuestionGenerator):
     def __init__(self, model_name: str = "gemini-2.0-flash") -> None:
         self._model_name = model_name
-        self.last_title: str | None = None  # do wyciągania tytułu
 
     @staticmethod
     @lru_cache()
@@ -72,7 +71,9 @@ class GeminiQuestionGenerator(QuestionGenerator):
         settings = get_settings()
         return genai.Client(api_key=settings.GEMINI_API_KEY)
 
-    def generate(self, *, source_text: str, params: GenerateParams) -> List[Question]:
+    def generate(
+        self, *, source_text: str, params: GenerateParams
+    ) -> tuple[str | None, List[Question]]:
         prompt = _build_prompt(source_text, params)
 
         try:
@@ -80,93 +81,103 @@ class GeminiQuestionGenerator(QuestionGenerator):
                 model=self._model_name,
                 contents=prompt,
             )
-        except Exception as exc:  # błąd HTTP / klienta
+        except Exception as exc:  # noqa: BLE001
             raise RuntimeError(f"Gemini request failed: {exc}") from exc
 
         raw_output = (response.text or "").strip()
 
         if raw_output.startswith("```"):
-            raw_output = raw_output.strip("`").strip()
+            first_nl = raw_output.find("\n")
+            if first_nl != -1:
+                raw_output = raw_output[first_nl + 1 :].strip()
+            if raw_output.endswith("```"):
+                raw_output = raw_output[:-3].strip()
+
         if raw_output.lower().startswith("json"):
-            raw_output = raw_output[4:].strip()
+            raw_output = raw_output[4:].lstrip(":").strip()
 
         try:
             parsed = json.loads(raw_output)
-        except json.JSONDecodeError:
+        except json.JSONDecodeError as exc:
+            snippet = raw_output[:800]
             raise ValueError(
-                "Model zwrócił odpowiedź w niepoprawnym formacie JSON. "
-                "Spróbuj ponownie lub zmniejsz ilość tekstu wejściowego."
-            )
+                "Nie udało się sparsować odpowiedzi LLM jako JSON. "
+                f"Fragment odpowiedzi:\n{snippet}"
+            ) from exc
 
-        questions_payload: list
-
-        # Obsługa dwóch formatów:
-        # 1) { "title": "...", "questions": [ ... ] }
-        # 2) [ { ... }, { ... } ]
-        self.last_title = None
+        title: str | None = None
 
         if isinstance(parsed, dict):
-            q_list = parsed.get("questions")
-            if not isinstance(q_list, list):
+            title = parsed.get("title") or None
+            questions_payload = parsed.get("questions")
+            if not isinstance(questions_payload, list):
                 raise ValueError(
-                    "Model nie zwrócił poprawnej listy 'questions' w odpowiedzi."
+                    "Odpowiedź LLM zawiera obiekt, ale pole 'questions' nie jest listą."
                 )
-            self.last_title = (
-                str(parsed.get("title")).strip() or None
-                if parsed.get("title") is not None else None
-            )
-            questions_payload = q_list
         elif isinstance(parsed, list):
             questions_payload = parsed
         else:
             raise ValueError(
-                "Nieoczekiwany format odpowiedzi modelu. "
-                "Oczekiwano tablicy pytań lub obiektu z polami 'title' i 'questions'."
+                "Nieoczekiwany format odpowiedzi LLM. "
+                "Spodziewano listy pytań lub obiektu z polem 'questions'."
             )
-
-        if not questions_payload:
-            raise ValueError("Model nie wygenerował żadnych pytań.")
 
         questions: List[Question] = []
 
-        for idx, item in enumerate(questions_payload, start=1):
+        for item in questions_payload:
             if not isinstance(item, dict):
-                raise ValueError(f"Pytanie #{idx} ma niepoprawny format.")
+                raise ValueError("Element listy pytań nie jest obiektem JSON.")
 
-            missing = {"text", "is_closed", "difficulty", "choices", "correct_choices"} - set(item.keys())
+            missing = {"text", "is_closed", "difficulty"} - item.keys()
             if missing:
-                raise ValueError(
-                    f"Pytanie #{idx} nie zawiera wymaganych pól: {', '.join(missing)}."
-                )
+                raise ValueError(f"Brak wymaganych pól w pytaniu: {missing}")
 
-            try:
-                difficulty_val = int(item["difficulty"])
-                difficulty = QuestionDifficulty(difficulty_val)
-            except Exception:
-                raise ValueError(
-                    f"Pytanie #{idx} ma niepoprawną wartość 'difficulty': {item['difficulty']!r}."
-                )
+            text = str(item["text"])
+            is_closed = bool(item["is_closed"])
+            difficulty = QuestionDifficulty(int(item["difficulty"]))
 
-            choices = item.get("choices") or []
-            correct_choices = item.get("correct_choices") or []
+            raw_choices = item.get("choices") or []
+            raw_correct = item.get("correct_choices") or []
 
-            if not isinstance(choices, list):
-                choices = [choices]
-            if not isinstance(correct_choices, list):
-                correct_choices = [correct_choices]
+            choices: List[str] = []
+            if is_closed and raw_choices:
+                if not isinstance(raw_choices, list):
+                    raise ValueError("Pole 'choices' musi być listą.")
+                choices = [str(c) for c in raw_choices]
+
+            correct_choices: List[str] = []
+            if is_closed and raw_correct:
+                if isinstance(raw_correct, list) and all(
+                    isinstance(c, int) for c in raw_correct
+                ):
+                    for idx in raw_correct:
+                        if 0 <= idx < len(choices):
+                            correct_choices.append(choices[idx])
+                else:
+                    if not isinstance(raw_correct, list):
+                        raise ValueError(
+                            "Pole 'correct_choices' musi być listą indeksów lub stringów."
+                        )
+                    correct_choices = [str(c) for c in raw_correct]
+
+            if not is_closed:
+                choices = []
+                correct_choices = []
 
             questions.append(
                 Question(
                     id=None,
-                    text=str(item["text"]),
-                    is_closed=bool(item["is_closed"]),
+                    text=text,
+                    is_closed=is_closed,
                     difficulty=difficulty,
-                    choices=[str(c) for c in choices] if choices else [],
-                    correct_choices=[str(c) for c in correct_choices] if correct_choices else [],
+                    choices=choices or None,
+                    correct_choices=correct_choices or None,
                 )
             )
 
-        return questions
+        return title, questions
+
+
 
 __all__ = ["GeminiQuestionGenerator"]
 
