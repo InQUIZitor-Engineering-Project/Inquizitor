@@ -11,22 +11,37 @@ import {
 import { Logo, LogosWrapper } from "../../styles/common";
 import { useAuth } from "../../context/AuthContext";
 import { HashLink } from "react-router-hash-link";
+import { useLoader } from "../../components/Loader/GlobalLoader";
 
 const Navbar: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const handleLogout = async () => {
-    try {
-      await logout();
-    } finally {
-      navigate("/login", { replace: true });
-    }
+  const { startLoading, stopLoading, withLoader } = useLoader();
+
+  const triggerQuickLoader = () => {
+    startLoading();
+    setTimeout(() => {
+      stopLoading();
+    }, 150);
   };
 
+  const handleNavClick = (path: string) => {
+    withLoader(async () => {
+      navigate(path);
+      await new Promise((res) => setTimeout(res, 250));
+    });
+  };
+
+  const handleLogout = async () => {
+    await withLoader(async () => {
+      await logout();
+      navigate("/login", { replace: true });
+    });
+  };
 
   return (
     <NavbarContainer>
-      <Link to="/">
+      <Link to="/" onClick={triggerQuickLoader}>
         <LogosWrapper>
           <Logo src="/src/assets/logo_book.png" alt="Inquizitor Book Logo" />
           <Logo src="/src/assets/logo_tekst.png" alt="Inquizitor Text Logo" />
@@ -34,25 +49,34 @@ const Navbar: React.FC = () => {
       </Link>
 
       <NavLinks>
-        <StyledLink to="/">Strona główna</StyledLink>
-        <StyledLink to="/about">O nas</StyledLink>
-        <StyledLink 
+        <StyledLink to="/" onClick={triggerQuickLoader}>
+          Strona główna
+        </StyledLink>
+
+        <StyledLink to="/about" onClick={triggerQuickLoader}>
+          O nas
+        </StyledLink>
+
+        <StyledLink
           as={HashLink}
           to="/#how-it-works"
           smooth
+          onClick={triggerQuickLoader}
         >
           Jak to działa?
         </StyledLink>
-        <StyledLink to="/faq">FAQ</StyledLink>
+
+        <StyledLink to="/faq" onClick={triggerQuickLoader}>
+          FAQ
+        </StyledLink>
       </NavLinks>
 
       <ButtonGroup>
         {user ? (
           <>
             <RegisterButton
-              as={Link}
-              to="/profile"
-              onClick={() => navigate("/profile")}
+              as="button"
+              onClick={() => handleNavClick("/profile")}
             >
               {user.first_name} →
             </RegisterButton>
@@ -62,8 +86,18 @@ const Navbar: React.FC = () => {
           </>
         ) : (
           <>
-            <LoginLink as={Link} to="/login">Zaloguj się</LoginLink>
-            <RegisterButton as={Link} to="/register">Zarejestruj się</RegisterButton>
+            <LoginLink
+              as="button"
+              onClick={() => handleNavClick("/login")}
+            >
+              Zaloguj się
+            </LoginLink>
+            <RegisterButton
+              as="button"
+              onClick={() => handleNavClick("/register")}
+            >
+              Zarejestruj się
+            </RegisterButton>
           </>
         )}
       </ButtonGroup>

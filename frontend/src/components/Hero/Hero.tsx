@@ -13,10 +13,12 @@ import {
   Illustration,
 } from "./Hero.styles";
 import Button from "../Button/Button";
+import { useLoader } from "../Loader/GlobalLoader";
 
 const Hero: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { withLoader } = useLoader();
   const [hasTests, setHasTests] = useState(false);
 
   useEffect(() => {
@@ -34,11 +36,14 @@ const Hero: React.FC = () => {
     : "Utwórz pierwszy test";
 
   const handleStart = () => {
-    if (!user) {
-      navigate('/login');
-    } else {
-      navigate('/dashboard');
-    }
+    withLoader(async () => {
+      if (!user) {
+        navigate("/login");
+      } else {
+        navigate("/dashboard");
+      }
+      await new Promise((res) => setTimeout(res, 250));
+    });
   };
 
   return (

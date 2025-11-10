@@ -5,6 +5,7 @@ import { uploadMaterial, type MaterialUploadResponse } from "../../services/mate
 import type { TestOut } from "../../services/test";
 import Footer from "../../components/Footer/Footer";
 import Sidebar from "../../components/Sidebar/Sidebar";
+import { useLoader } from "../../components/Loader/GlobalLoader";
 
 import {
   CreateTestWrapper,
@@ -32,6 +33,7 @@ import {
 
 const CreateTestPage: React.FC = () => {
   const navigate = useNavigate();
+  const { withLoader } = useLoader();
 
   // Sidebar
   const [tests, setTests] = useState<TestOut[]>([]);
@@ -161,16 +163,18 @@ const CreateTestPage: React.FC = () => {
         : undefined;
 
     try {
-      const resp = await generateTest({
-        num_closed,
-        num_open,
-        closed_types,
-        easy: easyCount,
-        medium: mediumCount,
-        hard: hardCount,
-        text: textPayload || undefined,
-        file_id: sourceType === "material" ? materialData?.file_id : undefined,
-      });
+      const resp = await withLoader(() =>
+        generateTest({
+          num_closed,
+          num_open,
+          closed_types,
+          easy: easyCount,
+          medium: mediumCount,
+          hard: hardCount,
+          text: textPayload || undefined,
+          file_id: sourceType === "material" ? materialData?.file_id : undefined,
+        })
+      );
 
       navigate(`/tests/${resp.test_id}`);
     } catch (err: any) {
