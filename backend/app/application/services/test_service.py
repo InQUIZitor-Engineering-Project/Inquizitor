@@ -6,7 +6,8 @@ import logging
 logger = logging.getLogger(__name__)
 import json
 from typing import Callable, Dict, List, Tuple
-
+import re
+import unicodedata
 from fastapi import HTTPException
 
 from app.api.schemas.tests import (
@@ -332,11 +333,24 @@ class TestService:
         return [value]
 
     @staticmethod
-    def _build_export_filename(title: str | None, test_id: int, *, suffix: str) -> str:
+    def _build_export_filename(
+        title: str | None,
+        test_id: int,
+        *,
+        suffix: str,
+    ) -> str:
         base = title or f"test_{test_id}"
-        slug = "_".join(part for part in base.lower().split() if part)
-        slug = slug or f"test_{test_id}"
-        return f"{slug}_{test_id}.{suffix}"
+
+        base = unicodedata.normalize("NFKD", base)
+        base = base.encode("ascii", "ignore").decode("ascii")
+
+        base = re.sub(r"[^a-zA-Z0-9_-]+", "_", base).strip("_")
+
+        if not base:
+            base = f"test_{test_id}"
+
+        return f"{base}_{test_id}.{suffix}"
+
 
 
 __all__ = ["TestService"]
