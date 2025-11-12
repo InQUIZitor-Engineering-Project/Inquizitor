@@ -16,10 +16,20 @@ import AboutUsPage from './pages/AboutUsPage/AboutUsPage';
 import FAQPage from './pages/FAQPage/FAQPage';
 import CreateTestPage from "./pages/CreateTestPage/CreateTestPage";
 
-
 const ProtectedRoute: React.FC<{ children: JSX.Element }> = ({ children }) => {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+  if (loading) {
+    return null; 
+  }
   return user ? children : <Navigate to="/login" replace />;
+};
+
+const PublicOnlyRoute: React.FC<{ children: JSX.Element }> = ({ children }) => {
+  const { user, loading } = useAuth();
+  if (loading) {
+    return null;
+  }
+  return user ? <Navigate to="/dashboard" replace /> : children;
 };
 
 const NavbarSpacer = styled.div`
@@ -35,19 +45,46 @@ const App: React.FC = () => {
 
         <Routes>
           <Route path="/" element={<HomePage />} />
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/tests/new" element={<CreateTestPage />} />
+          <Route 
+            path="/dashboard" 
+            element={
+              <ProtectedRoute>
+                <DashboardPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/tests/new" 
+            element={
+              <ProtectedRoute>
+                <CreateTestPage />
+              </ProtectedRoute>
+            } 
+          />
           <Route path="/tests/:testId" element={
-            // <ProtectedRoute>
+            <ProtectedRoute>
               <TestDetailPage />
-            // </ProtectedRoute>
+            </ProtectedRoute>
           }>
           </Route>
           <Route path="/about" element={<AboutUsPage />} />
           <Route path="/faq" element={<FAQPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/login" element={<LoginPage />} />
-
+          <Route 
+            path="/register" 
+            element={
+              <PublicOnlyRoute>
+                <RegisterPage />
+              </PublicOnlyRoute>
+            } 
+          />
+          <Route 
+            path="/login" 
+            element={
+              <PublicOnlyRoute>
+                <LoginPage />
+              </PublicOnlyRoute>
+            }
+          />
           <Route
             path="/profile"
             element={
