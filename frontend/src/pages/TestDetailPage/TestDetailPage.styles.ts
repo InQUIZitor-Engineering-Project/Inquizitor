@@ -131,9 +131,17 @@ export const PrimaryButton = styled(BaseButton)`
 `;
 
 export const DangerButton = styled(BaseButton)`
-  background: #f44336;
-  color: #ffffff;
+  background: rgba(244, 67, 54, 0.08);
+  color: #c62828; 
+  box-shadow: none;
+  border: 1px solid rgba(244, 67, 54, 0.3);
+
+  &:hover {
+    background: rgba(244, 67, 54, 0.16);
+    box-shadow: 0 3px 8px rgba(244, 67, 54, 0.18);
+  }
 `;
+
 
 export const GhostButton = styled(BaseButton)`
   background: #f5f5f5;
