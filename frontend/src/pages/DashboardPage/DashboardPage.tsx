@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { getMyTests } from "../../services/test";
 import type { TestOut } from "../../services/test";
 import Sidebar from "../../components/Sidebar/Sidebar";
+import useDocumentTitle from "../../components/GeneralComponents/Hooks/useDocumentTitle";
+
 import {
   DashboardWrapper,
   EmptyStateWrapper,
@@ -29,7 +31,9 @@ const DashboardPage: React.FC = () => {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return null;
+  useDocumentTitle("Panel główny | Inquizitor");
+  
+  if (loading) return null; // Or a full-page spinner
 
   if (tests.length === 0) {
     return (

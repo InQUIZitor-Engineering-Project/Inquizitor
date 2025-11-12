@@ -34,6 +34,7 @@ import {
   ErrorText,
   SuccessText,
 } from "./ProfilePage.styles";
+import useDocumentTitle from "../../components/GeneralComponents/Hooks/useDocumentTitle";
 
 const API_BASE = import.meta.env.VITE_API_URL || "";
 
@@ -195,6 +196,8 @@ const ProfilePage: React.FC = () => {
     if (!stats || !totalQuestions || !value) return 0;
     return Math.round((value / totalQuestions) * 100);
   };
+
+  useDocumentTitle("Profil | Inquizitor");
 
   if (loading) {
     return (

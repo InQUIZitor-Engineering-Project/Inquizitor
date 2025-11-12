@@ -41,6 +41,7 @@ import {
   DownloadBar,
   DownloadButton
 } from "./TestDetailPage.styles";
+import useDocumentTitle from "../../components/GeneralComponents/Hooks/useDocumentTitle";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
@@ -314,6 +315,8 @@ const TestDetailPage: React.FC = () => {
       choices: [...ensureChoices(d.choices), ""],
     }));
   };
+
+  useDocumentTitle("Test | Inquizitor");
 
   if (loading) return <PageWrapper>Ładowanie…</PageWrapper>;
   if (error) return <PageWrapper>Błąd: {error}</PageWrapper>;

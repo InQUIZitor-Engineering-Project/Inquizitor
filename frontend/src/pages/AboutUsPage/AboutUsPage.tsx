@@ -20,8 +20,12 @@ import {
 
 import Footer from "../../components/Footer/Footer";
 import onasImg from "../../assets/onas.png";
+import useDocumentTitle from "../../components/GeneralComponents/Hooks/useDocumentTitle";
 
 const AboutUsPage: React.FC = () => {
+
+  useDocumentTitle("O nas | Inquizitor");
+
   return (
     <PageWrapper>
       <ContentWrapper>

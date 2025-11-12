@@ -6,6 +6,7 @@ import type { TestOut } from "../../services/test";
 import Footer from "../../components/Footer/Footer";
 import Sidebar from "../../components/Sidebar/Sidebar";
 import { useLoader } from "../../components/Loader/GlobalLoader";
+import useDocumentTitle from "../../components/GeneralComponents/Hooks/useDocumentTitle";
 
 import {
   CreateTestWrapper,
@@ -183,6 +184,9 @@ const CreateTestPage: React.FC = () => {
       setGenLoading(false);
     }
   };
+
+  useDocumentTitle("Stwórz nowy | Inquizitor");
+
 
   if (loading) return null;
 

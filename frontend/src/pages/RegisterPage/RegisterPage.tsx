@@ -22,6 +22,7 @@ import { Link, useNavigate } from "react-router-dom";
 import Button from "../../components/Button/Button";
 import { registerUser } from "../../services/auth";
 import Footer from "../../components/Footer/Footer.tsx";
+import useDocumentTitle from "../../components/GeneralComponents/Hooks/useDocumentTitle.ts";
 
 const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
@@ -61,6 +62,7 @@ const RegisterPage: React.FC = () => {
     }
   };
 
+    useDocumentTitle("Rejestracja | Inquizitor");
 
     return (
     <PageWrapper>

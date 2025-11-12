@@ -22,6 +22,7 @@ import { Link, useNavigate } from "react-router-dom";
 import Button from "../../components/Button/Button";
 import { useAuth } from "../../context/AuthContext";
 import Footer from "../../components/Footer/Footer";
+import useDocumentTitle from "../../components/GeneralComponents/Hooks/useDocumentTitle.ts";
 
 
 const LoginPage: React.FC = () => {
@@ -50,6 +51,7 @@ const LoginPage: React.FC = () => {
     }
   };
 
+    useDocumentTitle("Zaloguj się | Inquizitor");
 
     return (
     <PageWrapper>

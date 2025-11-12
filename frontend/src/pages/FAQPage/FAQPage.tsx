@@ -23,6 +23,7 @@ import {
   SearchInput,
   Pill,
 } from "./FAQPage.styles";
+import useDocumentTitle from "../../components/GeneralComponents/Hooks/useDocumentTitle";
 
 const faqItems = [
   {
@@ -134,6 +135,8 @@ const FAQPage: React.FC = () => {
   const handleToggle = (id: number) => {
     setActiveId((prev) => (prev === id ? null : id));
   };
+
+  useDocumentTitle("FAQ | Inquizitor");
 
   return (
     <PageWrapper>
