@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getMyTests, deleteTest } from "../../services/test";
 import type { TestOut } from "../../services/test";
-import Sidebar from "../../components/Sidebar/Sidebar";
 import ConfirmationModal from "../../components/ConfirmationModal/ConfirmationModal";
 import useDocumentTitle from "../../components/GeneralComponents/Hooks/useDocumentTitle";
 
@@ -88,13 +87,6 @@ const DashboardPage: React.FC = () => {
 
   return (
     <DashboardWrapper>
-      <Sidebar
-        tests={tests}
-        onSelect={(testId) => navigate(`/tests/${testId}`)}
-        onCreateNew={() => navigate(`/tests/new`)}
-        onDelete={(testId) => handleOpenDeleteModal(testId)}
-      />
-
       {/* This is the new "hub" content area, re-using EmptyState components */}
       {/* We pass $isHub to modify its style (see styles file) */}
       <EmptyStateWrapper $isHub={true}>

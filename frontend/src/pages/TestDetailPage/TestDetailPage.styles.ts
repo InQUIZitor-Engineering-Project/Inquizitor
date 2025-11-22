@@ -205,15 +205,22 @@ export const DownloadButton = styled(BaseButton)`
 `;
 
 export const PageWrapper = styled.div`
-  display: grid;
-  grid-template-columns: 280px 1fr;
-  height: calc(100vh - 80px);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
   background-color: ${({ theme }) => theme.colors.neutral.silver};
 `;
 
 export const ContentWrapper = styled.div`
-  padding: 40px;
+  flex: 1;
   overflow-y: auto;
+  padding: 32px clamp(24px, 4vw, 40px);
+
+  /* szerzej + centrowanie kontentu */
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
 `;
 
 export const Header = styled.h1`

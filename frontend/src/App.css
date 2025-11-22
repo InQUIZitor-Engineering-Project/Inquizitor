@@ -1,10 +1,26 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+/* App.css */
+*, *::before, *::after {
+  box-sizing: border-box;
 }
 
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden; /* Blokujemy scroll przeglądarki */
+  background-color: #f9f9f9;
+}
+
+#root {
+  display: flex;
+  flex-direction: column; /* Układa Navbar i MainLayout w pionie */
+  height: 100vh;          /* Zajmuje całe okno */
+  width: 100vw;
+  overflow: hidden;
+}
+
+/* Reszta Twoich stylów (logo, animacje itp.) zostaje bez zmian */
 .logo {
   height: 6em;
   padding: 1.5em;

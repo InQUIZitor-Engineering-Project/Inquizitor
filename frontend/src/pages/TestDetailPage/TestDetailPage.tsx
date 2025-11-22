@@ -93,6 +93,15 @@ const TestDetailPage: React.FC = () => {
 
   const token = localStorage.getItem("access_token");
 
+  const refreshSidebarTests = async () => {
+    try {
+      const testsList = await getMyTests();
+      setTests(testsList);
+    } catch (e) {
+      console.error("Failed to refresh sidebar tests", e);
+    }
+  };
+
   const download = (url: string, filename: string) => {
     withLoader(async () => {
       try {
@@ -117,39 +126,33 @@ const TestDetailPage: React.FC = () => {
   };
 
   useEffect(() => {
+    refreshSidebarTests();
+  }, []);
+
+  useEffect(() => {
     if (!testId) return;
     const id = Number(testId);
     if (!Number.isFinite(id)) {
       setError("Nieprawidłowe ID testu");
       return;
     }
-    setLoading(true);
-    Promise.all([getTestDetail(id), getMyTests()])
-      .then(([detail, testsList]) => {
-        setData(detail);
-        setTests(testsList);
-        setError(null);
-        setEditingId(null);
-        setIsAdding(false);
-        setDraft({});
-      })
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false));
-  }, [testId]);
+    getTestDetail(id)
+          .then((detail) => {
+            setData(detail);
+            setError(null);
+            // Resetowanie stanów edycji przy zmianie testu
+            setEditingId(null);
+            setIsAdding(false);
+            setDraft({});
+          })
+          .catch((e) => setError(e.message))
+          .finally(() => setLoading(false));
+    }, [testId]);
 
   const refreshTest = async () => {
     if (!testIdNum) return;
     const detail = await getTestDetail(testIdNum);
     setData(detail);
-  };
-
-  const refreshSidebarTests = async () => {
-    try {
-      const testsList = await getMyTests();
-      setTests(testsList);
-    } catch (e) {
-      console.error("Failed to refresh sidebar tests", e);
-    }
   };
 
   const startEdit = (q: QuestionOut) => {
@@ -365,12 +368,6 @@ const TestDetailPage: React.FC = () => {
 
   return (
     <PageWrapper>
-      <Sidebar
-        tests={tests}
-        onSelect={(testId) => navigate(`/tests/${testId}`)}
-        onCreateNew={() => navigate(`/tests/new`)}
-        onDelete={(testId) => handleOpenDeleteModal(testId)}
-      />
 
       <ContentWrapper>
         <Header>{data.title}</Header>

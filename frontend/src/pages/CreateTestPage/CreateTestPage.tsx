@@ -1,13 +1,11 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getMyTests, generateTest, deleteTest } from "../../services/test";
+import { generateTest } from "../../services/test";
 import { uploadMaterial, type MaterialUploadResponse } from "../../services/materials";
-import type { TestOut } from "../../services/test";
 import Footer from "../../components/Footer/Footer";
-import Sidebar from "../../components/Sidebar/Sidebar";
-import ConfirmationModal from "../../components/ConfirmationModal/ConfirmationModal";
 import { useLoader } from "../../components/Loader/GlobalLoader";
 import useDocumentTitle from "../../components/GeneralComponents/Hooks/useDocumentTitle";
+
 
 import {
   CreateTestWrapper,
@@ -37,9 +35,7 @@ const CreateTestPage: React.FC = () => {
   const navigate = useNavigate();
   const { withLoader } = useLoader();
 
-  // Sidebar
-  const [tests, setTests] = useState<TestOut[]>([]);
-  const [loading, setLoading] = useState(true);
+  // --- USUNIĘTO CAŁĄ LOGIKĘ SIDEBARA (tests, loading, deleteTest itp.) ---
 
   // Form state
   const [sourceType, setSourceType] = useState<"text" | "material">("text");
@@ -57,8 +53,6 @@ const CreateTestPage: React.FC = () => {
   const [materialUploading, setMaterialUploading] = useState(false);
   const [materialError, setMaterialError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-
-  const [testIdToDelete, setTestIdToDelete] = useState<number | null>(null);
 
   const handleMaterialButtonClick = () => {
     fileInputRef.current?.click();
@@ -96,13 +90,6 @@ const CreateTestPage: React.FC = () => {
       }
     }
   };
-
-  useEffect(() => {
-    getMyTests()
-      .then((data) => setTests(data))
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, []);
 
   const handleGenerate = async () => {
     setGenError(null);
@@ -188,54 +175,12 @@ const CreateTestPage: React.FC = () => {
     }
   };
 
-  const refreshSidebarTests = async () => {
-    try {
-      const testsList = await getMyTests();
-      setTests(testsList);
-    } catch (e) {
-      console.error("Failed to refresh sidebar tests", e);
-    }
-  };
-
-  const handleOpenDeleteModal = (testId: number) => {
-    setTestIdToDelete(testId);
-  };
-
-  const handleCloseModal = () => {
-    setTestIdToDelete(null);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (testIdToDelete === null) return;
-
-    try {
-      await deleteTest(testIdToDelete);
-
-      await refreshSidebarTests();
-
-      navigate('/dashboard');
-
-    } catch (err) {
-      alert("Nie udało się usunąć testu: " + (err as Error).message);
-    } finally {
-      handleCloseModal();
-    }
-  };
-
   useDocumentTitle("Stwórz nowy | Inquizitor");
-
-
-  if (loading) return null;
 
   return (
     <CreateTestWrapper>
-      <Sidebar
-        tests={tests}
-        onSelect={(testId) => navigate(`/tests/${testId}`)}
-        onCreateNew={() => navigate(`/tests/new`)}
-        onDelete={(testId) => handleOpenDeleteModal(testId)}
-      />
-
+      {/* USUNIĘTO <SIDEBAR> Z TEGO MIEJSCA */}
+      
       <ContentWrapper>
         <InnerWrapper>
           <Heading>Utwórz test dopasowany do swoich potrzeb</Heading>
@@ -419,15 +364,8 @@ const CreateTestPage: React.FC = () => {
           </GenerateButton>
 
           {genError && <ErrorText>{genError}</ErrorText>}
-
-        </InnerWrapper>
         <Footer />
-        {testIdToDelete !== null && (
-          <ConfirmationModal
-            onCancel={handleCloseModal}
-            onConfirm={handleConfirmDelete}
-          />
-        )}
+        </InnerWrapper>
       </ContentWrapper>
     </CreateTestWrapper>
   );

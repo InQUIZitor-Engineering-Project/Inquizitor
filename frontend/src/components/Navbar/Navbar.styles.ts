@@ -5,19 +5,21 @@ export const NAVBAR_HEIGHT = 80;
 
 export const NavbarContainer = styled.nav`
   width: 100%;
+  height: ${NAVBAR_HEIGHT}px;
+  
+  /* Stylizacja wyglądu */
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 24px ${({ theme }) => theme.grid.margin};
   background-color: ${({ theme }) => theme.colors.neutral.white};
   box-shadow: ${({ theme }) => theme.shadows["2px"]};
-  height: ${NAVBAR_HEIGHT}px;
   box-sizing: border-box;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
   z-index: 100;
+
+  /* --- NAPRAWA --- */
+  position: relative; /* Już nie fixed! */
+  flex-shrink: 0;     /* Ważne: Navbar zachowuje swoje 80px i nie maleje */
 `;
 
 export const NavLinks = styled.div`
@@ -80,5 +82,3 @@ export const RegisterButton = styled.a`
     box-shadow: ${({ theme }) => theme.shadows["4px"]};
   }
 `;
-
-

@@ -7,7 +7,7 @@ export const SidebarWrapper = styled.aside`
   background-color: ${({ theme }) => theme.colors.neutral.white};
   box-shadow: ${({ theme }) => theme.shadows["2px"]};
   width: 280px;
-  height: calc(100vh - 80px); /* fixed height */
+  height: 100%; 
   overflow: hidden;
 `;
 

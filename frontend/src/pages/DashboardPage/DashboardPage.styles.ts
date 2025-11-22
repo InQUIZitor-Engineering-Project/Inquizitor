@@ -1,13 +1,14 @@
 import styled from "styled-components";
 
 export const DashboardWrapper = styled.div`
-  display: grid;
-  grid-template-columns: 280px 1fr;
-  height: calc(100vh - 80px);
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   background-color: ${({ theme }) => theme.colors.neutral.silver};
 `;
 
-// This style is kept for the new hub content
 export const Subheading = styled.p`
   ${({ theme }) => `
     text-align: center;

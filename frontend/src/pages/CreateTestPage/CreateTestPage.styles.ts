@@ -1,25 +1,31 @@
 import styled from "styled-components";
 
 export const CreateTestWrapper = styled.div`
-  display: grid;
-  grid-template-columns: 280px 1fr;
-  height: calc(100vh - 80px);
+  width: 100%;
+  height: 100%;         /* kluczowe: wypełnia ContentArea */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   background-color: ${({ theme }) => theme.colors.neutral.silver};
 `;
 
 export const ContentWrapper = styled.div`
-  padding: 40px;
+  flex: 1;
+  height: 100%;         /* dopinamy wysokość */
   overflow-y: auto;
-  display: flex;
-  flex-direction: column;
+  padding: 40px;
+  /* ...reszta bez zmian... */
 `;
 
+
 export const InnerWrapper = styled.div`
-  max-width: 1200px;
+  max-width: 900px; /* Zmniejszyłem z 1200px, żeby formularz był bardziej czytelny na środku */
   margin: 0 auto;
+  width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 24px; /* odstęp między sekcjami, żeby nic nie było ściśnięte */
+  padding-bottom: 60px; /* Miejsce na dole, żeby stopka nie uciekała */
+  gap: 24px;
 `;
 
 export const Heading = styled.h1`
@@ -45,7 +51,6 @@ export const Subheading = styled.p`
   margin: 0;
 `;
 
-/* Kafelkowe sekcje jak na TestDetailPage */
 export const SectionCard = styled.div`
   background-color: ${({ theme }) => theme.colors.neutral.white};
   border-radius: 16px;
@@ -74,7 +79,6 @@ export const SectionHeader = styled.div`
   }
 `;
 
-/* Mały opis pod tytułem sekcji */
 export const Hint = styled.p`
   ${({ theme }) => `
     font-family: ${theme.typography.body.regular.body3.fontFamily};
@@ -85,7 +89,6 @@ export const Hint = styled.p`
   margin: 4px 0 0;
 `;
 
-/* Label + licznik znaków */
 export const LabelRow = styled.div`
   display: flex;
   justify-content: space-between;
@@ -111,7 +114,7 @@ export const LabelRow = styled.div`
 `;
 
 export const ToggleGroup = styled.div`
-  display: inline-flex;                      /* tylko szerokość zawartości */
+  display: inline-flex;
   align-items: center;
   gap: 8px;
   padding: 4px;
@@ -119,9 +122,10 @@ export const ToggleGroup = styled.div`
   margin-bottom: 12px;
   border-radius: 999px;
   background-color: ${({ theme }) => theme.colors.tint.t5};
-  align-self: flex-start;                    /* nie rozciągaj w poziomie */
-  width: fit-content;                        /* ważne: dopasuj do treści */
+  align-self: flex-start;
+  width: fit-content;
   max-width: 100%;
+  flex-wrap: wrap; /* Zabezpieczenie na małe ekrany */
 
   & > button {
     padding: 8px 18px;
@@ -144,7 +148,6 @@ export const ToggleGroup = styled.div`
   }
 `;
 
-
 export const TextArea = styled.textarea`
   width: 100%;
   min-height: 140px;
@@ -152,14 +155,12 @@ export const TextArea = styled.textarea`
   border: 1px solid ${({ theme }) => theme.colors.neutral.greyBlue};
   border-radius: 10px;
   resize: vertical;
-  max-height: 360px;
+  max-height: 500px;
   font-family: ${({ theme }) =>
     theme.typography.body.regular.body2.fontFamily};
   font-size: ${({ theme }) => theme.typography.body.regular.body2.fontSize};
   box-sizing: border-box;
 `;
-
-/* Upload sekcja */
 
 export const UploadSection = styled.div`
   display: flex;
@@ -196,8 +197,6 @@ export const UploadButton = styled.button`
     box-shadow: 0 6px 16px rgba(33, 150, 243, 0.3);
     background: #1e88e5;
   }
-
-
 `;
 
 export const UploadInfo = styled.p`
@@ -222,11 +221,10 @@ export const HiddenFileInput = styled.input`
   display: none;
 `;
 
-/* Rodzaj pytań zamkniętych */
-
 export const QuestionTypeGroup = styled.div`
   display: inline-flex;
   gap: 8px;
+  flex-wrap: wrap;
 
   & > button {
     padding: 6px 14px;
@@ -245,8 +243,6 @@ export const QuestionTypeGroup = styled.div`
     }
   }
 `;
-
-/* Trudność */
 
 export const DifficultyGroup = styled.div`
   display: flex;
@@ -268,12 +264,10 @@ export const DifficultyField = styled.div`
     padding: 8px 10px;
     border: 1px solid ${({ theme }) => theme.colors.neutral.greyBlue};
     border-radius: 8px;
-    width: 120px;
+    width: 100px;
     font-size: 14px;
   }
 `;
-
-/* Generuj */
 
 export const GenerateButton = styled.button`
   ${({ theme }) => `

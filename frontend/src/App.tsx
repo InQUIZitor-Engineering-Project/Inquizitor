@@ -4,7 +4,6 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 
 import Navbar from "./components/Navbar/Navbar";
-import { NAVBAR_HEIGHT } from "./components/Navbar/Navbar.styles";
 
 import HomePage from "./pages/HomePage";
 import RegisterPage from "./pages/RegisterPage/RegisterPage";
@@ -15,6 +14,7 @@ import TestDetailPage from "./pages/TestDetailPage/TestDetailPage";
 import AboutUsPage from './pages/AboutUsPage/AboutUsPage';
 import FAQPage from './pages/FAQPage/FAQPage';
 import CreateTestPage from "./pages/CreateTestPage/CreateTestPage";
+import MainLayout from "./layouts/MainLayout";
 
 import ScrollToTop from "./components/GeneralComponents/ScrollToTop/ScrollToTop";
 
@@ -34,40 +34,38 @@ const PublicOnlyRoute: React.FC<{ children: JSX.Element }> = ({ children }) => {
   return user ? <Navigate to="/dashboard" replace /> : children;
 };
 
-const NavbarSpacer = styled.div`
-  height: ${NAVBAR_HEIGHT}px;
-`;
 
 const App: React.FC = () => {
   return (
     <AuthProvider>
       <BrowserRouter>
         <Navbar />
-        <NavbarSpacer />
         <ScrollToTop />
         <Routes>
           <Route path="/" element={<HomePage />} />
-          <Route 
-            path="/dashboard" 
-            element={
+          <Route path="/" element={<MainLayout />}>
+            <Route 
+              path="/dashboard" 
+              element={
+                <ProtectedRoute>
+                  <DashboardPage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/tests/new" 
+              element={
+                <ProtectedRoute>
+                  <CreateTestPage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route path="/tests/:testId" element={
               <ProtectedRoute>
-                <DashboardPage />
+                <TestDetailPage />
               </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/tests/new" 
-            element={
-              <ProtectedRoute>
-                <CreateTestPage />
-              </ProtectedRoute>
-            } 
-          />
-          <Route path="/tests/:testId" element={
-            <ProtectedRoute>
-              <TestDetailPage />
-            </ProtectedRoute>
-          }>
+            }>
+            </Route>
           </Route>
           <Route path="/about" element={<AboutUsPage />} />
           <Route path="/faq" element={<FAQPage />} />
