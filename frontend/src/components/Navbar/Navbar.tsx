@@ -20,17 +20,14 @@ const Navbar: React.FC = () => {
 
   const triggerQuickLoader = () => {
     startLoading();
-    setTimeout(() => {
-      stopLoading();
-    }, 150);
+    setTimeout(() => stopLoading(), 150);
   };
 
-  const handleNavClick = (path: string) => {
+  const handleNavClick = (path: string) =>
     withLoader(async () => {
       navigate(path);
       await new Promise((res) => setTimeout(res, 250));
     });
-  };
 
   const handleLogout = async () => {
     await withLoader(async () => {
@@ -41,7 +38,7 @@ const Navbar: React.FC = () => {
 
   return (
     <NavbarContainer>
-      <Link to="/" onClick={triggerQuickLoader}>
+      <Link to="/" onClick={triggerQuickLoader} style={{ minWidth: 0 }}>
         <LogosWrapper>
           <Logo src="/src/assets/logo_book.png" alt="Inquizitor Book Logo" />
           <Logo src="/src/assets/logo_tekst.png" alt="Inquizitor Text Logo" />
@@ -52,6 +49,12 @@ const Navbar: React.FC = () => {
         <StyledLink to="/" onClick={triggerQuickLoader}>
           Strona główna
         </StyledLink>
+
+        {user && (
+          <StyledLink to="/dashboard" onClick={triggerQuickLoader}>
+            Panel główny
+          </StyledLink>
+        )}
 
         <StyledLink to="/about" onClick={triggerQuickLoader}>
           O nas
@@ -74,10 +77,7 @@ const Navbar: React.FC = () => {
       <ButtonGroup>
         {user ? (
           <>
-            <RegisterButton
-              as="button"
-              onClick={() => handleNavClick("/profile")}
-            >
+            <RegisterButton as="button" onClick={() => handleNavClick("/profile")}>
               {user.first_name} →
             </RegisterButton>
             <LoginLink as="button" onClick={handleLogout}>
@@ -86,16 +86,10 @@ const Navbar: React.FC = () => {
           </>
         ) : (
           <>
-            <LoginLink
-              as="button"
-              onClick={() => handleNavClick("/login")}
-            >
+            <LoginLink as="button" onClick={() => handleNavClick("/login")}>
               Zaloguj się
             </LoginLink>
-            <RegisterButton
-              as="button"
-              onClick={() => handleNavClick("/register")}
-            >
+            <RegisterButton as="button" onClick={() => handleNavClick("/register")}>
               Zarejestruj się
             </RegisterButton>
           </>
