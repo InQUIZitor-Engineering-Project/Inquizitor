@@ -1,5 +1,5 @@
 import React, { useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useOutletContext } from "react-router-dom";
 import { generateTest } from "../../services/test";
 import { uploadMaterial, type MaterialUploadResponse } from "../../services/materials";
 import Footer from "../../components/Footer/Footer";
@@ -31,8 +31,13 @@ import {
   ErrorText,
 } from "./CreateTestPage.styles";
 
+type LayoutCtx = { refreshSidebarTests: () => Promise<void> };
+
+
 const CreateTestPage: React.FC = () => {
   const navigate = useNavigate();
+  const { refreshSidebarTests } = useOutletContext<LayoutCtx>();
+
   const { withLoader } = useLoader();
 
   // --- USUNIĘTO CAŁĄ LOGIKĘ SIDEBARA (tests, loading, deleteTest itp.) ---
@@ -166,7 +171,7 @@ const CreateTestPage: React.FC = () => {
           file_id: sourceType === "material" ? materialData?.file_id : undefined,
         })
       );
-
+      await refreshSidebarTests();
       navigate(`/tests/${resp.test_id}`);
     } catch (err: any) {
       setGenError(err.message || "Wystąpił błąd przy generowaniu testu");
