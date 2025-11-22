@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo, useState } from "react";
 import {
   SidebarWrapper,
   SearchInput,
@@ -7,9 +7,7 @@ import {
   CreateNewButton,
   DeleteIcon,
 } from "./Sidebar.styles";
-
-// 1. IMPORT YOUR TRASH ICON
-import trashIcon from "../../assets/icons/trash.png"; 
+import trashIcon from "../../assets/icons/trash.png";
 
 export interface SidebarProps {
   tests: { id: number; title: string }[];
@@ -24,6 +22,14 @@ const Sidebar: React.FC<SidebarProps> = ({
   onCreateNew,
   onDelete,
 }) => {
+  const [query, setQuery] = useState("");
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return tests;
+    return tests.filter((t) => (t.title || "").toLowerCase().includes(q));
+  }, [tests, query]);
+
   const handleDeleteClick = (
     e: React.MouseEvent<HTMLImageElement>,
     testId: number
@@ -34,22 +40,34 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <SidebarWrapper>
-      <SearchInput placeholder="Wyszukaj..." />
+      <SearchInput
+        placeholder="Wyszukaj…"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        aria-label="Wyszukaj test"
+      />
+
       <TestList>
-        {tests.map((t) => (
-          <TestItem key={t.id} onClick={() => onSelect(t.id)}>
-            <span>{t.title}</span>
-            <DeleteIcon
-              src={trashIcon}
-              alt="Delete"
-              onClick={(e) => handleDeleteClick(e, t.id)}
-            />
-          </TestItem>
-        ))}
+        {filtered.length === 0 ? (
+          <div style={{ padding: "12px", color: "#777", fontSize: 12 }}>
+            Brak wyników.
+          </div>
+        ) : (
+          filtered.map((t) => (
+            <TestItem key={t.id} onClick={() => onSelect(t.id)}>
+              <span>{t.title}</span>
+              <DeleteIcon
+                src={trashIcon}
+                alt="Usuń"
+                onClick={(e) => handleDeleteClick(e, t.id)}
+                title="Usuń test"
+              />
+            </TestItem>
+          ))
+        )}
       </TestList>
-      <CreateNewButton onClick={onCreateNew}>
-        + Utwórz nowy
-      </CreateNewButton>
+
+      <CreateNewButton onClick={onCreateNew}>+ Utwórz nowy</CreateNewButton>
     </SidebarWrapper>
   );
 };
