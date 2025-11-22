@@ -74,9 +74,16 @@ class SqlModelTestRepository(TestRepository):
         return mappers.test_to_domain(db_test, questions)
 
     def list_for_user(self, user_id: int) -> Iterable[Test]:
-        stmt = select(db_models.Test).where(db_models.Test.owner_id == user_id)
+        stmt = (
+            select(db_models.Test)
+            .where(db_models.Test.owner_id == user_id)
+            .order_by(
+                db_models.Test.id.asc(),
+            )
+        )
         rows = self._session.exec(stmt).all()
         return [mappers.test_to_domain(row) for row in rows]
+
 
     def remove(self, test_id: int) -> None:
         db_test = self._session.get(db_models.Test, test_id)

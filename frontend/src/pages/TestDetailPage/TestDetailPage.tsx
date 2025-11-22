@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import styled from "styled-components";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useOutletContext } from "react-router-dom";
 import Sidebar from "../../components/Sidebar/Sidebar";
 import { useLoader } from "../../components/Loader/GlobalLoader";
 import ConfirmationModal from "../../components/ConfirmationModal/ConfirmationModal";
@@ -80,16 +80,19 @@ const getDifficultyLabel = (d: number) => {
 const ensureChoices = (choices?: string[] | null): string[] =>
   choices && choices.length > 0 ? choices : ["", "", "", ""];
 
+type LayoutCtx = { refreshSidebarTests: () => Promise<void> };
+
+
 // --- component ---
 
 const TestDetailPage: React.FC = () => {
+  
   const { testId } = useParams<{ testId: string }>();
   const testIdNum = Number(testId);
   const navigate = useNavigate();
   const { withLoader } = useLoader();
 
   const [data, setData] = useState<TestDetail | null>(null);
-  const [tests, setTests] = useState<TestOut[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -100,17 +103,9 @@ const TestDetailPage: React.FC = () => {
   const [testIdToDelete, setTestIdToDelete] = useState<number | null>(null);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState("");
+  const { refreshSidebarTests } = useOutletContext<LayoutCtx>();
 
   const token = localStorage.getItem("access_token");
-
-  const refreshSidebarTests = async () => {
-    try {
-      const testsList = await getMyTests();
-      setTests(testsList);
-    } catch (e) {
-      console.error("Failed to refresh sidebar tests", e);
-    }
-  };
 
   const download = (url: string, filename: string) => {
     withLoader(async () => {
@@ -135,9 +130,6 @@ const TestDetailPage: React.FC = () => {
     });
   };
 
-  useEffect(() => {
-    refreshSidebarTests();
-  }, []);
 
   useEffect(() => {
     if (!testId) return;
@@ -385,6 +377,8 @@ const TestDetailPage: React.FC = () => {
         const updated = await updateTestTitle(data.test_id, next);
         setData((prev) => (prev ? { ...prev, title: updated.title } : prev));
         setIsEditingTitle(false);
+        await refreshSidebarTests();
+
       });
     } catch (e: any) {
       alert(e.message || "Nie udało się zaktualizować tytułu");
