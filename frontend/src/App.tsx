@@ -34,6 +34,11 @@ const PublicOnlyRoute: React.FC<{ children: JSX.Element }> = ({ children }) => {
   return user ? <Navigate to="/dashboard" replace /> : children;
 };
 
+const FallbackRedirect: React.FC = () => {
+  const { user, loading } = useAuth();
+  if (loading) return null; // możesz tu wstawić globalny loader
+  return <Navigate to={user ? "/dashboard" : "/login"} replace />;
+};
 
 const App: React.FC = () => {
   return (
@@ -93,8 +98,8 @@ const App: React.FC = () => {
               </ProtectedRoute>
             }
           />
+          <Route path="*" element={<FallbackRedirect />} />
         </Routes>
-
       </BrowserRouter>
     </AuthProvider>
   );
