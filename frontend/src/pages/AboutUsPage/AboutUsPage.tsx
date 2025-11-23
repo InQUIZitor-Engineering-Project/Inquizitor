@@ -19,7 +19,7 @@ import {
 } from "./AboutUsPage.styles";
 
 import Footer from "../../components/Footer/Footer";
-import onasImg from "../../assets/onas.png";
+import onasImg from "../../assets/onas_nobackground2.png";
 import useDocumentTitle from "../../components/GeneralComponents/Hooks/useDocumentTitle";
 
 const AboutUsPage: React.FC = () => {

@@ -228,7 +228,7 @@ const ProfilePage: React.FC = () => {
 
           <IllustrationWrapper>
             <ProfileIllustration
-              src="/src/assets/landing_main.png"
+              src="/src/assets/profile.png"
               alt="Profil użytkownika"
             />
           </IllustrationWrapper>
