@@ -386,3 +386,198 @@ export const TitleSmallCancel = styled(TitleSmallButton)`
   }
 `;
 
+
+export const EditorCard = styled.div`
+  background: linear-gradient(0deg, #fff, #fff), rgba(33, 150, 243, 0.03);
+  border: 1px solid rgba(0,0,0,0.06);
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.04);
+`;
+
+export const EditorToolbar = styled.div`
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+`;
+
+export const EditorTextarea = styled.textarea`
+  width: 100%;
+  min-height: 140px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid #dfe4ea;
+  background: #fff;
+  font-size: 15px;
+  line-height: 1.5;
+  transition: box-shadow .15s ease, border-color .15s ease;
+  resize: vertical;
+
+  &::placeholder { color: #9aa4b2; }
+  &:focus {
+    outline: none;
+    border-color: #64b5f6;
+    box-shadow: 0 0 0 4px rgba(33,150,243,.12);
+  }
+`;
+
+export const Segmented = styled.div`
+  display: inline-flex;
+  padding: 4px;
+  border-radius: 999px;
+  background: ${({ theme }) => theme.colors.tint.t5};
+  gap: 4px;
+
+  button {
+    font-size: 12px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: 0;
+    background: transparent;
+    color: ${({ theme }) => theme.colors.neutral.dGrey};
+    cursor: pointer;
+  }
+  .is-active-closed {
+    background: rgba(33,150,243,.12);
+    color: #1565c0;
+  }
+  .is-active-open {
+    background: rgba(156,39,176,.12);
+    color: #6a1b9a;
+  }
+`;
+
+export const NiceSelect = styled(MetaSelect)`
+  font-size: 12px;
+  padding: 6px 10px;
+`;
+
+export const ChoiceListEditor = styled.ul`
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+`;
+
+export const ChoiceRow = styled.li`
+  display: grid;
+  grid-template-columns: 36px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  background: ${({ theme }) => theme.colors.neutral.silver};
+  border: 1px solid ${({ theme }) => theme.colors.neutral.greyBlue};
+  border-radius: 10px;
+  padding: 8px 10px;
+`;
+
+export const LetterBubble = styled.span`
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 12px;
+  color: #1565c0;
+  background: rgba(33,150,243,.12);
+`;
+
+export const ChoiceInput = styled.input`
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #dfe4ea;
+  background: #fff;
+  font-size: 14px;
+
+  &:focus {
+    outline: none;
+    border-color: #80cbc4;
+    box-shadow: 0 0 0 3px rgba(0,150,136,.12);
+  }
+`;
+
+export const CorrectToggle = styled.button<{ $active?: boolean }>`
+  border: 1px solid ${({ $active }) => ($active ? "rgba(76,175,80,.4)" : "#dfe4ea")};
+  background: ${({ $active }) => ($active ? "rgba(76,175,80,.12)" : "#fff")};
+  color: ${({ $active }) => ($active ? "#2e7d32" : "#4b5563")};
+  font-size: 12px;
+  padding: 8px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all .15s ease;
+`;
+
+export const AddChoiceBtn = styled(GhostButton)`
+  background: rgba(33,150,243,.08);
+  color: #1565c0;
+  border: 1px dashed rgba(33,150,243,.35);
+  margin-top: 6px;
+
+  &:hover { background: rgba(33,150,243,.14); }
+`;
+
+export const EditorActions = styled(QuestionActions)`
+  justify-content: flex-end;
+  margin-top: 16px;
+`;
+
+export const EditorLabel = styled.div`
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .02em;
+  color: #6b7280;
+  margin-bottom: 6px;
+`;
+
+export const Counter = styled.span`
+  font-size: 11px;
+  color: #9aa3af;
+  margin-left: 8px;
+`;
+
+export const Divider = styled.div`
+  height: 1px;
+  background: rgba(0,0,0,.06);
+  margin: 12px 0 8px;
+`;
+
+export const IndexChip = styled.span`
+  min-width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 12px;
+  color: #374151;
+  background: #eef2ff;
+  border: 1px solid #dbeafe;
+`;
+
+export const ChoiceCheckbox = styled.input.attrs({ type: "checkbox" })`
+  width: 16px;
+  height: 16px;
+  accent-color: #4caf50;
+`;
+
+export const EditorHint = styled.div`
+  font-size: 12px;
+  color: #6b7280;
+  font-style: italic;
+  margin-top: 8px;
+`;
+
+export const ErrorNote = styled.div`
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(244, 67, 54, 0.08);
+  border: 1px solid rgba(244, 67, 54, 0.3);
+  color: #c62828;
+  font-size: 12px;
+`;
