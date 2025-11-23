@@ -50,6 +50,21 @@ import {
   TitleActions,
   TitleSmallButton,
   TitleSmallCancel,
+  EditorCard,
+  EditorToolbar,
+  Segmented,
+  NiceSelect,
+  EditorTextarea,
+  ChoiceListEditor,
+  ChoiceRow,
+  LetterBubble,
+  ChoiceInput,
+  CorrectToggle,
+  AddChoiceBtn,
+  EditorActions,
+  ErrorNote,
+  EditorHint,
+  Divider,  
 } from "./TestDetailPage.styles";
 import useDocumentTitle from "../../components/GeneralComponents/Hooks/useDocumentTitle";
 
@@ -104,6 +119,9 @@ const TestDetailPage: React.FC = () => {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState("");
   const { refreshSidebarTests } = useOutletContext<LayoutCtx>();
+  const [editorError, setEditorError] = useState<string | null>(null);
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [savingAdd, setSavingAdd]   = useState(false);
 
   const token = localStorage.getItem("access_token");
 
@@ -160,6 +178,7 @@ const TestDetailPage: React.FC = () => {
 
   const startEdit = (q: QuestionOut) => {
     setIsAdding(false);
+    setEditorError(null);
     setEditingId(q.id);
     setDraft({
       id: q.id,
@@ -172,6 +191,7 @@ const TestDetailPage: React.FC = () => {
   };
 
   const startAdd = () => {
+    setEditorError(null);
     setEditingId(null);
     setIsAdding(true);
     setDraft({
@@ -185,18 +205,26 @@ const TestDetailPage: React.FC = () => {
 
   const cancelEdit = () => {
     setEditingId(null);
+    setEditorError(null);
     setIsAdding(false);
     setDraft({});
   };
 
   const handleSaveEdit = async () => {
     if (!data || editingId == null) return;
+    setEditorError(null);
+    setSavingEdit(true);
+
     try {
       const payload: any = {
         text: draft.text,
         is_closed: !!draft.is_closed,
         difficulty: draft.difficulty || 1,
       };
+      if (!payload.text) {
+        setEditorError("Podaj treść pytania.");
+        return;
+      }
 
       if (payload.is_closed) {
         const cleanedChoices = (draft.choices || [])
@@ -205,6 +233,15 @@ const TestDetailPage: React.FC = () => {
         const cleanedCorrect = (draft.correct_choices || []).filter((c) =>
           cleanedChoices.includes(c)
         );
+
+        if (cleanedChoices.length === 0) {
+          setEditorError("Dodaj przynajmniej jedną odpowiedź.");
+          return;
+        }
+        if (cleanedCorrect.length === 0) {
+          setEditorError("Zaznacz przynajmniej jedną poprawną odpowiedź.");
+          return;
+        }
         payload.choices = cleanedChoices;
         payload.correct_choices = cleanedCorrect;
       } else {
@@ -228,11 +265,16 @@ const TestDetailPage: React.FC = () => {
       cancelEdit();
     } catch (e: any) {
       alert(e.message || "Nie udało się zapisać zmian");
+    } finally {
+      setSavingEdit(false);
     }
   };
 
   const handleAdd = async () => {
     if (!data) return;
+    setEditorError(null);
+    setSavingAdd(true);
+
     try {
       const payload: any = {
         text: (draft.text || "").trim(),
@@ -241,23 +283,22 @@ const TestDetailPage: React.FC = () => {
       };
 
       if (!payload.text) {
-        alert("Podaj treść pytania");
+        setEditorError("Podaj treść pytania.");
         return;
       }
-
       if (payload.is_closed) {
         const cleanedChoices = (draft.choices || [])
           .map((c) => (c || "").trim())
           .filter((c) => c);
         if (cleanedChoices.length === 0) {
-          alert("Dodaj przynajmniej jedną odpowiedź");
+          setEditorError("Dodaj przynajmniej jedną odpowiedź.");
           return;
         }
         const cleanedCorrect = (draft.correct_choices || []).filter((c) =>
           cleanedChoices.includes(c)
         );
         if (cleanedCorrect.length === 0) {
-          alert("Zaznacz przynajmniej jedną poprawną odpowiedź");
+          setEditorError("Zaznacz przynajmniej jedną poprawną odpowiedź.");
           return;
         }
         payload.choices = cleanedChoices;
@@ -271,7 +312,9 @@ const TestDetailPage: React.FC = () => {
       await refreshTest(); // nowe pytanie na końcu
       cancelEdit();
     } catch (e: any) {
-      alert(e.message || "Nie udało się dodać pytania");
+      setEditorError(e.message || "Nie udało się dodać pytania.");
+    } finally {
+      setSavingAdd(false);
     }
   };
 
@@ -306,13 +349,17 @@ const TestDetailPage: React.FC = () => {
   const setDraftDifficulty = (value: number) => {
     setDraft((d) => ({ ...d, difficulty: value }));
   };
-
+  const onTextChange = (v: string) => {
+    setDraft(d => ({ ...d, text: v }));
+    setEditorError(null);
+  };
   const updateDraftChoice = (index: number, value: string) => {
     setDraft((d) => {
       const choices = ensureChoices(d.choices);
       choices[index] = value;
       return { ...d, choices };
     });
+    setEditorError(null);
   };
 
   const toggleDraftCorrect = (value: string, checked: boolean) => {
@@ -326,6 +373,7 @@ const TestDetailPage: React.FC = () => {
       }
       return { ...d, correct_choices: next };
     });
+    setEditorError(null);
   };
 
   const addDraftChoiceRow = () => {
@@ -399,6 +447,15 @@ const TestDetailPage: React.FC = () => {
   const closedCount = data.questions.filter((q) => q.is_closed).length;
   const openCount = data.questions.length - closedCount;
 
+  const hasAnyChoice = (draft.choices || []).some(c => (c || "").trim().length > 0);
+  const hasAnyCorrect = (draft.correct_choices || []).length > 0;
+
+  const canSaveBase = (draft.text || "").trim().length > 0;
+  const canSaveNew  = draft.is_closed ? (canSaveBase && hasAnyChoice) : canSaveBase;
+  const canSaveEdit = draft.is_closed ? (canSaveBase && hasAnyChoice) : canSaveBase;
+
+  const missingCorrectLive = !!draft.is_closed && hasAnyChoice && !hasAnyCorrect;
+
   return (
     <PageWrapper>
 
@@ -444,140 +501,105 @@ const TestDetailPage: React.FC = () => {
 
             if (isEditing) {
               return (
-                <QuestionItem key={q.id}>
-                  <QuestionHeaderRow>
-                    <QuestionTitle>
-                      {idx + 1}.{" "}
-                      <textarea
-                        value={draft.text || ""}
-                        onChange={(e) =>
-                          setDraft((d) => ({ ...d, text: e.target.value }))
-                        }
-                        style={{
-                          width: "100%",
-                          minHeight: 120, // 🆕 większe pole przy edycji
-                          resize: "vertical",
-                        }}
-                      />
-                    </QuestionTitle>
-                    <MetaControls>
-                      <MetaSelect
-                        value={draft.difficulty || 1}
-                        onChange={(e) =>
-                          setDraftDifficulty(Number(e.target.value))
-                        }
+              <QuestionItem key={q.id}>
+                <EditorCard>
+                  <EditorToolbar>
+                    <Segmented>
+                      <button
+                        className={draft.is_closed ? "is-active-closed" : ""}
+                        onClick={() => toggleDraftClosed(true)}
+                        type="button"
                       >
-                        <option value={1}>Łatwe</option>
-                        <option value={2}>Średnie</option>
-                        <option value={3}>Trudne</option>
-                      </MetaSelect>
-                      <div>
-                        <MetaToggle
-                          className={
-                            draft.is_closed ? "active-closed" : ""
-                          }
-                          onClick={() => toggleDraftClosed(true)}
-                          type="button"
-                        >
-                          Zamknięte
-                        </MetaToggle>
-                        <MetaToggle
-                          className={
-                            draft.is_closed ? "" : "active-open"
-                          }
-                          onClick={() => toggleDraftClosed(false)}
-                          type="button"
-                          style={{ marginLeft: 4 }}
-                        >
-                          Otwarte
-                        </MetaToggle>
-                      </div>
-                    </MetaControls>
-                  </QuestionHeaderRow>
+                        Zamknięte
+                      </button>
+                      <button
+                        className={!draft.is_closed ? "is-active-open" : ""}
+                        onClick={() => toggleDraftClosed(false)}
+                        type="button"
+                      >
+                        Otwarte
+                      </button>
+                    </Segmented>
+
+                    <NiceSelect
+                      value={draft.difficulty || 1}
+                      onChange={(e) => setDraftDifficulty(Number(e.target.value))}
+                      aria-label="Poziom trudności"
+                    >
+                      <option value={1}>Łatwe</option>
+                      <option value={2}>Średnie</option>
+                      <option value={3}>Trudne</option>
+                    </NiceSelect>
+                  </EditorToolbar>
+
+                  <EditorTextarea
+                    value={draft.text || ""}
+                    onChange={(e) => onTextChange(e.target.value)}
+                    placeholder="Wpisz treść pytania…"
+                  />
 
                   {draft.is_closed && (
-                    <ChoiceList style={{ marginTop: 12 }}>
-                      {ensureChoices(draft.choices).map((choice, ci) => {
-                        const value = choice ?? "";
-                        const isCorrect = (draft.correct_choices || []).includes(
-                          value
-                        );
-                        return (
-                          <li key={ci} style={{ marginBottom: 6 }}>
-                            <label
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 8,
-                              }}
-                            >
-                              <input
-                                type="checkbox"
-                                checked={isCorrect}
-                                onChange={(e) =>
-                                  toggleDraftCorrect(
-                                    value,
-                                    e.target.checked
-                                  )
-                                }
-                              />
-                              <input
+                    <>
+                      <ChoiceListEditor>
+                        {ensureChoices(draft.choices).map((choice, ci) => {
+                          const value = choice ?? "";
+                          const isCorrect = (draft.correct_choices || []).includes(value);
+                          return (
+                            <ChoiceRow key={ci}>
+                              <LetterBubble>{String.fromCharCode(65 + ci)}</LetterBubble>
+
+                              <ChoiceInput
                                 type="text"
                                 value={value}
-                                onChange={(e) =>
-                                  updateDraftChoice(ci, e.target.value)
-                                }
-                                placeholder={`Odpowiedź ${String.fromCharCode(
-                                  65 + ci
-                                )}`}
-                                style={{
-                                  flex: 1,
-                                  padding: "6px 8px",
-                                  borderRadius: 8,
-                                  border: "1px solid #ddd",
-                                }}
+                                onChange={(e) => updateDraftChoice(ci, e.target.value)}
+                                placeholder={`Odpowiedź ${String.fromCharCode(65 + ci)}`}
                               />
-                            </label>
-                          </li>
-                        );
-                      })}
-                      <li>
-                        <GhostButton
-                          type="button"
-                          onClick={addDraftChoiceRow}
-                        >
-                          + Dodaj odpowiedź
-                        </GhostButton>
-                      </li>
-                    </ChoiceList>
+
+                              <CorrectToggle
+                                type="button"
+                                $active={isCorrect}
+                                onClick={() => toggleDraftCorrect(value, !isCorrect)}
+                                title={isCorrect ? "Usuń oznaczenie poprawnej" : "Oznacz jako poprawną"}
+                              >
+                                {isCorrect ? "Poprawna" : "Ustaw jako poprawną"}
+                              </CorrectToggle>
+                            </ChoiceRow>
+                          );
+                        })}
+                      </ChoiceListEditor>
+
+                      <AddChoiceBtn type="button" onClick={addDraftChoiceRow}>
+                        + Dodaj odpowiedź
+                      </AddChoiceBtn>
+                    </>
                   )}
 
                   {!draft.is_closed && (
                     <div
                       style={{
-                        marginTop: 12,
+                        marginTop: 10,
                         fontSize: 12,
-                        color: "#777",
+                        color: "#6b7280",
                         fontStyle: "italic",
                       }}
                     >
-                      Pytanie otwarte — odpowiedź nie jest tutaj edytowana,
-                      będzie wpisywana przez zdającego.
+                      Pytanie otwarte — odpowiedź udzielana przez zdającego.
                     </div>
                   )}
+                  {missingCorrectLive && !editorError && (
+                    <ErrorNote>Zaznacz przynajmniej jedną poprawną odpowiedź.</ErrorNote>
+                  )}
 
-                  <QuestionActions>
-                    <PrimaryButton onClick={handleSaveEdit}>
-                      Zapisz
-                    </PrimaryButton>
-                    <DangerButton onClick={cancelEdit}>
-                      Anuluj
-                    </DangerButton>
-                  </QuestionActions>
-                </QuestionItem>
+                  {editorError && <ErrorNote>{editorError}</ErrorNote>}
+                  <EditorActions>
+                    <PrimaryButton onClick={handleSaveEdit} disabled={savingEdit}>Zapisz</PrimaryButton>
+                    <DangerButton onClick={cancelEdit}>Anuluj</DangerButton>
+                  </EditorActions>
+                </EditorCard>
+              </QuestionItem>
+
               );
             }
-
             // VIEW MODE
             return (
               <QuestionItem key={q.id}>
@@ -644,126 +666,107 @@ const TestDetailPage: React.FC = () => {
             + Dodaj pytanie
           </AddQuestionButton>
         </AddQuestionBar>
+          {isAdding && (
+            <QuestionItem>
+              <EditorCard>
+                <EditorToolbar>
+                  <Segmented>
+                    <button
+                      className={draft.is_closed ? "is-active-closed" : ""}
+                      onClick={() => toggleDraftClosed(true)}
+                      type="button"
+                    >
+                      Zamknięte
+                    </button>
+                    <button
+                      className={!draft.is_closed ? "is-active-open" : ""}
+                      onClick={() => toggleDraftClosed(false)}
+                      type="button"
+                    >
+                      Otwarte
+                    </button>
+                  </Segmented>
 
-        {isAdding && (
-          <QuestionItem>
-            <QuestionHeaderRow>
-              <QuestionTitle>
-                <textarea
+                  <NiceSelect
+                    value={draft.difficulty || 1}
+                    onChange={(e) => setDraftDifficulty(Number(e.target.value))}
+                    aria-label="Poziom trudności"
+                  >
+                    <option value={1}>Łatwe</option>
+                    <option value={2}>Średnie</option>
+                    <option value={3}>Trudne</option>
+                  </NiceSelect>
+                </EditorToolbar>
+
+                <EditorTextarea
                   value={draft.text || ""}
-                  onChange={(e) =>
-                    setDraft((d) => ({ ...d, text: e.target.value }))
-                  }
-                  placeholder="Treść nowego pytania"
-                  style={{
-                    width: "100%",
-                    minHeight: 120, // 🆕 większe pole dla nowego pytania
-                    resize: "vertical",
-                  }}
+                  onChange={(e) => onTextChange(e.target.value)}
+                  placeholder="Wpisz treść pytania…"
                 />
-              </QuestionTitle>
-              <MetaControls>
-                <MetaSelect
-                  value={draft.difficulty || 1}
-                  onChange={(e) =>
-                    setDraftDifficulty(Number(e.target.value))
-                  }
-                >
-                  <option value={1}>Łatwe</option>
-                  <option value={2}>Średnie</option>
-                  <option value={3}>Trudne</option>
-                </MetaSelect>
-                <div>
-                  <MetaToggle
-                    className={draft.is_closed ? "active-closed" : ""}
-                    onClick={() => toggleDraftClosed(true)}
-                    type="button"
-                  >
-                    Zamknięte
-                  </MetaToggle>
-                  <MetaToggle
-                    className={draft.is_closed ? "" : "active-open"}
-                    onClick={() => toggleDraftClosed(false)}
-                    type="button"
-                    style={{ marginLeft: 4 }}
-                  >
-                    Otwarte
-                  </MetaToggle>
-                </div>
-              </MetaControls>
-            </QuestionHeaderRow>
 
-            {draft.is_closed && (
-              <ChoiceList style={{ marginTop: 12 }}>
-                {ensureChoices(draft.choices).map((choice, ci) => {
-                  const value = choice ?? "";
-                  const isCorrect = (draft.correct_choices || []).includes(
-                    value
-                  );
-                  return (
-                    <li key={ci} style={{ marginBottom: 6 }}>
-                      <label
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 8,
-                        }}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={isCorrect}
-                          onChange={(e) =>
-                            toggleDraftCorrect(value, e.target.checked)
-                          }
-                        />
-                        <input
-                          type="text"
-                          value={value}
-                          onChange={(e) =>
-                            updateDraftChoice(ci, e.target.value)
-                          }
-                          placeholder={`Odpowiedź ${String.fromCharCode(
-                            65 + ci
-                          )}`}
-                          style={{
-                            flex: 1,
-                            padding: "6px 8px",
-                            borderRadius: 8,
-                            border: "1px solid #ddd",
-                          }}
-                        />
-                      </label>
-                    </li>
-                  );
-                })}
-                <li>
-                  <GhostButton type="button" onClick={addDraftChoiceRow}>
-                    + Dodaj odpowiedź
-                  </GhostButton>
-                </li>
-              </ChoiceList>
-            )}
+                <Divider />
 
-            {!draft.is_closed && (
-              <div
-                style={{
-                  marginTop: 12,
-                  fontSize: 12,
-                  color: "#777",
-                  fontStyle: "italic",
-                }}
-              >
-                Pytanie otwarte — poprawność będzie oceniana ręcznie.
-              </div>
-            )}
+                {draft.is_closed ? (
+                  <>
+                    <ChoiceListEditor>
+                      {ensureChoices(draft.choices).map((choice, ci) => {
+                        const value = choice ?? "";
+                        const isCorrect = (draft.correct_choices || []).includes(value);
+                        return (
+                          <ChoiceRow key={ci}>
+                            <LetterBubble>{String.fromCharCode(65 + ci)}</LetterBubble>
 
-            <QuestionActions>
-              <PrimaryButton onClick={handleAdd}>Zapisz</PrimaryButton>
-              <DangerButton onClick={cancelEdit}>Anuluj</DangerButton>
-            </QuestionActions>
-          </QuestionItem>
-        )}
+                            <ChoiceInput
+                              type="text"
+                              value={value}
+                              onChange={(e) => updateDraftChoice(ci, e.target.value)}
+                              placeholder={`Odpowiedź ${String.fromCharCode(65 + ci)}`}
+                            />
 
+                            <CorrectToggle
+                              type="button"
+                              $active={isCorrect}
+                              onClick={() => {
+                                const v = ensureChoices(draft.choices)[ci] ?? "";
+                                // przełącz poprawność po aktualnej wartości
+                                toggleDraftCorrect(v, !isCorrect);
+                              }}
+                              title={isCorrect ? "Usuń oznaczenie poprawnej" : "Oznacz jako poprawną"}
+                            >
+                              {isCorrect ? "Poprawna" : "Ustaw jako poprawną"}
+                            </CorrectToggle>
+                          </ChoiceRow>
+                        );
+                      })}
+                    </ChoiceListEditor>
+
+                    <AddChoiceBtn type="button" onClick={addDraftChoiceRow}>
+                      + Dodaj odpowiedź
+                    </AddChoiceBtn>
+
+                    <EditorHint>
+                      Zaznacz przynajmniej jedną poprawną odpowiedź, aby zapisać pytanie zamknięte.
+                    </EditorHint>
+                  </>
+                ) : (
+                  <EditorHint>
+                    Pytanie otwarte — odpowiedź udzielana przez zdającego.
+                  </EditorHint>
+                )}
+                {missingCorrectLive && !editorError && (
+                  <ErrorNote>Zaznacz przynajmniej jedną poprawną odpowiedź.</ErrorNote>
+                )}
+                {editorError && <ErrorNote>{editorError}</ErrorNote>}
+
+                <EditorActions>
+                  <PrimaryButton onClick={handleAdd} disabled={savingAdd}>
+                    Zapisz
+                  </PrimaryButton>
+                  <DangerButton onClick={cancelEdit}>Anuluj</DangerButton>
+                </EditorActions>
+              </EditorCard>
+            </QuestionItem>
+          )}
         <DownloadBar>
           <DownloadButton
             onClick={() =>
