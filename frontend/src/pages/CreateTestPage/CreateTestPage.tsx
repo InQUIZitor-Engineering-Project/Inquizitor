@@ -177,7 +177,7 @@ const CreateTestPage: React.FC = () => {
       await refreshSidebarTests();
       navigate(`/tests/${resp.test_id}`);
     } catch (err: any) {
-      setGenError(err.message || "Wystąpił błąd przy generowaniu testu");
+      setGenError(err.message || "Wystąpił błąd przy generowaniu testu. Spróbuj ponownie.");
     } finally {
       setGenLoading(false);
     }
