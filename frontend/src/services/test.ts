@@ -94,6 +94,7 @@ export interface GenerateParams {
   medium: number;
   hard: number;
   text?: string;
+  additional_instructions?: string;
   file_id?: number;
 }
 

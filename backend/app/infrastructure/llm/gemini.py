@@ -50,7 +50,7 @@ def _build_prompt(text: str, params: GenerateParams) -> str:
         f"- Dokładnie {c_total} zamkniętych ({c_tf} TF, {c_sc} single, {c_mc} multi) i {params.num_open} otwartych.",
         "- Zwróć WYŁĄCZNIE poprawny JSON (bez komentarzy/tekstu dookoła).",
         "- Jeśli czegoś nie możesz wygenerować, i tak zwróć poprawny JSON (pusta lista 'questions').",
-        "",
+        f"- Weź pod uwagę następujące preferencje odnośnie generowanego testu: {params.additional_instructions}\n" if params.additional_instructions is not "" else "",
         f"Tekst źródłowy:\n{text}\n",
     ]
 
