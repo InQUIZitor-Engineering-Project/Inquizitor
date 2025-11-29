@@ -132,36 +132,69 @@ def compile_tex_to_pdf(tex_source: str) -> bytes:
 
 
 def test_to_xml_bytes(test: dict) -> bytes:
-    root = ET.Element(
-        "Test",
-        attrib={
-            "id": str(test["id"]),
-            "title": test["title"],
-        },
-    )
-    for question in test["questions"]:
-        question_el = ET.SubElement(
-            root,
-            "Question",
-            attrib={
-                "id": str(question["id"]),
-                "type": "closed" if question.get("is_closed", True) else "open",
-                "difficulty": str(question.get("difficulty", 1)),
-            },
-        )
-        text_el = ET.SubElement(question_el, "Text")
-        text_el.text = question.get("text", "")
-        choices = _to_list(question.get("choices"))
-        if choices:
-            choices_el = ET.SubElement(question_el, "Choices")
-            correct = set(_to_list(question.get("correct_choices")) or [])
+    root = ET.Element("quiz")
+
+    cat_question = ET.SubElement(root, "question", type="category")
+    cat_elem = ET.SubElement(cat_question, "category")
+    ET.SubElement(cat_elem, "text").text = f"$course$/{test.get('title', 'Default Test')}"
+
+    def _ensure_list(val):
+        return val if isinstance(val, list) else []
+
+    for question in test.get("questions", []):
+        is_closed = question.get("is_closed", True)
+        
+        q_type = "multichoice" if is_closed else "essay"
+        
+        q_elem = ET.SubElement(root, "question", type=q_type)
+
+        name_elem = ET.SubElement(q_elem, "name")
+        q_text_short = question.get("text", "")[:20]
+        ET.SubElement(name_elem, "text").text = f"Q{question['id']} - {q_text_short}..."
+
+        qtext_elem = ET.SubElement(q_elem, "questiontext", format="html")
+        ET.SubElement(qtext_elem, "text").text = question.get("text", "")
+
+        difficulty = str(question.get("difficulty", 1))
+        ET.SubElement(q_elem, "defaultgrade").text = difficulty
+        
+        gen_feedback = ET.SubElement(q_elem, "generalfeedback", format="html")
+        ET.SubElement(gen_feedback, "text").text = ""
+
+        if q_type == "essay":
+            answer_elem = ET.SubElement(q_elem, "answer", fraction="0")
+            ET.SubElement(answer_elem, "text").text = ""
+
+        elif q_type == "multichoice":
+            choices = _ensure_list(question.get("choices"))
+            correct_choices = set(_ensure_list(question.get("correct_choices")))
+            
+            num_correct = len(correct_choices)
+            is_single = num_correct <= 1
+            
+            ET.SubElement(q_elem, "single").text = "true" if is_single else "false"
+            ET.SubElement(q_elem, "shuffleanswers").text = "true"
+            ET.SubElement(q_elem, "answernumbering").text = "abc"
+
+            if num_correct > 0:
+                correct_fraction = 100.0 if is_single else (100.0 / num_correct)
+            else:
+                correct_fraction = 100.0 # Fallback
+
             for choice in choices:
-                choice_el = ET.SubElement(
-                    choices_el,
-                    "Choice",
-                    attrib={"correct": "true" if choice in correct else "false"},
-                )
-                choice_el.text = choice
+                is_correct = choice in correct_choices
+                
+                fraction = f"{correct_fraction:.5g}" if is_correct else "0"
+                
+                answer_elem = ET.SubElement(q_elem, "answer", fraction=fraction, format="html")
+                ET.SubElement(answer_elem, "text").text = str(choice)
+                
+                fb_elem = ET.SubElement(answer_elem, "feedback", format="html")
+                if is_correct:
+                    ET.SubElement(fb_elem, "text").text = "Correct!"
+                else:
+                    ET.SubElement(fb_elem, "text").text = "Incorrect."
+
     return ET.tostring(root, encoding="utf-8", xml_declaration=True)
 
 
