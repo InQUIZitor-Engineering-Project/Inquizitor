@@ -20,7 +20,7 @@ from app.infrastructure import (
     SqlModelUserRepository,
 )
 from app.api.routers import auth, files, materials, tests, users
-from app.infrastructure.extractors import extract_text_from_file
+from app.infrastructure.extractors.extract_composite import composite_text_extractor
 
 try:  # pragma: no cover - optional dependency
     import magic
@@ -97,7 +97,7 @@ class AppContainer:
         return MaterialService(
             lambda: self.provide_unit_of_work(),
             storage=self._materials_storage,
-            text_extractor=extract_text_from_file,
+            text_extractor=composite_text_extractor,
             mime_detector=self._detect_mime,
         )
 
