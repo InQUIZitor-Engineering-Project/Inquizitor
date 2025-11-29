@@ -17,6 +17,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     fontconfig \
     libmagic1 \
     tesseract-ocr \
+    tesseract-ocr-pol \
+    tesseract-ocr-eng \
     poppler-utils \
     libcairo2 \
     libpango-1.0-0 \

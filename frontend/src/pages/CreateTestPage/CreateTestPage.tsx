@@ -50,9 +50,6 @@ const CreateTestPage: React.FC = () => {
 
   const { withLoader } = useLoader();
 
-  // --- USUNIĘTO CAŁĄ LOGIKĘ SIDEBARA (tests, loading, deleteTest itp.) ---
-
-  // Form state
   const [sourceType, setSourceType] = useState<"text" | "material">("text");
   const [sourceContent, setSourceContent] = useState("");
   const [tfCount, setTfCount] = useState(0);
@@ -242,7 +239,7 @@ const CreateTestPage: React.FC = () => {
                 <HiddenFileInput
                   ref={fileInputRef}
                   type="file"
-                  accept=".pdf,.docx,.txt,.md"
+                  accept=".pdf,.docx,.txt,.md,.png,.jpg"
                   onChange={handleMaterialChange}
                 />
 

@@ -7,7 +7,7 @@ from app.domain.services import OCRService
 
 
 class DefaultOCRService(OCRService):
-    def __init__(self, language: str = "pol") -> None:
+    def __init__(self, language: str = "pol+eng") -> None:
         self._language = language
 
     def extract_text(self, *, file_path: str) -> str:
