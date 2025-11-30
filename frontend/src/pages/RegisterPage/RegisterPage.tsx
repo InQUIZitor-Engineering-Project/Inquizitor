@@ -42,7 +42,6 @@ const RegisterPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const [termsHtml, setTermsHtml] = useState<string>("");
-
   const [errorMessage, setErrorMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -85,7 +84,8 @@ const RegisterPage: React.FC = () => {
       });
       navigate("/login");
     } catch (err: any) {
-      setErrorMessage(err.message || "Błąd rejestracji");
+      const msg = String(err?.message || "Błąd rejestracji");
+      setErrorMessage(msg);
     } finally {
       setLoading(false);
     }
