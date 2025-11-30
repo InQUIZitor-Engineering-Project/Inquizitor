@@ -463,7 +463,7 @@ export const ChoiceListEditor = styled.ul`
 
 export const ChoiceRow = styled.li`
   display: grid;
-  grid-template-columns: 36px 1fr auto;
+  grid-template-columns: 36px 1fr auto auto;
   align-items: center;
   gap: 10px;
   background: ${({ theme }) => theme.colors.neutral.silver};
@@ -472,6 +472,29 @@ export const ChoiceRow = styled.li`
   padding: 8px 10px;
 `;
 
+export const TrashBtn = styled.button`
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid rgba(244, 67, 54, 0.35);
+  background: rgba(244, 67, 54, 0.06);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .15s ease;
+
+  &:hover {
+    background: rgba(244, 67, 54, 0.12);
+    transform: translateY(-1px);
+  }
+
+  img {
+    width: 16px;
+    height: 16px;
+    display: block;
+  }
+`;
 export const LetterBubble = styled.span`
   width: 28px;
   height: 28px;
