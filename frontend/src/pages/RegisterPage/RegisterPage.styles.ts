@@ -176,4 +176,80 @@ export const ErrorMessage = styled.p`
   margin-bottom: 8px;
 `;
 
+export const ModalOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+`;
+
+export const ModalContent = styled.div`
+  background: white;
+  padding: 30px;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  position: relative;
+
+  h3 {
+    margin-top: 0;
+    color: #333;
+  }
+  
+  h4 {
+    margin-bottom: 5px;
+    color: #444;
+  }
+
+  p, li {
+    font-size: 14px;
+    line-height: 1.5;
+    color: #555;
+  }
+
+  ul {
+    padding-left: 20px;
+  }
+`;
+
+export const CloseButton = styled.button`
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #888;
+  
+  &:hover {
+    color: #000;
+  }
+`;
+
+export const LinkButton = styled.button`
+  background: none;
+  border: none;
+  color: #007bff; /* Twój kolor linku */
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+  font-size: inherit;
+  font-family: inherit;
+
+  &:hover {
+    color: #0056b3;
+  }
+`;
+
+
 
