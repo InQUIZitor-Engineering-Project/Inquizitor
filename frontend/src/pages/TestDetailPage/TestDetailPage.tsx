@@ -65,6 +65,8 @@ import {
   ErrorNote,
   EditorHint,
   Divider,  
+  AiWarningBox,
+  MetaRow
 } from "./TestDetailPage.styles";
 import useDocumentTitle from "../../components/GeneralComponents/Hooks/useDocumentTitle";
 
@@ -482,18 +484,27 @@ const TestDetailPage: React.FC = () => {
             </>
           )}
         </TitleRow>
+        
+        <MetaRow>
+          <Meta>
+            {data.questions.length} pytań |{" "}
+            {data.questions.filter((q) => q.difficulty === 1).length} łatwe,{" "}
+            {data.questions.filter((q) => q.difficulty === 2).length} średnie,{" "}
+            {data.questions.filter((q) => q.difficulty === 3).length} trudne |{" "}
+            {closedCount > 0 && openCount > 0
+              ? `Mieszane (${closedCount} zamkniętych, ${openCount} otwartych)`
+              : closedCount === data.questions.length
+              ? "Zamknięte"
+              : "Otwarte"}
+          </Meta>
 
-        <Meta>
-          {data.questions.length} pytań |{" "}
-          {data.questions.filter((q) => q.difficulty === 1).length} łatwe,{" "}
-          {data.questions.filter((q) => q.difficulty === 2).length} średnie,{" "}
-          {data.questions.filter((q) => q.difficulty === 3).length} trudne |{" "}
-          {closedCount > 0 && openCount > 0
-            ? `Mieszane (${closedCount} zamkniętych, ${openCount} otwartych)`
-            : closedCount === data.questions.length
-            ? "Zamknięte"
-            : "Otwarte"}
-        </Meta>
+          <AiWarningBox>
+            <span>
+              Test został wygenerowany przez AI i może zawierać błędy.
+              Zweryfikuj go przed pobraniem.
+            </span>
+          </AiWarningBox>
+        </MetaRow>
 
         <QuestionList>
           {data.questions.map((q, idx) => {

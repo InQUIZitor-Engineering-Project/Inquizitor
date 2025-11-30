@@ -234,7 +234,16 @@ export const Header = styled.h1`
   margin-bottom: 8px;
 `;
 
-export const Meta = styled.p`
+export const MetaRow = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 24px;
+`;
+
+export const Meta = styled.div`
   ${({ theme }) => `
     font-family: ${theme.typography.body.regular.body3.fontFamily};
     font-size: ${theme.typography.body.regular.body3.fontSize};
@@ -242,7 +251,21 @@ export const Meta = styled.p`
     line-height: ${theme.typography.body.regular.body3.lineHeight};
     color: ${theme.colors.neutral.grey};
   `}
-  margin-bottom: 24px;
+`;
+
+export const AiWarningBox = styled.div`
+  ${({ theme }) => `
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    color: ${theme.colors.brand.secondary};
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.2;
+    white-space: nowrap;
+  `}
 `;
 
 export const QuestionList = styled.div`
