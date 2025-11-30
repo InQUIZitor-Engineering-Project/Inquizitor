@@ -5,6 +5,7 @@ import Sidebar from "../../components/Sidebar/Sidebar";
 import { useLoader } from "../../components/Loader/GlobalLoader";
 import ConfirmationModal from "../../components/ConfirmationModal/ConfirmationModal";
 import editIcon from "../../assets/icons/edit-icon.png";
+import trashIcon from "../../assets/icons/Trash.png";
 
 import {
   getMyTests,
@@ -64,7 +65,8 @@ import {
   EditorActions,
   ErrorNote,
   EditorHint,
-  Divider,  
+  Divider,
+  TrashBtn,  
 } from "./TestDetailPage.styles";
 import useDocumentTitle from "../../components/GeneralComponents/Hooks/useDocumentTitle";
 
@@ -268,6 +270,26 @@ const TestDetailPage: React.FC = () => {
     } finally {
       setSavingEdit(false);
     }
+  };
+
+  const removeChoiceRow = (index: number) => {
+    setDraft((d) => {
+      const current = ensureChoices(d.choices);
+      const removedVal = current[index] ?? "";
+
+      const nextChoices = [...current.slice(0, index), ...current.slice(index + 1)];
+
+      if (nextChoices.length === 0) nextChoices.push("");
+
+      let nextCorrect = (d.correct_choices || []).filter((c) => c !== removedVal);
+
+      return {
+        ...d,
+        choices: nextChoices,
+        correct_choices: nextCorrect,
+      };
+    });
+    setEditorError(null);
   };
 
   const handleAdd = async () => {
@@ -563,6 +585,14 @@ const TestDetailPage: React.FC = () => {
                               >
                                 {isCorrect ? "Poprawna" : "Ustaw jako poprawną"}
                               </CorrectToggle>
+                              <TrashBtn
+                                type="button"
+                                onClick={() => removeChoiceRow(ci)}
+                                title="Usuń odpowiedź"
+                                aria-label="Usuń odpowiedź"
+                              >
+                                <img src={trashIcon} alt="" />
+                              </TrashBtn>
                             </ChoiceRow>
                           );
                         })}
@@ -735,6 +765,14 @@ const TestDetailPage: React.FC = () => {
                             >
                               {isCorrect ? "Poprawna" : "Ustaw jako poprawną"}
                             </CorrectToggle>
+                              <TrashBtn
+                                type="button"
+                                onClick={() => removeChoiceRow(ci)}
+                                title="Usuń odpowiedź"
+                                aria-label="Usuń odpowiedź"
+                              >
+                                <img src={trashIcon} alt="" />
+                              </TrashBtn>
                           </ChoiceRow>
                         );
                       })}
