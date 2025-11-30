@@ -44,6 +44,8 @@ class GenerateParams(BaseModel):
     medium: int = 0
     hard: int = 0
 
+    additional_instructions: Optional[str] = None
+
     @model_validator(mode="after")
     def check_counts(self):
         if self.num_open < 0:

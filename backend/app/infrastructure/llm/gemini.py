@@ -19,6 +19,8 @@ def _build_prompt(text: str, params: GenerateParams) -> str:
     c_mc = params.closed.multi_choice
     c_total = c_tf + c_sc + c_mc
 
+    additional = (params.additional_instructions or "").strip()
+
     parts = [
         "Pracujesz jako ekspert dydaktyczny języka polskiego.",
         "Twoim zadaniem jest przygotowanie pytań testowych na podstawie przekazanego materiału.",
@@ -50,10 +52,11 @@ def _build_prompt(text: str, params: GenerateParams) -> str:
         f"- Dokładnie {c_total} zamkniętych ({c_tf} TF, {c_sc} single, {c_mc} multi) i {params.num_open} otwartych.",
         "- Zwróć WYŁĄCZNIE poprawny JSON (bez komentarzy/tekstu dookoła).",
         "- Jeśli czegoś nie możesz wygenerować, i tak zwróć poprawny JSON (pusta lista 'questions').",
-        "",
-        f"Tekst źródłowy:\n{text}\n",
     ]
+    if additional:
+        parts.append(f"- Weź pod uwagę następujące preferencje odnośnie generowanego testu: {additional}")
 
+    parts.append(f"Tekst źródłowy:\n{text}\n")
     return "\n".join(parts)
 
 

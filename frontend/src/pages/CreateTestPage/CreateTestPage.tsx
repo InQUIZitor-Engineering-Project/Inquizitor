@@ -24,7 +24,6 @@ import {
   HiddenFileInput,
   SectionCard,
   SectionHeader,
-  LabelRow,
   Hint,
   ErrorText,
   HelpRow,
@@ -39,6 +38,7 @@ import {
   DistributionSegment,
   PALETTE,
   Pill,
+  LabelRow,
 } from "./CreateTestPage.styles";
 
 type LayoutCtx = { refreshSidebarTests: () => Promise<void> };
@@ -52,6 +52,7 @@ const CreateTestPage: React.FC = () => {
 
   const [sourceType, setSourceType] = useState<"text" | "material">("text");
   const [sourceContent, setSourceContent] = useState("");
+  const [instructions, setInstructions] = useState("");
   const [tfCount, setTfCount] = useState(0);
   const [singleCount, setSingleCount] = useState(0);
   const [multiCount, setMultiCount] = useState(0);
@@ -59,6 +60,8 @@ const CreateTestPage: React.FC = () => {
   const [easyCount, setEasyCount] = useState(0);
   const [mediumCount, setMediumCount] = useState(0);
   const [hardCount, setHardCount] = useState(0);
+
+  const [isPersonalizationOpen, setIsPersonalizationOpen] = useState(false);
 
   const [genError, setGenError] = useState<string | null>(null);
   const [genLoading, setGenLoading] = useState(false);
@@ -118,41 +121,41 @@ const CreateTestPage: React.FC = () => {
 
     const textPayload = sourceContent.trim();
 
-  if (!textPayload) {
-    setGenError("Uzupełnij treść źródłową (wklej tekst lub wgraj materiał).");
-    setGenLoading(false);
-    return;
-  }
+    if (!textPayload) {
+      setGenError("Uzupełnij treść źródłową (wklej tekst lub wgraj materiał).");
+      setGenLoading(false);
+      return;
+    }
 
-  if (!hasStructure) {
-    setGenError("Ustaw najpierw strukturę pytań (ile TF / jednokrotnego / wielokrotnego / otwartych).");
-    setGenLoading(false);
-    return;
-  }
+    if (!hasStructure) {
+      setGenError("Ustaw najpierw strukturę pytań (ile TF / jednokrotnego / wielokrotnego / otwartych).");
+      setGenLoading(false);
+      return;
+    }
 
-  if (totalAll <= 0) {
-    setGenError("Podaj łączną liczbę pytań (co najmniej jedno).");
-    setGenLoading(false);
-    return;
-  }
+    if (totalAll <= 0) {
+      setGenError("Podaj łączną liczbę pytań (co najmniej jedno).");
+      setGenLoading(false);
+      return;
+    }
 
-  if (totalDifficulty === 0) {
-    setGenError("Rozdziel pytania na poziomy trudności (łatwe/średnie/trudne).");
-    setGenLoading(false);
-    return;
-  }
+    if (totalDifficulty === 0) {
+      setGenError("Rozdziel pytania na poziomy trudności (łatwe/średnie/trudne).");
+      setGenLoading(false);
+      return;
+    }
 
-  if (difficultyMismatch) {
-    setGenError(`Rozkład trudności (suma: ${totalDifficulty}) musi równać się liczbie pytań (razem: ${totalAll}).`);
-    setGenLoading(false);
-    return;
-  }
+    if (difficultyMismatch) {
+      setGenError(`Rozkład trudności (suma: ${totalDifficulty}) musi równać się liczbie pytań (razem: ${totalAll}).`);
+      setGenLoading(false);
+      return;
+    }
 
-  if (sourceType === "material" && !materialData?.file_id) {
-    setGenError("Najpierw wgraj materiał dydaktyczny (plik).");
-    setGenLoading(false);
-    return;
-  }
+    if (sourceType === "material" && !materialData?.file_id) {
+      setGenError("Najpierw wgraj materiał dydaktyczny (plik).");
+      setGenLoading(false);
+      return;
+    }
 
     try {
       const resp = await withLoader(() =>
@@ -167,6 +170,7 @@ const CreateTestPage: React.FC = () => {
           medium: mediumCount,
           hard: hardCount,
           text: textPayload || undefined,
+          additional_instructions: instructions.trim() || undefined,
           file_id: sourceType === "material" ? materialData?.file_id : undefined,
         })
       ) as TestGenerateResponse;
@@ -261,15 +265,70 @@ const CreateTestPage: React.FC = () => {
               </UploadSection>
             )}
 
+          {sourceType === "text" && (
             <LabelRow>
               <label>Treść źródłowa</label>
               <span>{sourceContent.trim().length} znaków</span>
             </LabelRow>
+          )}
+          {sourceType === "text" && (
             <TextArea
               value={sourceContent}
               onChange={(e) => setSourceContent(e.target.value)}
               placeholder="Wklej treść materiału, notatki z zajęć, fragment podręcznika lub tekst, na podstawie którego chcesz wygenerować test..."
             />
+          )}
+          </SectionCard>
+
+          <SectionCard>
+            <SectionHeader 
+              onClick={() => setIsPersonalizationOpen(!isPersonalizationOpen)}
+              style={{ cursor: "pointer", userSelect: "none" }}
+            >
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <h3>Personalizacja testu (opcjonalne)</h3>
+                  {/* Optional: Show a small dot if instructions are present but collapsed */}
+                  {!isPersonalizationOpen && instructions.trim().length > 0 && (
+                    <span style={{ fontSize: '12px', color: PALETTE.type.closedFg, background: PALETTE.type.closedBg, padding: '2px 8px', borderRadius: '12px'}}>
+                      Aktywna
+                    </span>
+                  )}
+                </div>
+                <Hint>Opcjonalne wytyczne dla AI (np. styl pytań, temat przewodni).</Hint>
+              </div>
+
+              {/* Chevron Icon with rotation animation */}
+              <div style={{ 
+                transform: isPersonalizationOpen ? "rotate(180deg)" : "rotate(0deg)", 
+                transition: "transform 0.2s ease",
+                display: "flex",
+                alignItems: "center",
+                color: "#666" 
+              }}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </div>
+            </SectionHeader>
+
+            {isPersonalizationOpen && (
+              <>
+                <Divider style={{ margin: "0 0 20px 0" }} />
+                
+                <LabelRow>
+                  <label>Dodatkowe instrukcje</label>
+                  <span>{instructions.trim().length} znaków</span>
+                </LabelRow>
+                
+                <TextArea
+                  value={instructions}
+                  onChange={(e) => setInstructions(e.target.value)}
+                  placeholder="Np. 'Skup się na datach i nazwiskach', 'Pytania mają być podchwytliwe'..."
+                  style={{ minHeight: '60px' }}
+                />
+              </>
+            )}
           </SectionCard>
 
           {/* Typ pytań */}
