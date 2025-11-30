@@ -20,6 +20,54 @@ export interface Token {
 
 const API_BASE = import.meta.env.VITE_API_URL || "";
 
+function toPolishEmailError(msg: string): string {
+  const m = msg.toLowerCase();
+
+  if (m.includes("special-use or reserved name")) {
+    return "Domena adresu e-mail jest zarezerwowana do celów testowych i nie może być użyta.";
+  }
+  if (m.includes("value is not a valid email address")) {
+    return "Wpisz poprawny adres e-mail.";
+  }
+  if (m.includes("must have exactly one @")) {
+    return "Adres e-mail musi zawierać dokładnie jeden znak „@”.";
+  }
+  if (m.includes("there must be something before the @")) {
+    return "Przed znakiem „@” musi znajdować się nazwa użytkownika.";
+  }
+  if (m.includes("the part after the @-sign is not valid") || m.includes("domain name is not valid")) {
+    return "Część domenowa (po „@”) jest nieprawidłowa.";
+  }
+  if (m.includes("domain name does not exist") || m.includes("no mx record")) {
+    return "Domena adresu e-mail nie istnieje lub nie ma poprawnej konfiguracji.";
+  }
+  if (m.includes("already registered")) {
+    return "Ten adres e-mail jest już zarejestrowany.";
+  }
+  return "Nieprawidłowy adres e-mail.";
+}
+
+function translateError(detail: any): string {
+  if (Array.isArray(detail) && detail.length) {
+    const emailItem = detail.find((e: any) =>
+      Array.isArray(e?.loc) && e.loc.includes("email")
+    );
+    if (emailItem?.msg) return toPolishEmailError(String(emailItem.msg));
+
+    const firstMsg = String(detail[0]?.msg ?? "");
+    return toPolishEmailError(firstMsg) || "Błąd formularza.";
+  }
+
+  if (typeof detail === "string") {
+    if (detail.toLowerCase().includes("email already registered")) {
+      return "Ten adres e-mail jest już zarejestrowany.";
+    }
+    return toPolishEmailError(detail) || "Coś poszło nie tak.";
+  }
+
+  return "Coś poszło nie tak.";
+}
+
 export async function registerUser(data: UserCreate): Promise<UserRead> {
   const res = await fetch(`${API_BASE}/auth/register`, {
     method: "POST",
@@ -27,8 +75,14 @@ export async function registerUser(data: UserCreate): Promise<UserRead> {
     body: JSON.stringify(data),
   });
   if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.detail || "Coś poszło nie tak");
+    let message = "Coś poszło nie tak";
+    try {
+      const err = await res.json();
+      message = translateError(err.detail);
+    }
+    catch {
+    }
+    throw new Error(message);
   }
   return res.json();
 }
