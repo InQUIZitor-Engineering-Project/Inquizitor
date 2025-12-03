@@ -520,12 +520,6 @@ const TestDetailPage: React.FC = () => {
               : "Otwarte"}
           </Meta>
 
-          <AiWarningBox>
-            <span>
-              Test został wygenerowany przez AI i może zawierać błędy.
-              Zweryfikuj go przed pobraniem.
-            </span>
-          </AiWarningBox>
         </MetaRow>
 
         <QuestionList>
@@ -837,6 +831,12 @@ const TestDetailPage: React.FC = () => {
           >
             Pobierz XML
           </DownloadButton>
+          <AiWarningBox>
+            <span>
+              Test został wygenerowany przez AI i może zawierać błędy.
+              Zweryfikuj go przed pobraniem.
+            </span>
+          </AiWarningBox>
         </DownloadBar>
 
         <Footer />
