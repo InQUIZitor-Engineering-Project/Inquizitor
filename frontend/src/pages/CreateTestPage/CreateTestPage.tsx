@@ -518,7 +518,7 @@ const CreateTestPage: React.FC = () => {
             <HelpRow>Ustaw najpierw <strong>Strukturę pytań</strong>, aby odblokować rozdział trudności.</HelpRow>
           )}
           {difficultyMismatch && (
-            <HelpRow style={{ color: "#725252ff" }}>
+            <HelpRow style={{ color: "#e53835" }}>
               Rozkład trudności (suma: {totalDifficulty}) musi równać się liczbie pytań (razem: {totalAll}).
             </HelpRow>
           )}
