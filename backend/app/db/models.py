@@ -26,7 +26,10 @@ class Test(SQLModel, table=True):
     owner: Optional[User] = Relationship(back_populates="tests")
     questions: List["Question"] = Relationship(
         back_populates="test",
-        sa_relationship_kwargs={"cascade": "all, delete-orphan"}
+        sa_relationship_kwargs={
+            "cascade": "all, delete-orphan",
+            "order_by": "Question.id"
+        },
         )
 
 class Question(SQLModel, table=True):
