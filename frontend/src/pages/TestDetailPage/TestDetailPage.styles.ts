@@ -326,9 +326,9 @@ export const ChoiceItem = styled.div<{ $correct?: boolean }>`
   `}
 
   ${({ theme }) => `
-    font-family: ${theme.typography.body.regular.body1.fontFamily};
-    font-size: ${theme.typography.body.regular.body1.fontSize};
-    line-height: ${theme.typography.body.regular.body1.lineHeight};
+    font-family: ${theme.typography.body.regular.body2.fontFamily};
+    font-size: ${theme.typography.body.regular.body2.fontSize};
+    line-height: ${theme.typography.body.regular.body2.lineHeight};
     color: ${theme.colors.neutral.dGrey};
   `}
 `;

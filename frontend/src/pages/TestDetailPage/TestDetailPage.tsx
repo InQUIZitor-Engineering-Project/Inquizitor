@@ -1,14 +1,12 @@
 import React, { useEffect, useState } from "react";
-import styled from "styled-components";
 import { useParams, useNavigate, useOutletContext } from "react-router-dom";
-import Sidebar from "../../components/Sidebar/Sidebar";
 import { useLoader } from "../../components/Loader/GlobalLoader";
 import ConfirmationModal from "../../components/ConfirmationModal/ConfirmationModal";
 import editIcon from "../../assets/icons/edit-icon.png";
 import trashIcon from "../../assets/icons/Trash.png";
+import { MathText } from "../../components/MathText/MathText";
 
 import {
-  getMyTests,
   getTestDetail,
   addQuestion,
   updateQuestion,
@@ -16,7 +14,7 @@ import {
   deleteTest,
   updateTestTitle,
 } from "../../services/test";
-import type { TestDetail, TestOut, QuestionOut } from "../../services/test";
+import type { TestDetail, QuestionOut } from "../../services/test";
 import Footer from "../../components/Footer/Footer";
 
 import {
@@ -33,13 +31,9 @@ import {
   QuestionMeta,
   DifficultyBadge,
   TypeBadge,
-  MetaControls,
-  MetaSelect,
-  MetaToggle,
   QuestionActions,
   PrimaryButton,
   DangerButton,
-  GhostButton,
   EditButton,
   AddQuestionBar,
   AddQuestionButton,
@@ -333,7 +327,7 @@ const TestDetailPage: React.FC = () => {
       }
 
       await addQuestion(data.test_id, payload);
-      await refreshTest(); // nowe pytanie na końcu
+      await refreshTest(); // ensure the new question appears at the end
       cancelEdit();
     } catch (e: any) {
       setEditorError(e.message || "Nie udało się dodać pytania.");
@@ -640,7 +634,8 @@ const TestDetailPage: React.FC = () => {
               <QuestionItem key={q.id}>
                 <QuestionHeaderRow>
                   <QuestionTitle style={{ marginBottom: 6 }}>
-                    {idx + 1}. {q.text}
+                    <span style={{ marginRight: 6 }}>{idx + 1}.</span>
+                    <MathText text={q.text} />
                   </QuestionTitle>
                   <QuestionMeta>
                     <DifficultyBadge $level={q.difficulty}>
@@ -660,7 +655,10 @@ const TestDetailPage: React.FC = () => {
                       ).includes(choice);
                       return (
                         <ChoiceItem key={ci} $correct={isCorrect}>
-                          {String.fromCharCode(65 + ci)}. {choice}
+                          <span style={{ marginRight: 6 }}>
+                            {String.fromCharCode(65 + ci)}.
+                          </span>
+                          <MathText text={choice} />
                         </ChoiceItem>
                       );
                     })}

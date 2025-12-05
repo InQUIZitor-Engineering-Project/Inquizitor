@@ -10,9 +10,11 @@ def _read_txt(path: Path) -> str:
 
         data = path.read_bytes()
         encoding = chardet.detect(data)["encoding"] or "utf-8"
-        return data.decode(encoding, errors="ignore")
+        # Always return valid UTF-8 without surrogate characters – unsupported
+        # bytes are replaced when necessary.
+        return data.decode(encoding, errors="replace")
     except Exception:
-        return path.read_text(errors="ignore")
+        return path.read_text(errors="replace")
 
 
 def _read_pdf(path: Path) -> str:

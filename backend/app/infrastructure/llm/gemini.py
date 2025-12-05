@@ -50,7 +50,12 @@ def _build_prompt(text: str, params: GenerateParams) -> str:
         "Wymagania:",
         f"- Łącznie pytań: {c_total + params.num_open}.",
         f"- Dokładnie {c_total} zamkniętych ({c_tf} TF, {c_sc} single, {c_mc} multi) i {params.num_open} otwartych.",
+        "- Jeśli w treści pytania lub odpowiedzi pojawia się zapis matematyczny (wzór, równanie, wyrażenie), zapisuj go w składni LaTeX.",
+        '- Dla matematyki w tekście używaj WYŁĄCZNIE formatu "$...$", np.: `"text": "Ile wynosi $x^2 + y^2$?"`.',
+        '- Dla osobnych wzorów możesz użyć `$$...$$`, np.: `"text": "Podaj wynik: $$\\\\int_0^1 x^2\\\\,dx$$"`.',
+        "- Nie używaj innych notacji (takich jak `\\( ... \\)`, `\\[ ... \\]`, HTML, Markdown).",
         "- Zwróć WYŁĄCZNIE poprawny JSON (bez komentarzy/tekstu dookoła).",
+        "- Upewnij się, że wszystkie backslash'e w LaTeX są poprawnie zapisane w JSON (np. \"$\\\\frac{1}{2}$\").",
         "- Jeśli czegoś nie możesz wygenerować, i tak zwróć poprawny JSON (pusta lista 'questions').",
     ]
     if additional:

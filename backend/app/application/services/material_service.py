@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 from datetime import datetime
 from pathlib import Path
-from typing import Callable, Iterable, Optional, Sequence, List
+from typing import Callable, Optional, Sequence, List
 
 from app.api.schemas.materials import MaterialOut, MaterialUpdate
 from app.application import dto
@@ -63,12 +63,8 @@ class MaterialService:
         with self._uow_factory() as uow:
             file_record = uow.files.add(file_domain)
 
-            extracted_text = self._text_extractor(stored_path, mime_type)
-            normalized_text = (
-                extracted_text[: self._max_text_length]
-                if extracted_text
-                else None
-            )
+            raw_text = self._text_extractor(stored_path, mime_type)
+            normalized_text = self._sanitize_text(raw_text)
 
             status = (
                 ProcessingStatus.DONE
@@ -119,7 +115,7 @@ class MaterialService:
                 raise ValueError("Material not found")
 
             if payload.extracted_text is not None:
-                material.extracted_text = payload.extracted_text[: self._max_text_length]
+                material.extracted_text = self._sanitize_text(payload.extracted_text)
                 material.status = ProcessingStatus.DONE
                 material.processing_error = None
 
@@ -151,6 +147,20 @@ class MaterialService:
             return self._mime_detector(path)
         except Exception:
             return None
+
+    def _sanitize_text(self, text: str | None) -> str | None:
+        """
+        Ensure a string is valid Unicode and does not contain surrogate
+        characters. Invalid bytes/characters are replaced and the result
+        is truncated to `max_text_length`.
+        """
+        if not text:
+            return None
+
+        cleaned = (
+            text.encode("utf-8", errors="replace").decode("utf-8", errors="replace")
+        )
+        return cleaned[: self._max_text_length]
 
 
 __all__ = ["MaterialService"]
