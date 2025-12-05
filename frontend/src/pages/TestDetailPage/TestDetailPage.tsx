@@ -102,6 +102,15 @@ const getDifficultyLabel = (d: number) => {
   return `Poziom ${d}`;
 };
 
+const difficultyOrder: Record<number, number> = { 1: 0, 2: 1, 3: 2 };
+const sortQuestions = (qs: QuestionOut[]) =>
+  [...qs].sort((a, b) => {
+    const oa = difficultyOrder[a.difficulty] ?? 99;
+    const ob = difficultyOrder[b.difficulty] ?? 99;
+    if (oa !== ob) return oa - ob;
+    return (a.id || 0) - (b.id || 0);
+  });
+
 const ensureChoices = (choices?: string[] | null): string[] =>
   choices && choices.length > 0 ? choices : ["", "", "", ""];
 
@@ -138,6 +147,7 @@ const TestDetailPage: React.FC = () => {
     space_height_cm: 3,
     include_answer_key: false,
     generate_variants: false,
+    variant_mode: "shuffle",
     swap_order_variants: null,
     student_header: true,
     use_scratchpad: false,
@@ -194,7 +204,7 @@ const TestDetailPage: React.FC = () => {
     }
     getTestDetail(id)
           .then((detail) => {
-            setData(detail);
+            setData({ ...detail, questions: sortQuestions(detail.questions) });
             setTitleDraft(detail.title || "");
             setError(null);
             // Resetowanie stanów edycji przy zmianie testu
@@ -209,7 +219,7 @@ const TestDetailPage: React.FC = () => {
   const refreshTest = async () => {
     if (!testIdNum) return;
     const detail = await getTestDetail(testIdNum);
-    setData(detail);
+    setData({ ...detail, questions: sortQuestions(detail.questions) });
   };
 
   const startEdit = (q: QuestionOut) => {
@@ -290,11 +300,12 @@ const TestDetailPage: React.FC = () => {
       // lokalna aktualizacja bez zmiany kolejności
       setData((prev) => {
         if (!prev) return prev;
+        const nextQuestions = prev.questions.map((q) =>
+          q.id === editingId ? { ...q, ...payload } : q
+        );
         return {
           ...prev,
-          questions: prev.questions.map((q) =>
-            q.id === editingId ? { ...q, ...payload } : q
-          ),
+          questions: sortQuestions(nextQuestions),
         };
       });
 
@@ -965,7 +976,7 @@ const TestDetailPage: React.FC = () => {
                         use_scratchpad: checked,
                       }))
                     }
-                    label="Dodaj stronę w kratkę (brudnopis)."
+                    label="Dodaj brudnopis na końcu testu."
                   />
                 </ConfigField>
 
@@ -982,6 +993,26 @@ const TestDetailPage: React.FC = () => {
                     label="Wygeneruj dwie wersje (Grupa A i B)."
                   />
                 </ConfigField>
+
+                {pdfConfig.generate_variants && (
+                  <ConfigField>
+                    <label>Tryb drugiej grupy</label>
+                    <PdfConfigSelect
+                      value={pdfConfig.variant_mode || "shuffle"}
+                      onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                        setPdfConfig((cfg) => ({
+                          ...cfg,
+                          variant_mode: e.target.value as PdfExportConfig["variant_mode"],
+                        }))
+                      }
+                    >
+                      <option value="shuffle">Przetasuj w obrębie trudności</option>
+                      <option value="llm_variant">
+                        Nowe pytania o tej samej trudności
+                      </option>
+                    </PdfConfigSelect>
+                  </ConfigField>
+                )}
 
                 <ConfigField>
                   <Checkbox
@@ -1009,6 +1040,7 @@ const TestDetailPage: React.FC = () => {
                       space_height_cm: 3,
                       include_answer_key: false,
                       generate_variants: false,
+                      variant_mode: "shuffle",
                       swap_order_variants: null,
                       student_header: true,
                       use_scratchpad: false,

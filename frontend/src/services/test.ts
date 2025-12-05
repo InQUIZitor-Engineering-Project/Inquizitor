@@ -33,6 +33,7 @@ export interface PdfExportConfig {
   space_height_cm: number;
   include_answer_key: boolean;
   generate_variants: boolean;
+  variant_mode?: "shuffle" | "llm_variant";
   swap_order_variants?: boolean | null;
   student_header: boolean;
   use_scratchpad: boolean;

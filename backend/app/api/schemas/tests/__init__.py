@@ -179,6 +179,7 @@ class PdfExportConfig(BaseModel):
 
     include_answer_key: bool = False
     generate_variants: bool = False
+    variant_mode: Literal["shuffle", "llm_variant"] = "shuffle"
     swap_order_variants: Optional[bool] = None
 
     student_header: bool = True

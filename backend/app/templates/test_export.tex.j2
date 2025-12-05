@@ -18,7 +18,7 @@
     BoldItalicFont = *-BoldItalic
 ]{Roboto}
 
-% 2. Mathastext: Spójna matematyka z fontem tekstu
+% 2. Mathastext: Spójna matematyka
 \usepackage[italic]{mathastext}
 
 % --- Kolory ---
@@ -61,7 +61,6 @@
 \renewcommand{\headrulewidth}{0pt}
 
 % --- NAGŁÓWEK ---
-% Tabela centruje elementy w pionie (m-columns)
 \fancyhead[C]{%
     \begin{tabular}{ @{} m{0.3\textwidth} @{} m{0.69\textwidth} @{} }
         [% if logo_path %]
@@ -154,16 +153,16 @@
       \item 
       \begin{minipage}[t]{\linewidth}
         
-        % --- OZNACZENIE TYPU PYTANIA (NAD RAMKĄ) ---
-        [% if cfg.mark_multi_choice and q.is_multi %]
+        % --- OZNACZENIE TYPU PYTANIA ---
+        [% if q.type == 'multi' %]
              \hfill {\scriptsize\sffamily\textcolor{brand}{\textbf{[WIELOKROTNY WYBÓR]}}} \par
              \nointerlineskip
-        [% elif q.is_closed and q.choices and (q.correct_choices|length == 1) and (q.choices|length == 2) %]
+        [% elif q.type == 'tf' %]
              \hfill {\scriptsize\sffamily\textcolor{darkgray}{[PRAWDA / FAŁSZ]}} \par
              \nointerlineskip
         [% endif %]
 
-        % Treść pytania (Prostokątna ramka)
+        % Treść pytania
         \begin{questionbox}
           {{ q.text|latex_math }}
         \end{questionbox}
@@ -208,11 +207,24 @@
 [% endfor %]
 
 
-% --- 1. BRUDNOPIS (Teraz przed kluczem) ---
+% --- 1. INTELIGENTNY BRUDNOPIS ---
 [% if cfg.use_scratchpad %]
-\newpage
-\section*{\textcolor{brand}{Brudnopis}}
-\begin{answergrid}[height=23cm]\end{answergrid}
+  % Upewniamy się, że tryb wertykalny jest aktywny
+  \par 
+  % Logika: Obliczamy pozostałe miejsce (pagegoal - pagetotal)
+  % Jeśli pozostało więcej niż 0.5 wysokości tekstu:
+  \ifdim\dimexpr\pagegoal-\pagetotal\relax>0.5\textheight
+      % --- WSTAW TU ---
+      \vspace{1cm}
+      \section*{\textcolor{brand}{Brudnopis}}
+      % Obliczamy wysokość kratki: Pozostałe miejsce minus ~2.5cm na nagłówek i marginesy
+      \begin{answergrid}[height=\dimexpr\pagegoal-\pagetotal-2.5cm\relax]\end{answergrid}
+  \else
+      % --- NOWA STRONA ---
+      \newpage
+      \section*{\textcolor{brand}{Brudnopis}}
+      \begin{answergrid}[height=23cm]\end{answergrid}
+  \fi
 [% endif %]
 
 

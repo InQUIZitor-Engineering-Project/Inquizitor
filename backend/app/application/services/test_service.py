@@ -25,6 +25,7 @@ from app.application import dto
 from app.application.interfaces import OCRService, QuestionGenerator, UnitOfWork
 from app.domain.events import TestGenerated
 from app.domain.models import Test as TestDomain
+from app.domain.models.enums import QuestionDifficulty
 from app.db.models import Question as QuestionRow
 from app.db.models import Test as TestRow
 
@@ -34,6 +35,7 @@ from app.infrastructure.exporting import (
     render_custom_test_to_tex,
     test_to_xml_bytes,
 )
+from app.infrastructure.llm.gemini import GeminiQuestionGenerator
 
 class TestService:
     def __init__(
@@ -54,6 +56,156 @@ class TestService:
         self._compile_tex_to_pdf = pdf_compiler
         self._test_to_xml = xml_serializer
         self._render_custom_test_to_tex = custom_tex_renderer
+
+    @staticmethod
+    def _difficulty_order(value: int | QuestionDifficulty | None) -> int:
+        """Mapuje poziom trudności na stabilny klucz sortujący (łatwe → średnie → trudne)."""
+        try:
+            raw = value.value if isinstance(value, QuestionDifficulty) else int(value)  # type: ignore[arg-type]
+        except Exception:
+            raw = None
+        return {1: 0, 2: 1, 3: 2}.get(raw, 99)
+
+    @classmethod
+    def _sort_questions(cls, questions):
+        """
+        Zwraca listę pytań posortowaną rosnąco po trudności, a następnie stabilnie po id.
+        Działa zarówno dla obiektów domenowych, jak i dictów/DTO (używa getattr / get).
+        """
+        def _key(q):
+            difficulty = getattr(q, "difficulty", None)
+            qid = getattr(q, "id", None)
+            if isinstance(q, dict):
+                difficulty = q.get("difficulty", difficulty)
+                qid = q.get("id", qid)
+            return (cls._difficulty_order(difficulty), qid or 0)
+
+        return sorted(questions, key=_key)
+
+    @staticmethod
+    def _shuffle_within_difficulty(questions: List[Dict]) -> List[Dict]:
+        """
+        Tasuje pytania tylko wewnątrz bucketów trudności, utrzymując kolejność bucketów
+        (łatwe→średnie→trudne→inne).
+        """
+        buckets = {1: [], 2: [], 3: [], "other": []}
+        for q in questions:
+            d = q.get("difficulty")
+            if d in (1, 2, 3):
+                buckets[d].append(q)
+            else:
+                buckets["other"].append(q)
+
+        for key in (1, 2, 3, "other"):
+            random.shuffle(buckets[key])
+
+        return buckets[1] + buckets[2] + buckets[3] + buckets["other"]
+
+    # --- LLM wariant pytań (bliźniaczy zestaw) ---
+    def _build_variant_prompt(self, questions: List[Dict]) -> str:
+        """
+        Buduje prompt do wygenerowania wariantów pytań w jednej odpowiedzi JSON (lista).
+        """
+        template = {
+            "text": "Nowe pytanie po polsku",
+            "is_closed": True,
+            "difficulty": 1,
+            "choices": ["A", "B"],
+            "correct_choices": ["A"],
+        }
+        return (
+            "Przygotuj dla każdego pytania nowy, bardzo podobny wariant po polsku.\n"
+            "- Zachowaj poziom trudności (difficulty) i typ (is_closed).\n"
+            "- Dla pytań zamkniętych zachowaj liczbę odpowiedzi i liczbę poprawnych; poprawne mogą się zmienić.\n"
+            "- Dla pytań otwartych tylko zmień treść.\n"
+            "- Nie powtarzaj oryginalnego tekstu; zmień dane/liczby/kontekst, ale zachowaj sens i trudność.\n"
+            "- Zwróć WYŁĄCZNIE JSON: listę obiektów w tej samej kolejności co wejście.\n"
+            f"Przykład pojedynczego obiektu: {json.dumps(template, ensure_ascii=False)}\n"
+            "Wejściowe pytania (JSON lista):\n"
+            f"{json.dumps(questions, ensure_ascii=False)}"
+        )
+
+    def _generate_llm_variant(self, questions: List[Dict]) -> List[Dict]:
+        """
+        Próbuje wygenerować wariant B pytań z użyciem LLM. W razie błędu zwraca oryginał.
+        """
+        if not questions:
+            return questions
+
+        prompt = self._build_variant_prompt(questions)
+
+        try:
+            client = GeminiQuestionGenerator._client()
+            response = client.models.generate_content(
+                model="gemini-2.0-flash",
+                contents=prompt,
+            )
+            raw = (response.text or "").strip()
+            if raw.startswith("```"):
+                first_nl = raw.find("\n")
+                if first_nl != -1:
+                    raw = raw[first_nl + 1 :].strip()
+                if raw.endswith("```"):
+                    raw = raw[:-3].strip()
+            if raw.lower().startswith("json"):
+                raw = raw[4:].lstrip(":").strip()
+            parsed = json.loads(raw)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("LLM variant generation failed: %s", exc)
+            return questions
+
+        if not isinstance(parsed, list):
+            logger.warning("LLM variant returned non-list")
+            return questions
+
+        variants: List[Dict] = []
+        for orig, item in zip(questions, parsed):
+            if not isinstance(item, dict):
+                variants.append(orig)
+                continue
+
+            # Walidacja minimalna: typ i trudność muszą być zgodne
+            difficulty = item.get("difficulty", orig.get("difficulty"))
+            is_closed = item.get("is_closed", orig.get("is_closed"))
+            if difficulty != orig.get("difficulty") or bool(is_closed) != bool(
+                orig.get("is_closed")
+            ):
+                variants.append(orig)
+                continue
+
+            choices = item.get("choices")
+            correct_choices = item.get("correct_choices")
+
+            if is_closed:
+                # Zachowaj liczność odpowiedzi i poprawnych; jeśli brak, fallback do oryginału
+                if not isinstance(choices, list) or not choices:
+                    variants.append(orig)
+                    continue
+                if not isinstance(correct_choices, list) or len(correct_choices) == 0:
+                    variants.append(orig)
+                    continue
+                # Przytnij/uzupełnij do tej samej liczby co oryginał, aby zachować układ
+                target_len = len(orig.get("choices") or choices)
+                choices = choices[:target_len]
+                while len(choices) < target_len:
+                    choices.append("")
+
+            variants.append(
+                {
+                    "id": orig.get("id"),
+                    "text": str(item.get("text") or orig.get("text")),
+                    "is_closed": bool(is_closed),
+                    "difficulty": difficulty,
+                    "choices": choices if is_closed else None,
+                    "correct_choices": correct_choices if is_closed else None,
+                }
+            )
+
+        # Jeśli LLM zwrócił mniej elementów, domknij oryginałami
+        if len(variants) < len(questions):
+            variants.extend(questions[len(variants) :])
+
+        return variants
 
     def generate_test_from_input(
         self,
@@ -99,6 +251,8 @@ class TestService:
             if not questions:
                 raise ValueError("LLM zwrócił pustą listę pytań.")
 
+            questions = self._sort_questions(questions)
+
             final_title = (llm_title or "").strip() or base_title
 
             test = TestDomain(
@@ -130,6 +284,7 @@ class TestService:
             if not test or test.owner_id != owner_id:
                 raise ValueError("Test not found")
 
+            test.questions = self._sort_questions(test.questions)
             return dto.to_test_detail(test)
 
     def list_tests_for_user(self, *, owner_id: int) -> List[TestOut]:
@@ -230,11 +385,19 @@ class TestService:
         Supports single-variant and A/B variants scenarios.
         """
         questions = [self._build_question_payload(q) for q in detail.questions]
+        questions = self._sort_questions(questions)
 
         if config.generate_variants and len(questions) > 0:
-            variant_a = list(questions)
-            variant_b = list(questions)
-            random.shuffle(variant_b)
+            variant_a = self._shuffle_within_difficulty(list(questions))
+
+            if getattr(config, "variant_mode", "shuffle") == "llm_variant":
+                generated_b = self._generate_llm_variant(questions)
+                variant_b = self._shuffle_within_difficulty(
+                    self._sort_questions(generated_b)
+                )
+            else:  # default shuffle in-bucket
+                variant_b = self._shuffle_within_difficulty(list(questions))
+
             variants = [
                 {"name": "A", "questions": variant_a},
                 {"name": "B", "questions": variant_b},
