@@ -1,0 +1,242 @@
+\documentclass[11pt]{article}
+
+% --- Geometria i Typografia ---
+\usepackage{geometry}
+\geometry{a4paper, margin=2cm}
+\setlength{\parindent}{0pt}
+
+% --- Język i Fonty ---
+\usepackage{polyglossia}
+\setdefaultlanguage{polish}
+\usepackage{fontspec}
+
+% 1. Główny font: Roboto
+\setmainfont[
+    UprightFont = *-Regular,
+    BoldFont = *-Bold,
+    ItalicFont = *-Italic,
+    BoldItalicFont = *-BoldItalic
+]{Roboto}
+
+% 2. Mathastext: Spójna matematyka z fontem tekstu
+\usepackage[italic]{mathastext}
+
+% --- Kolory ---
+\usepackage{xcolor}
+\definecolor{brand}{HTML}{ {{ brand_hex | default("4CAF4F") }} }
+\definecolor{darkgray}{gray}{0.3}
+
+% --- Grafika ---
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{calc}
+
+% --- Layout i Tabele ---
+\usepackage[most]{tcolorbox}
+\tcbuselibrary{skins}
+\usepackage{array} % Potrzebne do kolumn 'm' w nagłówku
+
+% --- Kolumny Odpowiedzi (TASKS) ---
+\usepackage{enumitem}
+\usepackage{tasks}
+
+\settasks{
+    label=\alph*), 
+    label-format=\bfseries, 
+    label-offset=0.5em,
+    label-width=1.5em,
+    item-indent=2em, 
+    column-sep=1em,
+    before-skip=0.5em,
+    after-skip=0em
+}
+
+% --- Nagłówek i Stopka ---
+\usepackage{fancyhdr}
+\setlength{\headheight}{50pt}
+\setlength{\headsep}{20pt}
+
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+
+% --- NAGŁÓWEK ---
+% Tabela centruje elementy w pionie (m-columns)
+\fancyhead[C]{%
+    \begin{tabular}{ @{} m{0.3\textwidth} @{} m{0.69\textwidth} @{} }
+        [% if logo_path %]
+            \includegraphics[height=1.3cm, keepaspectratio]{ {{ logo_path }} }
+        [% endif %]
+        & 
+        \raggedleft \textcolor{brand}{\large\textbf{ {{ title|latex_math }} }}
+    \end{tabular}%
+}
+
+% STOPKA
+\fancyfoot[C]{\textcolor{gray}{\small Strona \thepage}}
+
+% --- Linki ---
+\usepackage{hyperref}
+\hypersetup{hidelinks}
+
+% --- Definicje Ramek (Styl PROSTOKĄTNY) ---
+
+% 1. Pytanie - Kąty proste
+\newtcolorbox{questionbox}{
+  enhanced,
+  colback=brand!5!white,
+  colframe=brand!50,
+  boxrule=0.5pt,
+  arc=0mm,          % Brak zaokrągleń
+  sharp corners,    % Ostre rogi
+  left=3mm, right=3mm, top=2mm, bottom=2mm,
+  before skip=2pt,
+  after skip=8pt,
+}
+
+% 2. Kratka - Kąty proste
+\newtcolorbox{answergrid}[1][]{
+  enhanced,
+  colback=white,
+  colframe=gray!30,
+  boxrule=0.5pt,
+  arc=0mm,
+  sharp corners,
+  #1,
+  underlay={
+    \begin{tcbclipinterior}
+      \draw[help lines, step=0.5cm, gray!20] (interior.south west) grid (interior.north east);
+    \end{tcbclipinterior}
+  }
+}
+
+% 3. Linie - Kąty proste
+\newtcolorbox{answerlines}[1][]{
+  enhanced,
+  colback=white,
+  colframe=gray!30,
+  boxrule=0.5pt,
+  arc=0mm,
+  sharp corners,
+  #1,
+  underlay={
+    \begin{tcbclipinterior}
+      \foreach \y in {0.9, 1.8, ..., 25} { 
+         \draw[gray!40] ([yshift=-\y cm]interior.north west) -- ([yshift=-\y cm]interior.north east);
+      }
+      \draw[brand!50, thick] ([xshift=1.5cm]interior.north west) -- ([xshift=1.5cm]interior.south west);
+    \end{tcbclipinterior}
+  }
+}
+
+\begin{document}
+
+% --- Sekcja Studenta ---
+[% if config.student_header %]
+\noindent
+\begin{tcolorbox}[colback=white, colframe=gray!50, sharp corners, boxrule=0.5pt]
+    \textbf{Imię i nazwisko:} \dotfill \quad \textbf{Klasa/Grupa:} \dotfill
+\end{tcolorbox}
+\vspace{0.2cm}
+[% endif %]
+
+[% set cfg = config %]
+
+% --- Główna pętla wariantów ---
+[% for variant in variants %]
+    
+    [% if variants|length > 1 %]
+      \section*{\textcolor{brand}{Grupa {{ variant.name }}}}
+    [% endif %]
+
+    \begin{enumerate}
+    [% for q in variant.questions %]
+      \item 
+      \begin{minipage}[t]{\linewidth}
+        
+        % --- OZNACZENIE TYPU PYTANIA (NAD RAMKĄ) ---
+        [% if cfg.mark_multi_choice and q.is_multi %]
+             \hfill {\scriptsize\sffamily\textcolor{brand}{\textbf{[WIELOKROTNY WYBÓR]}}} \par
+             \nointerlineskip
+        [% elif q.is_closed and q.choices and (q.correct_choices|length == 1) and (q.choices|length == 2) %]
+             \hfill {\scriptsize\sffamily\textcolor{darkgray}{[PRAWDA / FAŁSZ]}} \par
+             \nointerlineskip
+        [% endif %]
+
+        % Treść pytania (Prostokątna ramka)
+        \begin{questionbox}
+          {{ q.text|latex_math }}
+        \end{questionbox}
+
+        % --- Odpowiedzi Zamknięte ---
+        [% if q.is_closed and q.choices %]
+            
+            [% set total_len = q.choices | join('') | length %]
+            
+            [% if total_len < 60 %]
+                [% set cols = 4 %]
+            [% elif total_len < 140 %]
+                [% set cols = 2 %]
+            [% else %]
+                [% set cols = 1 %]
+            [% endif %]
+
+            \begin{tasks}({{ cols }})
+            [% for c in q.choices %]
+              \task {{ c|latex_math }}
+            [% endfor %]
+            \end{tasks}
+        
+        % --- Odpowiedzi Otwarte ---
+        [% else %]
+            [% if cfg.answer_space_style == "grid" %]
+              \begin{answergrid}[height={{ cfg.space_height_cm|default(3) }}cm]\end{answergrid}
+            [% elif cfg.answer_space_style == "lines" %]
+              \begin{answerlines}[height={{ cfg.space_height_cm|default(3) }}cm]\end{answerlines}
+            [% else %]
+              \vspace*{ {{ cfg.space_height_cm|default(3) }}cm }
+            [% endif %]
+        [% endif %]
+
+        \vspace{0.5cm}
+      \end{minipage}
+
+    [% endfor %]
+    \end{enumerate}
+
+    [% if not loop.last %]\newpage[% endif %]
+[% endfor %]
+
+
+% --- 1. BRUDNOPIS (Teraz przed kluczem) ---
+[% if cfg.use_scratchpad %]
+\newpage
+\section*{\textcolor{brand}{Brudnopis}}
+\begin{answergrid}[height=23cm]\end{answergrid}
+[% endif %]
+
+
+% --- 2. KLUCZ ODPOWIEDZI (Zawsze na końcu) ---
+[% if cfg.include_answer_key %]
+\newpage
+\section*{\textcolor{brand}{Klucz odpowiedzi}}
+
+[% for variant in variants %]
+  [% if variants|length > 1 %]
+    \subsection*{Grupa {{ variant.name }}}
+  [% endif %]
+  
+  \begin{enumerate}
+  [% for q in variant.questions %]
+    \item 
+    [% if q.is_closed and q.correct_choices %]
+      \textbf{ {{ q.correct_choices|join(', ')|latex_math }} }
+    [% else %]
+      \textit{otwarte}
+    [% endif %]
+  [% endfor %]
+  \end{enumerate}
+[% endfor %]
+[% endif %]
+
+\end{document}
