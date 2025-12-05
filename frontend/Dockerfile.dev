@@ -6,10 +6,17 @@ WORKDIR /usr/src/app
 COPY package*.json ./
 RUN npm ci
 
+# Copy entrypoint script
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
 # Copy rest of the app (bind-mounted in dev, but copy for completeness)
 COPY . .
 
 EXPOSE 5173
+
+# Use entrypoint to check and install dependencies if needed
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 
 # Default command for dev (compose overrides command as needed)
 CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173"]
