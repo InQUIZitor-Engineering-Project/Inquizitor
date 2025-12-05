@@ -23,6 +23,17 @@ export default tseslint.config(
         'warn',
         { allowConstantExport: true },
       ],
+      'no-restricted-syntax': [
+        'warn',
+        {
+          selector: 'JSXAttribute[name.name="style"]',
+          message: 'Avoid inline styles; use tokens/primitives instead.',
+        },
+        {
+          selector: 'Literal[value=/^#(?:[0-9a-fA-F]{3}){1,2}$/]',
+          message: 'Avoid raw hex colors; use theme tokens.',
+        },
+      ],
     },
   },
 )

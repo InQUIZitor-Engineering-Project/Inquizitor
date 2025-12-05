@@ -2,7 +2,7 @@ import styled from "styled-components";
 
 export const PageWrapper = styled.div`
   width: 100%;
-  min-height: calc(100vh - 80px);
+  min-height: calc(100vh - 40px);
   background-color: ${({ theme }) => theme.colors.neutral.silver};
   display: flex;
   justify-content: center;

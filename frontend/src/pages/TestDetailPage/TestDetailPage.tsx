@@ -3,8 +3,21 @@ import { useParams, useNavigate, useOutletContext } from "react-router-dom";
 import { useLoader } from "../../components/Loader/GlobalLoader";
 import ConfirmationModal from "../../components/ConfirmationModal/ConfirmationModal";
 import editIcon from "../../assets/icons/edit-icon.png";
-import trashIcon from "../../assets/icons/Trash.png";
 import { MathText } from "../../components/MathText/MathText";
+import { useTheme } from "styled-components";
+import {
+  Box,
+  Flex,
+  Stack,
+  Button,
+  Textarea,
+  Select,
+  Input,
+  Checkbox,
+  Badge,
+  Divider,
+} from "../../design-system/primitives";
+import { FormField, CollapsibleSection, ChoiceEditor, AlertBar } from "../../design-system/patterns";
 
 import {
   getTestDetail,
@@ -16,14 +29,9 @@ import {
   exportCustomPdf,
 } from "../../services/test";
 import type { TestDetail, QuestionOut, PdfExportConfig } from "../../services/test";
-import { Checkbox } from "../../components/GeneralComponents/Checkbox/Checkbox";
-import { CollapsibleSection } from "../../components/GeneralComponents/CollapsibleSection/CollapsibleSection";
-import { SectionCard } from "../../components/GeneralComponents/SectionCard/SectionCard";
 import Footer from "../../components/Footer/Footer";
 
 import {
-  PageWrapper,
-  ContentWrapper,
   Header,
   Meta,
   QuestionList,
@@ -33,48 +41,20 @@ import {
   QuestionHeaderRow,
   QuestionTitle,
   QuestionMeta,
-  DifficultyBadge,
-  TypeBadge,
   QuestionActions,
-  PrimaryButton,
-  GhostButton,
-  DangerButton,
-  EditButton,
-  AddQuestionBar,
-  AddQuestionButton,
-  DownloadBar,
-  DownloadButton,
   TitleRow,
   TitleEditIconBtn,
   HeaderInput,
   TitleActions,
-  TitleSmallButton,
-  TitleSmallCancel,
   EditorCard,
   EditorToolbar,
   Segmented,
-  NiceSelect,
-  EditorTextarea,
-  ChoiceListEditor,
-  ChoiceRow,
-  LetterBubble,
-  ChoiceInput,
-  CorrectToggle,
-  AddChoiceBtn,
   EditorActions,
   ErrorNote,
   EditorHint,
-  Divider,  
-  AiWarningBox,
   MetaRow,
-  TrashBtn,
-  PdfConfigSelect,
-  PdfConfigNumberInput,
   ConfigActions,
-  ConfigGrid,
-  ConfigField,
   ConfigSection,
-  InnerWrapper,
 } from "./TestDetailPage.styles";
 import useDocumentTitle from "../../components/GeneralComponents/Hooks/useDocumentTitle";
 
@@ -125,6 +105,7 @@ const TestDetailPage: React.FC = () => {
   const testIdNum = Number(testId);
   const navigate = useNavigate();
   const { withLoader } = useLoader();
+  const theme = useTheme();
 
   const [data, setData] = useState<TestDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -182,16 +163,18 @@ const TestDetailPage: React.FC = () => {
 
   const handleDownloadCustomPdf = async () => {
     if (!testIdNum) return;
-    try {
-      const blob = await exportCustomPdf(testIdNum, pdfConfig);
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = `test_${testIdNum}_custom.pdf`;
-      a.click();
-      URL.revokeObjectURL(a.href);
-    } catch (e: any) {
-      alert(e.message || "Nie udało się wyeksportować spersonalizowanego PDF.");
-    }
+    await withLoader(async () => {
+      try {
+        const blob = await exportCustomPdf(testIdNum, pdfConfig);
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = `test_${testIdNum}_custom.pdf`;
+        a.click();
+        URL.revokeObjectURL(a.href);
+      } catch (e: any) {
+        alert(e.message || "Nie udało się wyeksportować spersonalizowanego PDF.");
+      }
+    });
   };
 
 
@@ -507,8 +490,23 @@ const TestDetailPage: React.FC = () => {
 
   useDocumentTitle("Test | Inquizitor");
 
-  if (loading) return <PageWrapper>Ładowanie…</PageWrapper>;
-  if (error) return <PageWrapper>Błąd: {error}</PageWrapper>;
+  const renderShell = (child: React.ReactNode) => (
+    <Flex
+      $direction="column"
+      $height="100%"
+      $bg={theme.colors.neutral.silver}
+      $overflow="hidden"
+    >
+      <Box $flex={1} $overflowY="auto" $p={40} $width="100%">
+        <Stack style={{ maxWidth: 900, margin: "0 auto", width: "100%" }} $gap="md">
+          {child}
+        </Stack>
+      </Box>
+    </Flex>
+  );
+
+  if (loading) return renderShell("Ładowanie…");
+  if (error) return renderShell(`Błąd: ${error}`);
   if (!data) return null;
 
   const closedCount = data.questions.filter((q) => q.is_closed).length;
@@ -523,11 +521,8 @@ const TestDetailPage: React.FC = () => {
 
   const missingCorrectLive = !!draft.is_closed && hasAnyChoice && !hasAnyCorrect;
 
-  return (
-    <PageWrapper>
-
-      <ContentWrapper>
-        <InnerWrapper>
+  return renderShell(
+    <>
         <TitleRow>
           {isEditingTitle ? (
             <>
@@ -537,8 +532,12 @@ const TestDetailPage: React.FC = () => {
                 placeholder="Nazwa testu"
               />
               <TitleActions>
-                <TitleSmallButton onClick={saveTitle}>Zapisz</TitleSmallButton>
-                <TitleSmallCancel onClick={cancelTitle}>Anuluj</TitleSmallCancel>
+                <Button $size="sm" onClick={saveTitle}>
+                  Zapisz
+                </Button>
+                <Button $size="sm" $variant="danger" onClick={cancelTitle}>
+                  Anuluj
+                </Button>
               </TitleActions>
             </>
           ) : (
@@ -592,7 +591,7 @@ const TestDetailPage: React.FC = () => {
                       </button>
                     </Segmented>
 
-                    <NiceSelect
+                    <Select
                       value={draft.difficulty || 1}
                       onChange={(e) => setDraftDifficulty(Number(e.target.value))}
                       aria-label="Poziom trudności"
@@ -600,57 +599,35 @@ const TestDetailPage: React.FC = () => {
                       <option value={1}>Łatwe</option>
                       <option value={2}>Średnie</option>
                       <option value={3}>Trudne</option>
-                    </NiceSelect>
+                    </Select>
                   </EditorToolbar>
 
-                  <EditorTextarea
+                  <Textarea
+                    $fullWidth
+                    $minHeight="140px"
                     value={draft.text || ""}
                     onChange={(e) => onTextChange(e.target.value)}
                     placeholder="Wpisz treść pytania…"
                   />
 
                   {draft.is_closed && (
-                    <>
-                      <ChoiceListEditor>
-                        {ensureChoices(draft.choices).map((choice, ci) => {
-                          const value = choice ?? "";
-                          const isCorrect = (draft.correct_choices || []).includes(value);
-                          return (
-                            <ChoiceRow key={ci}>
-                              <LetterBubble>{String.fromCharCode(65 + ci)}</LetterBubble>
-
-                              <ChoiceInput
-                                type="text"
-                                value={value}
-                                onChange={(e) => updateDraftChoice(ci, e.target.value)}
-                                placeholder={`Odpowiedź ${String.fromCharCode(65 + ci)}`}
-                              />
-
-                              <CorrectToggle
-                                type="button"
-                                $active={isCorrect}
-                                onClick={() => toggleDraftCorrect(value, !isCorrect)}
-                                title={isCorrect ? "Usuń oznaczenie poprawnej" : "Oznacz jako poprawną"}
-                              >
-                                {isCorrect ? "Poprawna" : "Ustaw jako poprawną"}
-                              </CorrectToggle>
-                              <TrashBtn
-                                type="button"
-                                onClick={() => removeChoiceRow(ci)}
-                                title="Usuń odpowiedź"
-                                aria-label="Usuń odpowiedź"
-                              >
-                                <img src={trashIcon} alt="" />
-                              </TrashBtn>
-                            </ChoiceRow>
-                          );
-                        })}
-                      </ChoiceListEditor>
-
-                      <AddChoiceBtn type="button" onClick={addDraftChoiceRow}>
-                        + Dodaj odpowiedź
-                      </AddChoiceBtn>
-                    </>
+                    <ChoiceEditor
+                      items={ensureChoices(draft.choices).map((choice) => {
+                        const value = choice ?? "";
+                        return {
+                          value,
+                          isCorrect: (draft.correct_choices || []).includes(value),
+                        };
+                      })}
+                      onChange={(index, value) => updateDraftChoice(index, value)}
+                      onToggleCorrect={(index, next) => {
+                        const currentValue = ensureChoices(draft.choices)[index] ?? "";
+                        toggleDraftCorrect(currentValue, next);
+                      }}
+                      onRemove={(index) => removeChoiceRow(index)}
+                      onAdd={addDraftChoiceRow}
+                      addLabel="+ Dodaj odpowiedź"
+                    />
                   )}
 
                   {!draft.is_closed && (
@@ -671,8 +648,12 @@ const TestDetailPage: React.FC = () => {
 
                   {editorError && <ErrorNote>{editorError}</ErrorNote>}
                   <EditorActions>
-                    <PrimaryButton onClick={handleSaveEdit} disabled={savingEdit}>Zapisz</PrimaryButton>
-                    <DangerButton onClick={cancelEdit}>Anuluj</DangerButton>
+                    <Button onClick={handleSaveEdit} disabled={savingEdit}>
+                      Zapisz
+                    </Button>
+                    <Button $variant="danger" onClick={cancelEdit}>
+                      Anuluj
+                    </Button>
                   </EditorActions>
                 </EditorCard>
               </QuestionItem>
@@ -688,12 +669,16 @@ const TestDetailPage: React.FC = () => {
                     <MathText text={q.text} />
                   </QuestionTitle>
                   <QuestionMeta>
-                    <DifficultyBadge $level={q.difficulty}>
+                    <Badge
+                      $variant={
+                        q.difficulty === 1 ? "success" : q.difficulty === 2 ? "warning" : "danger"
+                      }
+                    >
                       {getDifficultyLabel(q.difficulty)}
-                    </DifficultyBadge>
-                    <TypeBadge $closed={q.is_closed}>
+                    </Badge>
+                    <Badge $variant={q.is_closed ? "info" : "brand"}>
                       {q.is_closed ? "Zamknięte" : "Otwarte"}
-                    </TypeBadge>
+                    </Badge>
                   </QuestionMeta>
                 </QuestionHeaderRow>
 
@@ -732,23 +717,23 @@ const TestDetailPage: React.FC = () => {
                 )}
 
                 <QuestionActions>
-                  <EditButton onClick={() => startEdit(q)}>
+                  <Button $variant="success" onClick={() => startEdit(q)}>
                     Edytuj
-                  </EditButton>
-                  <DangerButton onClick={() => handleDelete(q.id)}>
+                  </Button>
+                  <Button $variant="danger" onClick={() => handleDelete(q.id)}>
                     Usuń
-                  </DangerButton>
+                  </Button>
                 </QuestionActions>
               </QuestionItem>
             );
           })}
         </QuestionList>
 
-        <AddQuestionBar>
-          <AddQuestionButton onClick={startAdd}>
+        <Flex $justify="center" $mt="lg" $mb="sm">
+          <Button $variant="info" $size="lg" onClick={startAdd}>
             + Dodaj pytanie
-          </AddQuestionButton>
-        </AddQuestionBar>
+          </Button>
+        </Flex>
           {isAdding && (
             <QuestionItem>
               <EditorCard>
@@ -770,7 +755,7 @@ const TestDetailPage: React.FC = () => {
                     </button>
                   </Segmented>
 
-                  <NiceSelect
+                  <Select
                     value={draft.difficulty || 1}
                     onChange={(e) => setDraftDifficulty(Number(e.target.value))}
                     aria-label="Poziom trudności"
@@ -778,10 +763,12 @@ const TestDetailPage: React.FC = () => {
                     <option value={1}>Łatwe</option>
                     <option value={2}>Średnie</option>
                     <option value={3}>Trudne</option>
-                  </NiceSelect>
+                  </Select>
                 </EditorToolbar>
 
-                <EditorTextarea
+                <Textarea
+                  $fullWidth
+                  $minHeight="140px"
                   value={draft.text || ""}
                   onChange={(e) => onTextChange(e.target.value)}
                   placeholder="Wpisz treść pytania…"
@@ -791,49 +778,23 @@ const TestDetailPage: React.FC = () => {
 
                 {draft.is_closed ? (
                   <>
-                    <ChoiceListEditor>
-                      {ensureChoices(draft.choices).map((choice, ci) => {
+                    <ChoiceEditor
+                      items={ensureChoices(draft.choices).map((choice) => {
                         const value = choice ?? "";
-                        const isCorrect = (draft.correct_choices || []).includes(value);
-                        return (
-                          <ChoiceRow key={ci}>
-                            <LetterBubble>{String.fromCharCode(65 + ci)}</LetterBubble>
-
-                            <ChoiceInput
-                              type="text"
-                              value={value}
-                              onChange={(e) => updateDraftChoice(ci, e.target.value)}
-                              placeholder={`Odpowiedź ${String.fromCharCode(65 + ci)}`}
-                            />
-
-                            <CorrectToggle
-                              type="button"
-                              $active={isCorrect}
-                              onClick={() => {
-                                const v = ensureChoices(draft.choices)[ci] ?? "";
-                                // przełącz poprawność po aktualnej wartości
-                                toggleDraftCorrect(v, !isCorrect);
-                              }}
-                              title={isCorrect ? "Usuń oznaczenie poprawnej" : "Oznacz jako poprawną"}
-                            >
-                              {isCorrect ? "Poprawna" : "Ustaw jako poprawną"}
-                            </CorrectToggle>
-                              <TrashBtn
-                                type="button"
-                                onClick={() => removeChoiceRow(ci)}
-                                title="Usuń odpowiedź"
-                                aria-label="Usuń odpowiedź"
-                              >
-                                <img src={trashIcon} alt="" />
-                              </TrashBtn>
-                          </ChoiceRow>
-                        );
+                        return {
+                          value,
+                          isCorrect: (draft.correct_choices || []).includes(value),
+                        };
                       })}
-                    </ChoiceListEditor>
-
-                    <AddChoiceBtn type="button" onClick={addDraftChoiceRow}>
-                      + Dodaj odpowiedź
-                    </AddChoiceBtn>
+                      onChange={(index, value) => updateDraftChoice(index, value)}
+                      onToggleCorrect={(index, next) => {
+                        const currentValue = ensureChoices(draft.choices)[index] ?? "";
+                        toggleDraftCorrect(currentValue, next);
+                      }}
+                      onRemove={(index) => removeChoiceRow(index)}
+                      onAdd={addDraftChoiceRow}
+                      addLabel="+ Dodaj odpowiedź"
+                    />
 
                     <EditorHint>
                       Zaznacz przynajmniej jedną poprawną odpowiedź, aby zapisać pytanie zamknięte.
@@ -850,21 +811,19 @@ const TestDetailPage: React.FC = () => {
                 {editorError && <ErrorNote>{editorError}</ErrorNote>}
 
                 <EditorActions>
-                  <PrimaryButton onClick={handleAdd} disabled={savingAdd}>
+                  <Button onClick={handleAdd} disabled={savingAdd}>
                     Zapisz
-                  </PrimaryButton>
-                  <DangerButton onClick={cancelEdit}>Anuluj</DangerButton>
+                  </Button>
+                  <Button $variant="danger" onClick={cancelEdit}>
+                    Anuluj
+                  </Button>
                 </EditorActions>
               </EditorCard>
             </QuestionItem>
           )}
-        <DownloadBar>
-          <DownloadButton
-            onClick={handleDownloadCustomPdf}
-          >
-            Pobierz PDF
-          </DownloadButton>
-          <DownloadButton
+        <Flex $gap="sm" $mt="lg" $align="center" $wrap="wrap">
+          <Button onClick={handleDownloadCustomPdf}>Pobierz PDF</Button>
+          <Button
             onClick={() =>
               download(
                 `${API}/tests/${testIdNum}/export/xml`,
@@ -873,189 +832,193 @@ const TestDetailPage: React.FC = () => {
             }
           >
             Pobierz XML
-          </DownloadButton>
-          <AiWarningBox>
-            <span>
-              Test został wygenerowany przez AI i może zawierać błędy.
-              Zweryfikuj go przed pobraniem.
-            </span>
-          </AiWarningBox>
-        </DownloadBar>
+          </Button>
+          <AlertBar variant="warning">
+            Test został wygenerowany przez AI i może zawierać błędy. Zweryfikuj go przed pobraniem.
+          </AlertBar>
+        </Flex>
 
         <ConfigSection>
-          <SectionCard>
-              <CollapsibleSection
-                title="Personalizacja PDF (opcjonalne)"
-                hint="Ustaw parametry eksportu przed pobraniem."
-                isOpen={pdfConfigOpen}
-                onToggle={() => setPdfConfigOpen((v) => !v)}
-                isActive={
-                  pdfConfig.answer_space_style !== "blank" ||
-                  pdfConfig.space_height_cm !== 3 ||
-                  pdfConfig.include_answer_key ||
-                  pdfConfig.generate_variants ||
-                  pdfConfig.use_scratchpad ||
-                  !pdfConfig.mark_multi_choice
-                }
-              >
-              <Divider style={{ margin: "8px 0 16px" }} />
-              <ConfigGrid>
-                <ConfigField>
-                  <label>Styl pola odpowiedzi</label>
-                  <PdfConfigSelect
-                    value={pdfConfig.answer_space_style}
-                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                      setPdfConfig((cfg) => ({
-                        ...cfg,
-                        answer_space_style: e.target
-                          .value as PdfExportConfig["answer_space_style"],
-                      }))
-                    }
-                  >
-                    <option value="blank">Puste miejsce</option>
-                    <option value="lines">Linie do pisania</option>
-                    <option value="grid">Kratka</option>
-                  </PdfConfigSelect>
-                </ConfigField>
-
-                <ConfigField>
-                  <label>Wysokość pola odpowiedzi (cm)</label>
-                  <PdfConfigNumberInput
-                    type="number"
-                    min={1}
-                    max={10}
-                    step={0.5}
-                    value={pdfConfig.space_height_cm}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setPdfConfig((cfg) => ({
-                        ...cfg,
-                        space_height_cm: Math.max(
-                          1,
-                          Math.min(10, Number(e.target.value) || 1)
-                        ),
-                      }))
-                    }
-                  />
-                </ConfigField>
-
-                <ConfigField>
-                  <Checkbox
-                    id="pdf-student-header"
-                    checked={pdfConfig.student_header}
-                    onChange={(checked) =>
-                      setPdfConfig((cfg) => ({
-                        ...cfg,
-                        student_header: checked,
-                      }))
-                    }
-                    label="Dodaj linię na imię i nazwisko ucznia."
-                  />
-                </ConfigField>
-
-                <ConfigField>
-                  <Checkbox
-                    id="pdf-include-answer-key"
-                    checked={pdfConfig.include_answer_key}
-                    onChange={(checked) =>
-                      setPdfConfig((cfg) => ({
-                        ...cfg,
-                        include_answer_key: checked,
-                      }))
-                    }
-                    label="Dołącz klucz odpowiedzi do pytań zamkniętych."
-                  />
-                </ConfigField>
-
-                <ConfigField>
-                  <Checkbox
-                    id="pdf-scratchpad"
-                    checked={pdfConfig.use_scratchpad}
-                    onChange={(checked) =>
-                      setPdfConfig((cfg) => ({
-                        ...cfg,
-                        use_scratchpad: checked,
-                      }))
-                    }
-                    label="Dodaj brudnopis na końcu testu."
-                  />
-                </ConfigField>
-
-                <ConfigField>
-                  <Checkbox
-                    id="pdf-generate-variants"
-                    checked={pdfConfig.generate_variants}
-                    onChange={(checked) =>
-                      setPdfConfig((cfg) => ({
-                        ...cfg,
-                        generate_variants: checked,
-                      }))
-                    }
-                    label="Wygeneruj dwie wersje (Grupa A i B)."
-                  />
-                </ConfigField>
-
-                {pdfConfig.generate_variants && (
-                  <ConfigField>
-                    <label>Tryb drugiej grupy</label>
-                    <PdfConfigSelect
-                      value={pdfConfig.variant_mode || "shuffle"}
-                      onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                        setPdfConfig((cfg) => ({
-                          ...cfg,
-                          variant_mode: e.target.value as PdfExportConfig["variant_mode"],
-                        }))
-                      }
-                    >
-                      <option value="shuffle">Przetasuj w obrębie trudności</option>
-                      <option value="llm_variant">
-                        Nowe pytania o tej samej trudności
-                      </option>
-                    </PdfConfigSelect>
-                  </ConfigField>
-                )}
-
-                <ConfigField>
-                  <Checkbox
-                    id="pdf-mark-multi-choice"
-                    checked={pdfConfig.mark_multi_choice}
-                    onChange={(checked) =>
-                      setPdfConfig((cfg) => ({
-                        ...cfg,
-                        mark_multi_choice: checked,
-                      }))
-                    }
-                    label="Oznacz graficznie pytania wielokrotnego wyboru."
-                  />
-                </ConfigField>
-
-                <div />
-              </ConfigGrid>
-
-              <ConfigActions>
-                <GhostButton
-                  type="button"
-                  onClick={() =>
-                    setPdfConfig({
-                      answer_space_style: "blank",
-                      space_height_cm: 3,
-                      include_answer_key: false,
-                      generate_variants: false,
-                      variant_mode: "shuffle",
-                      swap_order_variants: null,
-                      student_header: true,
-                      use_scratchpad: false,
-                      mark_multi_choice: true,
-                    })
+          <CollapsibleSection
+            title="Personalizacja PDF (opcjonalne)"
+            hint="Ustaw parametry eksportu przed pobraniem."
+            isOpen={pdfConfigOpen}
+            onToggle={() => setPdfConfigOpen((v) => !v)}
+            isActive={
+              pdfConfig.answer_space_style !== "blank" ||
+              pdfConfig.space_height_cm !== 3 ||
+              pdfConfig.include_answer_key ||
+              pdfConfig.generate_variants ||
+              pdfConfig.use_scratchpad ||
+              !pdfConfig.mark_multi_choice
+            }
+            withCard
+          >
+            <Divider style={{ margin: "8px 0 16px" }} />
+            <Box
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                gap: theme.spacing.sm,
+                marginBottom: theme.spacing.md,
+              }}
+            >
+              <FormField label="Styl pola odpowiedzi" fullWidth>
+                <Select
+                  value={pdfConfig.answer_space_style}
+                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                    setPdfConfig((cfg) => ({
+                      ...cfg,
+                      answer_space_style: e.target.value as PdfExportConfig["answer_space_style"],
+                    }))
                   }
                 >
-                  Przywróć domyślne
-                </GhostButton>
-                <PrimaryButton onClick={handleDownloadCustomPdf}>
-                  Pobierz PDF z tymi ustawieniami
-                </PrimaryButton>
-              </ConfigActions>
-            </CollapsibleSection>
-          </SectionCard>
+                  <option value="blank">Puste miejsce</option>
+                  <option value="lines">Linie do pisania</option>
+                  <option value="grid">Kratka</option>
+                </Select>
+              </FormField>
+
+              <FormField label="Wysokość pola odpowiedzi (cm)" fullWidth>
+                <Input
+                  $size="sm"
+                  type="number"
+                  min={1}
+                  max={10}
+                  step={0.5}
+                  value={pdfConfig.space_height_cm}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setPdfConfig((cfg) => ({
+                      ...cfg,
+                      space_height_cm: Math.max(1, Math.min(10, Number(e.target.value) || 1)),
+                    }))
+                  }
+                />
+              </FormField>
+            </Box>
+
+            <FormField fullWidth>
+              <Flex $align="center" $gap="xs">
+                <Checkbox
+                  id="pdf-student-header"
+                  checked={pdfConfig.student_header}
+                  onChange={(e) =>
+                    setPdfConfig((cfg) => ({
+                      ...cfg,
+                      student_header: e.target.checked,
+                    }))
+                  }
+                />
+                <span>Dodaj linię na imię i nazwisko ucznia.</span>
+              </Flex>
+            </FormField>
+
+            <FormField fullWidth>
+              <Flex $align="center" $gap="xs">
+                <Checkbox
+                  id="pdf-include-answer-key"
+                  checked={pdfConfig.include_answer_key}
+                  onChange={(e) =>
+                    setPdfConfig((cfg) => ({
+                      ...cfg,
+                      include_answer_key: e.target.checked,
+                    }))
+                  }
+                />
+                <span>Dołącz klucz odpowiedzi do pytań zamkniętych.</span>
+              </Flex>
+            </FormField>
+
+            <FormField fullWidth>
+              <Flex $align="center" $gap="xs">
+                <Checkbox
+                  id="pdf-scratchpad"
+                  checked={pdfConfig.use_scratchpad}
+                  onChange={(e) =>
+                    setPdfConfig((cfg) => ({
+                      ...cfg,
+                      use_scratchpad: e.target.checked,
+                    }))
+                  }
+                />
+                <span>Dodaj brudnopis na końcu testu.</span>
+              </Flex>
+            </FormField>
+
+            <FormField fullWidth>
+              <Flex $align="center" $gap="xs">
+                <Checkbox
+                  id="pdf-generate-variants"
+                  checked={pdfConfig.generate_variants}
+                  onChange={(e) =>
+                    setPdfConfig((cfg) => ({
+                      ...cfg,
+                      generate_variants: e.target.checked,
+                    }))
+                  }
+                />
+                <span>Wygeneruj dwie wersje (Grupa A i B).</span>
+              </Flex>
+            </FormField>
+
+            {pdfConfig.generate_variants && (
+              <FormField label="Tryb drugiej grupy" fullWidth>
+                <Select
+                  value={pdfConfig.variant_mode || "shuffle"}
+                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                    setPdfConfig((cfg) => ({
+                      ...cfg,
+                      variant_mode: e.target.value as PdfExportConfig["variant_mode"],
+                    }))
+                  }
+                >
+                  <option value="shuffle">Przetasuj w obrębie trudności</option>
+                  <option value="llm_variant">Nowe pytania o tej samej trudności</option>
+                </Select>
+              </FormField>
+            )}
+
+            <FormField fullWidth>
+              <Flex $align="center" $gap="xs">
+                <Checkbox
+                  id="pdf-mark-multi-choice"
+                  checked={pdfConfig.mark_multi_choice}
+                  onChange={(e) =>
+                    setPdfConfig((cfg) => ({
+                      ...cfg,
+                      mark_multi_choice: e.target.checked,
+                    }))
+                  }
+                />
+                <span>Oznacz graficznie pytania wielokrotnego wyboru.</span>
+              </Flex>
+            </FormField>
+
+            <ConfigActions>
+              <Button
+                $variant="ghost"
+                type="button"
+                onClick={() =>
+                  setPdfConfig({
+                    answer_space_style: "blank",
+                    space_height_cm: 3,
+                    include_answer_key: false,
+                    generate_variants: false,
+                    variant_mode: "shuffle",
+                    swap_order_variants: null,
+                    student_header: true,
+                    use_scratchpad: false,
+                    mark_multi_choice: true,
+                  })
+                }
+              >
+                Przywróć domyślne
+              </Button>
+              <Button onClick={handleDownloadCustomPdf}>
+                Pobierz PDF z tymi ustawieniami
+              </Button>
+            </ConfigActions>
+          </CollapsibleSection>
         </ConfigSection>
 
         <Footer />
@@ -1065,9 +1028,7 @@ const TestDetailPage: React.FC = () => {
           onConfirm={handleConfirmDelete}
         />
         )}
-        </InnerWrapper>
-      </ContentWrapper>
-    </PageWrapper>
+    </>
   );
 };
 

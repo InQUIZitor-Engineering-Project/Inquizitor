@@ -1,4 +1,3 @@
-// src/components/Button/Button.styles.ts
 import styled, { css } from "styled-components";
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {

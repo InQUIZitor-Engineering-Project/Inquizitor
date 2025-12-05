@@ -1,4 +1,4 @@
-import styled from "styled-components";
+import styled, { css } from "styled-components";
 
 export const QuestionHeaderRow = styled.div`
   display: flex;
@@ -17,8 +17,8 @@ export const QuestionTitle = styled.div`
     width: 100%;
     box-sizing: border-box;
     padding: 8px 10px;
-    border-radius: 10px;
-    border: 1px solid #ddd;
+    border-radius: ${({ theme }) => theme.radii.md};
+    border: 1px solid ${({ theme }) => theme.colors.neutral.greyBlue};
     font-size: 14px;
     font-family: inherit;
     resize: vertical;
@@ -32,200 +32,13 @@ export const QuestionMeta = styled.div`
   justify-content: flex-end;
 `;
 
-export const Badge = styled.span`
-  padding: 3px 9px;
-  border-radius: 999px;
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-`;
-
-export const DifficultyBadge = styled(Badge)<{ $level: number }>`
-  background: ${({ $level }) =>
-    $level === 1
-      ? "rgba(76, 175, 80, 0.12)"
-      : $level === 2
-      ? "rgba(255, 193, 7, 0.14)"
-      : "rgba(244, 67, 54, 0.16)"};
-  color: ${({ $level }) =>
-    $level === 1
-      ? "#2e7d32"
-      : $level === 2
-      ? "#f57f17"
-      : "#c62828"};
-`;
-
-export const TypeBadge = styled(Badge)<{ $closed: boolean }>`
-  background: ${({ $closed }) =>
-    $closed ? "rgba(33, 150, 243, 0.12)" : "rgba(156, 39, 176, 0.12)"};
-  color: ${({ $closed }) => ($closed ? "#1565c0" : "#6a1b9a")};
-`;
-
-export const MetaControls = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  align-items: flex-end;
-`;
-
-export const MetaSelect = styled.select`
-  padding: 4px 8px;
-  border-radius: 8px;
-  border: 1px solid #ddd;
-  font-size: 10px;
-  background: #fff;
-  cursor: pointer;
-`;
-
-export const MetaToggle = styled.button`
-  padding: 3px 8px;
-  border-radius: 999px;
-  border: 1px solid #ddd;
-  font-size: 10px;
-  background: #f5f5f5;
-  cursor: pointer;
-  transition: all 0.15s ease-in-out;
-
-  &.active-closed {
-    background: rgba(33, 150, 243, 0.12);
-    color: #1565c0;
-    border-color: rgba(33, 150, 243, 0.4);
-  }
-
-  &.active-open {
-    background: rgba(156, 39, 176, 0.12);
-    color: #6a1b9a;
-    border-color: rgba(156, 39, 176, 0.4);
-  }
-`;
-
 export const QuestionActions = styled.div`
-  display: flex;
-  gap: 10px;
-  margin-top: 18px;
-`;
-
-export const BaseButton = styled.button`
-  padding: 9px 14px;
-  border-radius: 10px;
-  border: none;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  transition: all 0.15s ease-in-out;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
-
-  &:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
-  }
-`;
-
-export const PrimaryButton = styled(BaseButton)`
-  background: #4caf4f;
-  color: #ffffff;
-`;
-
-export const DangerButton = styled(BaseButton)`
-  background: rgba(244, 67, 54, 0.08);
-  color: #c62828; 
-  box-shadow: none;
-  border: 1px solid rgba(244, 67, 54, 0.3);
-
-  &:hover {
-    background: rgba(244, 67, 54, 0.16);
-    box-shadow: 0 3px 8px rgba(244, 67, 54, 0.18);
-  }
-`;
-
-
-export const GhostButton = styled(BaseButton)`
-  background: #f5f5f5;
-  color: #333;
-  box-shadow: none;
-
-  &:hover {
-    background: #e0e0e0;
-    box-shadow: none;
-  }
-`;
-
-export const EditButton = styled(BaseButton)`
-  background: rgba(76, 175, 80, 0.08);
-  color: #2e7d32;
-  box-shadow: none;
-  border: 1px solid rgba(76, 175, 80, 0.3);
-
-  &:hover {
-    background: rgba(76, 175, 80, 0.16);
-    box-shadow: 0 3px 8px rgba(76, 175, 80, 0.18);
-  }
-`;
-
-export const AddQuestionBar = styled.div`
-  margin-top: 28px;
-  margin-bottom: 10px;
-`;
-
-export const AddQuestionButton = styled.button`
-  padding: 10px 20px;
-  border-radius: 999px;
-  border: none;
-  background: #2196f3;
-  color: #ffffff;
-  font-weight: 600;
-  font-size: 13px;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  box-shadow: 0 4px 12px rgba(33, 150, 243, 0.25);
-  transition: all 0.16s ease-in-out;
-
-  &:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 6px 16px rgba(33, 150, 243, 0.3);
-    background: #1e88e5;
-  }
-`;
-
-export const DownloadBar = styled.div`
-  display: flex;
-  gap: 12px;
-  margin-top: 24px;
-`;
-
-export const DownloadButton = styled(BaseButton)`
-  background: #4caf4f;
-  color: #ffffff;
-`;
-
-export const PageWrapper = styled.div`
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  overflow: hidden;
-  background-color: ${({ theme }) => theme.colors.neutral.silver};
-`;
-
-export const ContentWrapper = styled.div`
-  flex: 1;
-  overflow-y: auto;
-  padding: 40px;
-  width: 100%;
-`;
-
-export const InnerWrapper = styled.div`
-  max-width: 900px;
-  margin: 0 auto;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+  ${({ theme }) => css`
+    display: flex;
+    gap: ${theme.spacing.sm};
+    margin-top: ${theme.spacing.md};
+    flex-wrap: wrap;
+  `}
 `;
 
 export const Header = styled.h1`
@@ -240,12 +53,14 @@ export const Header = styled.h1`
 `;
 
 export const MetaRow = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 16px;
-  margin-bottom: 24px;
+  ${({ theme }) => css`
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: ${theme.spacing.md};
+    margin-bottom: ${theme.spacing.lg};
+  `}
 `;
 
 export const Meta = styled.div`
@@ -258,21 +73,6 @@ export const Meta = styled.div`
   `}
 `;
 
-export const AiWarningBox = styled.div`
-  ${({ theme }) => `
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 12px;
-    border-radius: 20px;
-    color: ${theme.colors.brand.secondary};
-    font-size: 12px;
-    font-weight: 500;
-    line-height: 1.2;
-    white-space: nowrap;
-  `}
-`;
-
 export const QuestionList = styled.div`
   display: flex;
   flex-direction: column;
@@ -280,57 +80,50 @@ export const QuestionList = styled.div`
 `;
 
 export const QuestionItem = styled.div`
-  background-color: ${({ theme }) => theme.colors.neutral.white};
-  padding: 24px;
-  border-radius: 8px;
-  box-shadow: ${({ theme }) => theme.shadows["4px"]};
+  ${({ theme }) => css`
+    background-color: ${theme.colors.neutral.white};
+    padding: ${theme.spacing.lg};
+    border-radius: ${theme.radii.lg};
+    box-shadow: ${theme.elevation.md};
 
-  .question-header {
-    ${({ theme }) => `
+    .question-header {
       font-family: ${theme.typography.body.medium.body1.fontFamily};
       font-size: ${theme.typography.body.medium.body1.fontSize};
       font-weight: ${theme.typography.body.medium.body1.fontWeight};
       line-height: ${theme.typography.body.medium.body1.lineHeight};
       color: ${theme.colors.neutral.dGrey};
-    `}
-    margin-bottom: 16px;
-  }
+      margin-bottom: ${theme.spacing.md};
+    }
 
-  textarea {
-    width: 100%;
-    min-height: 80px;
-    padding: 12px;
-    border: 1px solid ${({ theme }) => theme.colors.neutral.greyBlue};
-    border-radius: 8px;
-    resize: vertical;
-    font-family: ${({ theme }) => theme.typography.body.regular.body1.fontFamily};
-  }
+    textarea {
+      width: 100%;
+      min-height: 80px;
+      padding: ${theme.spacing.md};
+      border: 1px solid ${theme.colors.neutral.greyBlue};
+      border-radius: ${theme.radii.md};
+      resize: vertical;
+      font-family: ${theme.typography.body.regular.body1.fontFamily};
+    }
+  `}
 `;
 
 export const ChoiceList = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: ${({ theme }) => theme.spacing.sm};
 `;
 
 export const ChoiceItem = styled.div<{ $correct?: boolean }>`
-  position: relative;
-  padding: 12px 16px;
-  border-radius: 8px;
-  background-color: ${({ theme }) => theme.colors.neutral.silver};
-  cursor: default;
-
-  ${({ $correct, theme }) =>
-    $correct
-      ? `
-    border: 2px solid ${theme.colors.brand.primary};
-    background-color: ${theme.colors.tint.t4};
-  `
-      : `
-    border: 1px solid ${theme.colors.neutral.greyBlue};
-  `}
-
-  ${({ theme }) => `
+  ${({ theme, $correct }) => css`
+    position: relative;
+    padding: ${theme.spacing.md};
+    border-radius: ${theme.radii.md};
+    background-color: ${theme.colors.neutral.silver};
+    cursor: default;
+    border: ${$correct
+      ? `2px solid ${theme.colors.brand.primary}`
+      : `1px solid ${theme.colors.neutral.greyBlue}`};
+    background-color: ${$correct ? theme.colors.tint.t4 : theme.colors.neutral.silver};
     font-family: ${theme.typography.body.regular.body2.fontFamily};
     font-size: ${theme.typography.body.regular.body2.fontSize};
     line-height: ${theme.typography.body.regular.body2.lineHeight};
@@ -339,44 +132,48 @@ export const ChoiceItem = styled.div<{ $correct?: boolean }>`
 `;
 
 export const TitleRow = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 8px;
+  ${({ theme }) => css`
+    display: flex;
+    align-items: center;
+    gap: ${theme.spacing.sm};
+    margin-bottom: ${theme.spacing.xs};
+  `}
 `;
 
 export const TitleEditIconBtn = styled.button`
-  border: none;
-  background: transparent;
-  padding: 4px;
-  border-radius: 8px;
-  cursor: pointer;
-  line-height: 0;
+  ${({ theme }) => css`
+    border: none;
+    background: transparent;
+    padding: ${theme.spacing.xxs};
+    border-radius: ${theme.radii.sm};
+    cursor: pointer;
+    line-height: 0;
 
-  &:hover {
-    background: rgba(0,0,0,0.06);
-  }
+    &:hover {
+      background: ${theme.colors.neutral.silver};
+    }
 
-  img {
-    width: 18px;
-    height: 18px;
-    display: block;
-  }
+    img {
+      width: 18px;
+      height: 18px;
+      display: block;
+    }
+  `}
 `;
 
 export const HeaderInput = styled.input`
-  flex: 1;
-  ${({ theme }) => `
+  ${({ theme }) => css`
+    flex: 1;
     font-family: ${theme.typography.heading.h2.fontFamily};
     font-size: ${theme.typography.heading.h2.fontSize};
     font-weight: ${theme.typography.heading.h2.fontWeight};
     line-height: ${theme.typography.heading.h2.lineHeight};
     color: ${theme.colors.neutral.dGrey};
+    padding: ${theme.spacing.xs} ${theme.spacing.sm};
+    border: 1px solid ${theme.colors.neutral.greyBlue};
+    border-radius: ${theme.radii.lg};
+    background: ${theme.colors.neutral.white};
   `}
-  padding: 6px 10px;
-  border: 1px solid #ddd;
-  border-radius: 10px;
-  background: #fff;
 `;
 
 export const TitleActions = styled.div`
@@ -384,191 +181,73 @@ export const TitleActions = styled.div`
   gap: 8px;
 `;
 
-export const TitleSmallButton = styled.button`
-  padding: 6px 10px;
-  border-radius: 8px;
-  border: none;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
-  transition: all .15s ease-in-out;
-  background: #4caf4f;
-  color: #fff;
-
-  &:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 10px rgba(0,0,0,0.08);
-  }
-`;
-
-export const TitleSmallCancel = styled(TitleSmallButton)`
-  background: rgba(244, 67, 54, 0.08);
-  color: #c62828;
-  box-shadow: none;
-  border: 1px solid rgba(244, 67, 54, 0.3);
-
-  &:hover {
-    background: rgba(244, 67, 54, 0.16);
-    box-shadow: 0 3px 8px rgba(244, 67, 54, 0.18);
-  }
-`;
-
 
 export const EditorCard = styled.div`
-  background: linear-gradient(0deg, #fff, #fff), rgba(33, 150, 243, 0.03);
-  border: 1px solid rgba(0,0,0,0.06);
-  border-radius: 14px;
-  padding: 16px;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.04);
+  ${({ theme }) => css`
+    background: ${theme.colors.neutral.white};
+    border: 1px solid ${theme.colors.neutral.greyBlue};
+    border-radius: ${theme.radii.lg};
+    padding: ${theme.spacing.md};
+    box-shadow: ${theme.elevation.md};
+  `}
 `;
 
 export const EditorToolbar = styled.div`
   display: flex;
-  gap: 10px;
+  gap: ${({ theme }) => theme.spacing.sm};
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 10px;
+  margin-bottom: ${({ theme }) => theme.spacing.sm};
 `;
 
 export const EditorTextarea = styled.textarea`
-  width: 100%;
-  min-height: 140px;
-  padding: 14px 16px;
-  border-radius: 12px;
-  border: 1px solid #dfe4ea;
-  background: #fff;
-  font-size: 15px;
-  line-height: 1.5;
-  transition: box-shadow .15s ease, border-color .15s ease;
-  resize: vertical;
+  ${({ theme }) => css`
+    width: 100%;
+    min-height: 140px;
+    padding: ${theme.spacing.md};
+    border-radius: ${theme.radii.lg};
+    border: 1px solid ${theme.colors.neutral.greyBlue};
+    background: ${theme.colors.neutral.white};
+    font-size: 15px;
+    line-height: 1.5;
+    transition: box-shadow 0.15s ease, border-color 0.15s ease;
+    resize: vertical;
 
-  &::placeholder { color: #9aa4b2; }
-  &:focus {
-    outline: none;
-    border-color: #64b5f6;
-    box-shadow: 0 0 0 4px rgba(33,150,243,.12);
-  }
+    &::placeholder {
+      color: ${theme.colors.neutral.lGrey};
+    }
+    &:focus {
+      outline: none;
+      border-color: ${theme.colors.brand.info};
+      box-shadow: 0 0 0 4px ${theme.colors.tint.t5};
+    }
+  `}
 `;
 
 export const Segmented = styled.div`
   display: inline-flex;
   padding: 4px;
-  border-radius: 999px;
+  border-radius: ${({ theme }) => theme.radii.pill};
   background: ${({ theme }) => theme.colors.tint.t5};
   gap: 4px;
 
   button {
     font-size: 12px;
     padding: 6px 10px;
-    border-radius: 999px;
+    border-radius: ${({ theme }) => theme.radii.pill};
     border: 0;
     background: transparent;
     color: ${({ theme }) => theme.colors.neutral.dGrey};
     cursor: pointer;
   }
   .is-active-closed {
-    background: rgba(33,150,243,.12);
-    color: #1565c0;
+    background: ${({ theme }) => theme.colors.tint.t5};
+    color: ${({ theme }) => theme.colors.brand.info};
   }
   .is-active-open {
-    background: rgba(156,39,176,.12);
-    color: #6a1b9a;
+    background: ${({ theme }) => theme.colors.tint.t4};
+    color: ${({ theme }) => theme.colors.brand.secondary};
   }
-`;
-
-export const NiceSelect = styled(MetaSelect)`
-  font-size: 12px;
-  padding: 6px 10px;
-`;
-
-export const ChoiceListEditor = styled.ul`
-  margin-top: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-`;
-
-export const ChoiceRow = styled.li`
-  display: grid;
-  grid-template-columns: 36px 1fr auto auto;
-  align-items: center;
-  gap: 10px;
-  background: ${({ theme }) => theme.colors.neutral.silver};
-  border: 1px solid ${({ theme }) => theme.colors.neutral.greyBlue};
-  border-radius: 10px;
-  padding: 8px 10px;
-`;
-
-export const TrashBtn = styled.button`
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  border: 1px solid rgba(244, 67, 54, 0.35);
-  background: rgba(244, 67, 54, 0.06);
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: all .15s ease;
-
-  &:hover {
-    background: rgba(244, 67, 54, 0.12);
-    transform: translateY(-1px);
-  }
-
-  img {
-    width: 16px;
-    height: 16px;
-    display: block;
-  }
-`;
-export const LetterBubble = styled.span`
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 12px;
-  color: #1565c0;
-  background: rgba(33,150,243,.12);
-`;
-
-export const ChoiceInput = styled.input`
-  width: 100%;
-  padding: 10px 12px;
-  border-radius: 8px;
-  border: 1px solid #dfe4ea;
-  background: #fff;
-  font-size: 14px;
-
-  &:focus {
-    outline: none;
-    border-color: #80cbc4;
-    box-shadow: 0 0 0 3px rgba(0,150,136,.12);
-  }
-`;
-
-export const CorrectToggle = styled.button<{ $active?: boolean }>`
-  border: 1px solid ${({ $active }) => ($active ? "rgba(76,175,80,.4)" : "#dfe4ea")};
-  background: ${({ $active }) => ($active ? "rgba(76,175,80,.12)" : "#fff")};
-  color: ${({ $active }) => ($active ? "#2e7d32" : "#4b5563")};
-  font-size: 12px;
-  padding: 8px 10px;
-  border-radius: 999px;
-  cursor: pointer;
-  transition: all .15s ease;
-`;
-
-export const AddChoiceBtn = styled(GhostButton)`
-  background: rgba(33,150,243,.08);
-  color: #1565c0;
-  border: 1px dashed rgba(33,150,243,.35);
-  margin-top: 6px;
-
-  &:hover { background: rgba(33,150,243,.14); }
 `;
 
 export const EditorActions = styled(QuestionActions)`
@@ -576,49 +255,16 @@ export const EditorActions = styled(QuestionActions)`
   margin-top: 16px;
 `;
 
-export const EditorLabel = styled.div`
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: .02em;
-  color: #6b7280;
-  margin-bottom: 6px;
-`;
-
-export const Counter = styled.span`
-  font-size: 11px;
-  color: #9aa3af;
-  margin-left: 8px;
-`;
-
 export const Divider = styled.div`
   height: 1px;
-  background: rgba(0,0,0,.06);
+  background: ${({ theme }) => theme.colors.neutral.greyBlue};
+  opacity: 0.4;
   margin: 12px 0 8px;
-`;
-
-export const IndexChip = styled.span`
-  min-width: 26px;
-  height: 26px;
-  border-radius: 999px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 12px;
-  color: #374151;
-  background: #eef2ff;
-  border: 1px solid #dbeafe;
-`;
-
-export const ChoiceCheckbox = styled.input.attrs({ type: "checkbox" })`
-  width: 16px;
-  height: 16px;
-  accent-color: #4caf50;
 `;
 
 export const EditorHint = styled.div`
   font-size: 12px;
-  color: #6b7280;
+  color: ${({ theme }) => theme.colors.neutral.grey};
   font-style: italic;
   margin-top: 8px;
 `;
@@ -627,50 +273,10 @@ export const ErrorNote = styled.div`
   margin-top: 10px;
   padding: 10px 12px;
   border-radius: 10px;
-  background: rgba(244, 67, 54, 0.08);
-  border: 1px solid rgba(244, 67, 54, 0.3);
-  color: #c62828;
+  background: ${({ theme }) => theme.colors.danger.bg};
+  border: 1px solid ${({ theme }) => theme.colors.danger.border};
+  color: ${({ theme }) => theme.colors.danger.main};
   font-size: 12px;
-`;
-
-export const PdfConfigToggleRow = styled.div`
-  margin-top: 16px;
-  margin-bottom: 8px;
-`;
-
-export const PdfConfigSelect = styled.select`
-  width: 100%;
-  padding: 6px 8px;
-  border-radius: 8px;
-  border: 1px solid ${({ theme }) => theme.colors.neutral.greyBlue};
-  font-size: 13px;
-  background: #ffffff;
-`;
-
-export const PdfConfigNumberInput = styled.input`
-  width: 100%;
-  padding: 6px 8px;
-  border-radius: 8px;
-  border: 1px solid ${({ theme }) => theme.colors.neutral.greyBlue};
-  font-size: 13px;
-`;
-
-export const ConfigGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-  align-items: start;
-
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-  }
-`;
-
-export const ConfigField = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  min-width: 0; /* pozwala kolumnom dzielić szerokość po 1fr */
 `;
 
 export const ConfigActions = styled.div`

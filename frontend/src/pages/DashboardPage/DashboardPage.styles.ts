@@ -29,13 +29,16 @@ export const EmptyStateWrapper = styled.div<{ $isHub?: boolean }>`
   text-align: center;
   gap: 24px;
   background-color: ${({ theme }) => theme.colors.neutral.silver};
-    height: calc(100vh - 80px);
+    height: calc(100vh - 40px);
 
   ${({ $isHub }) =>
     $isHub &&
     `
+    width: 100%;
+    min-height: calc(100vh - 40px);
     height: auto; 
     padding: 40px; 
+    justify-content: space-between;
   `}
 `;
 

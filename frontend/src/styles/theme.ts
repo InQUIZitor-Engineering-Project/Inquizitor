@@ -43,12 +43,48 @@ const theme: DefaultTheme = {
       shadow: "rgba(244, 67, 54, 0.18)" //box-shadow
     },
   },
+  spacing: {
+    xxs: "4px",
+    xs: "8px",
+    sm: "12px",
+    md: "16px",
+    lg: "24px",
+    xl: "32px",
+    "2xl": "48px",
+    "3xl": "64px",
+  },
+  radii: {
+    xs: "4px",
+    sm: "8px",
+    md: "10px",
+    lg: "12px",
+    xl: "16px",
+    pill: "999px",
+    full: "9999px",
+  },
+  tone: {
+    default: "#4d4d4d",
+    muted: "#717171",
+    subtle: "#89939e",
+    inverted: "#ffffff",
+    info: "#2194f3",
+    success: "#2e7d31",
+    warning: "#fbc02d",
+    danger: "#c62828",
+  },
   shadows: {
     "2px": "0px 2px 4px 0px rgba(171, 189, 209, 0.6)",   
     "4px": "0px 4px 8px 0px rgba(171, 189, 209, 0.4)",   
     "6px": "0px 6px 12px 0px rgba(171, 189, 209, 0.3)",  
     "8px": "0px 8px 16px 0px rgba(171, 189, 209, 0.4)", 
     "16px": "0px 16px 32px 0px rgba(171, 189, 209, 0.3)",
+  },
+  elevation: {
+    sm: "0px 2px 4px 0px rgba(171, 189, 209, 0.6)",
+    md: "0px 4px 8px 0px rgba(171, 189, 209, 0.4)",
+    lg: "0px 6px 12px 0px rgba(171, 189, 209, 0.3)",
+    xl: "0px 8px 16px 0px rgba(171, 189, 209, 0.4)",
+    "2xl": "0px 16px 32px 0px rgba(171, 189, 209, 0.3)",
   },
   typography: {
     heading: {

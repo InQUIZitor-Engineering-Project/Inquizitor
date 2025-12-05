@@ -1,7 +1,7 @@
 import styled from "styled-components";
 
 export const PageWrapper = styled.div`
-  min-height: calc(100vh - 80px);
+  min-height: calc(100vh - 40px);
   display: flex;
   flex-direction: column;
   background-color: ${({ theme }) => theme.colors.neutral.silver};

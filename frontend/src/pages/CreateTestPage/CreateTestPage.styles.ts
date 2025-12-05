@@ -24,7 +24,7 @@ export const InnerWrapper = styled.div`
   width: 100%;
   display: flex;
   flex-direction: column;
-  padding-bottom: 60px; /* Miejsce na dole, żeby stopka nie uciekała */
+  min-height: 100%;
   gap: 24px;
 `;
 
