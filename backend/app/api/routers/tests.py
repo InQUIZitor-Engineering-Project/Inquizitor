@@ -1,7 +1,17 @@
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 
 from app.api.dependencies import get_test_service
-from app.api.schemas.tests import TestDetailOut, TestGenerateRequest, TestGenerateResponse, QuestionOut, QuestionCreate, QuestionUpdate, TestTitleUpdate, TestOut
+from app.api.schemas.tests import (
+    TestDetailOut,
+    TestGenerateRequest,
+    TestGenerateResponse,
+    QuestionOut,
+    QuestionCreate,
+    QuestionUpdate,
+    TestTitleUpdate,
+    TestOut,
+    PdfExportConfig,
+)
 from app.application.services import TestService
 from app.core.security import get_current_user
 from app.db.models import User
@@ -117,6 +127,32 @@ def export_pdf(
     try:
         pdf_bytes, filename = test_service.export_test_pdf(
             owner_id=current_user.id, test_id=test_id, show_answers=show_answers
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    return Response(
+        pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.post("/{test_id}/export/pdf/custom")
+def export_custom_pdf(
+    test_id: int,
+    config: PdfExportConfig,
+    current_user: User = Depends(get_current_user),
+    test_service: TestService = Depends(get_test_service),
+):
+    """
+    Export a test as a customized PDF according to PdfExportConfig.
+    """
+    try:
+        pdf_bytes, filename = test_service.export_custom_test_pdf(
+            owner_id=current_user.id,
+            test_id=test_id,
+            config=config,
         )
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc

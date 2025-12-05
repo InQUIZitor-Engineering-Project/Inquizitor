@@ -215,12 +215,17 @@ export const PageWrapper = styled.div`
 export const ContentWrapper = styled.div`
   flex: 1;
   overflow-y: auto;
-  padding: 32px clamp(24px, 4vw, 40px);
-
-  /* szerzej + centrowanie kontentu */
-  max-width: 1200px;
+  padding: 40px;
   width: 100%;
+`;
+
+export const InnerWrapper = styled.div`
+  max-width: 900px;
   margin: 0 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 `;
 
 export const Header = styled.h1`
@@ -626,4 +631,56 @@ export const ErrorNote = styled.div`
   border: 1px solid rgba(244, 67, 54, 0.3);
   color: #c62828;
   font-size: 12px;
+`;
+
+export const PdfConfigToggleRow = styled.div`
+  margin-top: 16px;
+  margin-bottom: 8px;
+`;
+
+export const PdfConfigSelect = styled.select`
+  width: 100%;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid ${({ theme }) => theme.colors.neutral.greyBlue};
+  font-size: 13px;
+  background: #ffffff;
+`;
+
+export const PdfConfigNumberInput = styled.input`
+  width: 100%;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid ${({ theme }) => theme.colors.neutral.greyBlue};
+  font-size: 13px;
+`;
+
+export const ConfigGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  align-items: start;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+export const ConfigField = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0; /* pozwala kolumnom dzielić szerokość po 1fr */
+`;
+
+export const ConfigActions = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+`;
+
+export const ConfigSection = styled.div`
+  margin-top: 16px;
+  margin-bottom: 8px;
 `;

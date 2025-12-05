@@ -1,6 +1,6 @@
 # app/schemas/test.py
 from typing import List, Optional, Literal
-from pydantic import BaseModel, Field,field_validator, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 from datetime import datetime
 import json
 
@@ -168,6 +168,29 @@ class TestDetailOut(BaseModel):
 class TestTitleUpdate(BaseModel):
     title: str = Field(..., min_length=1, max_length=200)
 
+
+class PdfExportConfig(BaseModel):
+    """
+    Configuration options for customized PDF export of a test.
+    """
+
+    answer_space_style: Literal["grid", "lines", "blank"] = "blank"
+    space_height_cm: float = 3.0
+
+    include_answer_key: bool = False
+    generate_variants: bool = False
+    swap_order_variants: Optional[bool] = None
+
+    student_header: bool = True
+    use_scratchpad: bool = False
+    mark_multi_choice: bool = True
+
+    @model_validator(mode="after")
+    def validate_numeric(self) -> "PdfExportConfig":
+        if self.space_height_cm <= 0:
+            raise ValueError("space_height_cm must be > 0")
+        return self
+
 __all__ = [
     "FileUploadResponse",
     "TextInput",
@@ -181,4 +204,5 @@ __all__ = [
     "QuestionCreate",
     "QuestionUpdate",
     "TestTitleUpdate",
+    "PdfExportConfig",
 ]

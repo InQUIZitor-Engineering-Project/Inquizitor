@@ -13,8 +13,12 @@ import {
   deleteQuestion,
   deleteTest,
   updateTestTitle,
+  exportCustomPdf,
 } from "../../services/test";
-import type { TestDetail, QuestionOut } from "../../services/test";
+import type { TestDetail, QuestionOut, PdfExportConfig } from "../../services/test";
+import { Checkbox } from "../../components/GeneralComponents/Checkbox/Checkbox";
+import { CollapsibleSection } from "../../components/GeneralComponents/CollapsibleSection/CollapsibleSection";
+import { SectionCard } from "../../components/GeneralComponents/SectionCard/SectionCard";
 import Footer from "../../components/Footer/Footer";
 
 import {
@@ -33,6 +37,7 @@ import {
   TypeBadge,
   QuestionActions,
   PrimaryButton,
+  GhostButton,
   DangerButton,
   EditButton,
   AddQuestionBar,
@@ -62,7 +67,14 @@ import {
   Divider,  
   AiWarningBox,
   MetaRow,
-  TrashBtn,  
+  TrashBtn,
+  PdfConfigSelect,
+  PdfConfigNumberInput,
+  ConfigActions,
+  ConfigGrid,
+  ConfigField,
+  ConfigSection,
+  InnerWrapper,
 } from "./TestDetailPage.styles";
 import useDocumentTitle from "../../components/GeneralComponents/Hooks/useDocumentTitle";
 
@@ -121,6 +133,18 @@ const TestDetailPage: React.FC = () => {
   const [savingEdit, setSavingEdit] = useState(false);
   const [savingAdd, setSavingAdd]   = useState(false);
 
+  const [pdfConfig, setPdfConfig] = useState<PdfExportConfig>({
+    answer_space_style: "blank",
+    space_height_cm: 3,
+    include_answer_key: false,
+    generate_variants: false,
+    swap_order_variants: null,
+    student_header: true,
+    use_scratchpad: false,
+    mark_multi_choice: true,
+  });
+  const [pdfConfigOpen, setPdfConfigOpen] = useState(false);
+
   const token = localStorage.getItem("access_token");
 
   const download = (url: string, filename: string) => {
@@ -144,6 +168,20 @@ const TestDetailPage: React.FC = () => {
         alert(`Nie udało się pobrać pliku: ${e.message || e}`);
       }
     });
+  };
+
+  const handleDownloadCustomPdf = async () => {
+    if (!testIdNum) return;
+    try {
+      const blob = await exportCustomPdf(testIdNum, pdfConfig);
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `test_${testIdNum}_custom.pdf`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    } catch (e: any) {
+      alert(e.message || "Nie udało się wyeksportować spersonalizowanego PDF.");
+    }
   };
 
 
@@ -478,6 +516,7 @@ const TestDetailPage: React.FC = () => {
     <PageWrapper>
 
       <ContentWrapper>
+        <InnerWrapper>
         <TitleRow>
           {isEditingTitle ? (
             <>
@@ -810,12 +849,7 @@ const TestDetailPage: React.FC = () => {
           )}
         <DownloadBar>
           <DownloadButton
-            onClick={() =>
-              download(
-                `${API}/tests/${testIdNum}/export/pdf?show_answers=false`,
-                `test_${testIdNum}.pdf`
-              )
-            }
+            onClick={handleDownloadCustomPdf}
           >
             Pobierz PDF
           </DownloadButton>
@@ -837,6 +871,161 @@ const TestDetailPage: React.FC = () => {
           </AiWarningBox>
         </DownloadBar>
 
+        <ConfigSection>
+          <SectionCard>
+              <CollapsibleSection
+                title="Personalizacja PDF (opcjonalne)"
+                hint="Ustaw parametry eksportu przed pobraniem."
+                isOpen={pdfConfigOpen}
+                onToggle={() => setPdfConfigOpen((v) => !v)}
+                isActive={
+                  pdfConfig.answer_space_style !== "blank" ||
+                  pdfConfig.space_height_cm !== 3 ||
+                  pdfConfig.include_answer_key ||
+                  pdfConfig.generate_variants ||
+                  pdfConfig.use_scratchpad ||
+                  !pdfConfig.mark_multi_choice
+                }
+              >
+              <Divider style={{ margin: "8px 0 16px" }} />
+              <ConfigGrid>
+                <ConfigField>
+                  <label>Styl pola odpowiedzi</label>
+                  <PdfConfigSelect
+                    value={pdfConfig.answer_space_style}
+                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                      setPdfConfig((cfg) => ({
+                        ...cfg,
+                        answer_space_style: e.target
+                          .value as PdfExportConfig["answer_space_style"],
+                      }))
+                    }
+                  >
+                    <option value="blank">Puste miejsce</option>
+                    <option value="lines">Linie do pisania</option>
+                    <option value="grid">Kratka</option>
+                  </PdfConfigSelect>
+                </ConfigField>
+
+                <ConfigField>
+                  <label>Wysokość pola odpowiedzi (cm)</label>
+                  <PdfConfigNumberInput
+                    type="number"
+                    min={1}
+                    max={10}
+                    step={0.5}
+                    value={pdfConfig.space_height_cm}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setPdfConfig((cfg) => ({
+                        ...cfg,
+                        space_height_cm: Math.max(
+                          1,
+                          Math.min(10, Number(e.target.value) || 1)
+                        ),
+                      }))
+                    }
+                  />
+                </ConfigField>
+
+                <ConfigField>
+                  <Checkbox
+                    id="pdf-student-header"
+                    checked={pdfConfig.student_header}
+                    onChange={(checked) =>
+                      setPdfConfig((cfg) => ({
+                        ...cfg,
+                        student_header: checked,
+                      }))
+                    }
+                    label="Dodaj linię na imię i nazwisko ucznia."
+                  />
+                </ConfigField>
+
+                <ConfigField>
+                  <Checkbox
+                    id="pdf-include-answer-key"
+                    checked={pdfConfig.include_answer_key}
+                    onChange={(checked) =>
+                      setPdfConfig((cfg) => ({
+                        ...cfg,
+                        include_answer_key: checked,
+                      }))
+                    }
+                    label="Dołącz klucz odpowiedzi do pytań zamkniętych."
+                  />
+                </ConfigField>
+
+                <ConfigField>
+                  <Checkbox
+                    id="pdf-scratchpad"
+                    checked={pdfConfig.use_scratchpad}
+                    onChange={(checked) =>
+                      setPdfConfig((cfg) => ({
+                        ...cfg,
+                        use_scratchpad: checked,
+                      }))
+                    }
+                    label="Dodaj stronę w kratkę (brudnopis)."
+                  />
+                </ConfigField>
+
+                <ConfigField>
+                  <Checkbox
+                    id="pdf-generate-variants"
+                    checked={pdfConfig.generate_variants}
+                    onChange={(checked) =>
+                      setPdfConfig((cfg) => ({
+                        ...cfg,
+                        generate_variants: checked,
+                      }))
+                    }
+                    label="Wygeneruj dwie wersje (Grupa A i B)."
+                  />
+                </ConfigField>
+
+                <ConfigField>
+                  <Checkbox
+                    id="pdf-mark-multi-choice"
+                    checked={pdfConfig.mark_multi_choice}
+                    onChange={(checked) =>
+                      setPdfConfig((cfg) => ({
+                        ...cfg,
+                        mark_multi_choice: checked,
+                      }))
+                    }
+                    label="Oznacz graficznie pytania wielokrotnego wyboru."
+                  />
+                </ConfigField>
+
+                <div />
+              </ConfigGrid>
+
+              <ConfigActions>
+                <GhostButton
+                  type="button"
+                  onClick={() =>
+                    setPdfConfig({
+                      answer_space_style: "blank",
+                      space_height_cm: 3,
+                      include_answer_key: false,
+                      generate_variants: false,
+                      swap_order_variants: null,
+                      student_header: true,
+                      use_scratchpad: false,
+                      mark_multi_choice: true,
+                    })
+                  }
+                >
+                  Przywróć domyślne
+                </GhostButton>
+                <PrimaryButton onClick={handleDownloadCustomPdf}>
+                  Pobierz PDF z tymi ustawieniami
+                </PrimaryButton>
+              </ConfigActions>
+            </CollapsibleSection>
+          </SectionCard>
+        </ConfigSection>
+
         <Footer />
         {testIdToDelete !== null && (
         <ConfirmationModal
@@ -844,6 +1033,7 @@ const TestDetailPage: React.FC = () => {
           onConfirm={handleConfirmDelete}
         />
         )}
+        </InnerWrapper>
       </ContentWrapper>
     </PageWrapper>
   );

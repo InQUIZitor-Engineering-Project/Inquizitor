@@ -27,6 +27,46 @@ def latex_escape(text: str) -> str:
     return "".join(_LATEX_MAP.get(ch, ch) for ch in text)
 
 
+def latex_with_math(text: str) -> str:
+    """
+    Escape LaTeX special chars, but keep math segments written as $...$ or $$...$$
+    intact so they are rendered in math mode.
+    """
+    if text is None:
+        return ""
+
+    s = str(text)
+    out: list[str] = []
+    i = 0
+    n = len(s)
+
+    while i < n:
+        if s.startswith("$$", i):
+            end = s.find("$$", i + 2)
+            if end == -1:
+                # no closing $$ – treat the rest as plain text
+                out.append(latex_escape(s[i:]))
+                break
+            inner = s[i + 2 : end]
+            out.append("$$" + inner + "$$")
+            i = end + 2
+        elif s[i] == "$":
+            end = s.find("$", i + 1)
+            if end == -1:
+                out.append(latex_escape(s[i:]))
+                break
+            inner = s[i + 1 : end]
+            out.append("$" + inner + "$")
+            i = end + 1
+        else:
+            start = i
+            while i < n and s[i] != "$":
+                i += 1
+            out.append(latex_escape(s[start:i]))
+
+    return "".join(out)
+
+
 def _to_list(value) -> Optional[List[str]]:
     if value is None:
         return None
@@ -70,6 +110,7 @@ env = Environment(
     comment_end_string="#]",
 )
 env.filters["latex"] = latex_escape
+env.filters["latex_math"] = latex_with_math
 
 
 def render_test_to_tex(
@@ -101,6 +142,14 @@ def render_test_to_tex(
         brand_hex=brand_hex,
         logo_path=logo_path,
     )
+
+
+def render_custom_test_to_tex(context: dict) -> str:
+    """
+    Render a customized test PDF using the advanced LaTeX template.
+    """
+    template = env.get_template("test_export.tex.j2")
+    return template.render(**context)
 
 
 def compile_tex_to_pdf(tex_source: str) -> bytes:
@@ -202,4 +251,5 @@ __all__ = [
     "render_test_to_tex",
     "compile_tex_to_pdf",
     "test_to_xml_bytes",
+    "render_custom_test_to_tex",
 ]

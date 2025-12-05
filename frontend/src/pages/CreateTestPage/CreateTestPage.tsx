@@ -22,7 +22,6 @@ import {
   UploadInfo,
   UploadError,
   HiddenFileInput,
-  SectionCard,
   SectionHeader,
   Hint,
   ErrorText,
@@ -30,9 +29,6 @@ import {
   FieldsGrid,
   Field,
   Counter,
-  SmallNote,
-  StatPill,
-  SectionRight,
   Divider, 
   DistributionBar, 
   DistributionSegment,
@@ -40,6 +36,8 @@ import {
   Pill,
   LabelRow,
 } from "./CreateTestPage.styles";
+import { SectionCard } from "../../components/GeneralComponents/SectionCard/SectionCard";
+import { CollapsibleSection } from "../../components/GeneralComponents/CollapsibleSection/CollapsibleSection";
 
 type LayoutCtx = { refreshSidebarTests: () => Promise<void> };
 
@@ -204,8 +202,6 @@ const CreateTestPage: React.FC = () => {
 
   return (
     <CreateTestWrapper>
-      {/* USUNIĘTO <SIDEBAR> Z TEGO MIEJSCA */}
-      
       <ContentWrapper>
         <InnerWrapper>
           <Heading>Utwórz test dopasowany do swoich potrzeb</Heading>
@@ -281,54 +277,27 @@ const CreateTestPage: React.FC = () => {
           </SectionCard>
 
           <SectionCard>
-            <SectionHeader 
-              onClick={() => setIsPersonalizationOpen(!isPersonalizationOpen)}
-              style={{ cursor: "pointer", userSelect: "none" }}
+            <CollapsibleSection
+              title="Personalizacja testu (opcjonalne)"
+              hint="Opcjonalne wytyczne dla AI (np. styl pytań, temat przewodni)."
+              isOpen={isPersonalizationOpen}
+              onToggle={() => setIsPersonalizationOpen(!isPersonalizationOpen)}
+              isActive={instructions.trim().length > 0}
             >
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <h3>Personalizacja testu (opcjonalne)</h3>
-                  {/* Optional: Show a small dot if instructions are present but collapsed */}
-                  {!isPersonalizationOpen && instructions.trim().length > 0 && (
-                    <span style={{ fontSize: '12px', color: PALETTE.type.closedFg, background: PALETTE.type.closedBg, padding: '2px 8px', borderRadius: '12px'}}>
-                      Aktywna
-                    </span>
-                  )}
-                </div>
-                <Hint>Opcjonalne wytyczne dla AI (np. styl pytań, temat przewodni).</Hint>
-              </div>
+              <Divider style={{ margin: "0 0 20px 0" }} />
 
-              {/* Chevron Icon with rotation animation */}
-              <div style={{ 
-                transform: isPersonalizationOpen ? "rotate(180deg)" : "rotate(0deg)", 
-                transition: "transform 0.2s ease",
-                display: "flex",
-                alignItems: "center",
-                color: "#666" 
-              }}>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="6 9 12 15 18 9"></polyline>
-                </svg>
-              </div>
-            </SectionHeader>
+              <LabelRow>
+                <label>Dodatkowe instrukcje</label>
+                <span>{instructions.trim().length} znaków</span>
+              </LabelRow>
 
-            {isPersonalizationOpen && (
-              <>
-                <Divider style={{ margin: "0 0 20px 0" }} />
-                
-                <LabelRow>
-                  <label>Dodatkowe instrukcje</label>
-                  <span>{instructions.trim().length} znaków</span>
-                </LabelRow>
-                
-                <TextArea
-                  value={instructions}
-                  onChange={(e) => setInstructions(e.target.value)}
-                  placeholder="Np. 'Skup się na datach i nazwiskach', 'Pytania mają być podchwytliwe'..."
-                  style={{ minHeight: '60px' }}
-                />
-              </>
-            )}
+              <TextArea
+                value={instructions}
+                onChange={(e) => setInstructions(e.target.value)}
+                placeholder="Np. 'Skup się na datach i nazwiskach', 'Pytania mają być podchwytliwe'..."
+                style={{ minHeight: "60px" }}
+              />
+            </CollapsibleSection>
           </SectionCard>
 
           {/* Typ pytań */}

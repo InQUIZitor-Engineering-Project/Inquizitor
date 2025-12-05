@@ -59,7 +59,7 @@
     \includegraphics[height=1.0cm]{ {{ logo_path }} }%
   [% endif %]
 }
-\fancyhead[R]{\textcolor{brand}{\textbf{ {{ title|latex }} }}}
+\fancyhead[R]{\textcolor{brand}{\textbf{ {{ title|latex_math }} }}}
 \fancyfoot[C]{\textcolor{gray}{\thepage}}
 
 % Linki bez ramek
@@ -99,12 +99,12 @@ Odpowiedz na wszystkie pytania. W pytaniach zamkniętych zaznacz jedną poprawn�
   % Zarezerwuj miejsce; jeśli go brak, przerzuć całe pytanie na nast. stronę
   \NeedSpaceForQuestion{ {{nchoices}} }
 
-  \item {{ q.text|latex }}
+  \item {{ q.text|latex_math }}
 
   [% if q.is_closed and q.choices %]
     \begin{choicelist}
       [% for c in q.choices %]
-        \choice {{ c|latex }}[% if show_answers and (q.correct_choices and (c in q.correct_choices)) %] \correctmark[% endif %]
+        \choice {{ c|latex_math }}[% if show_answers and (q.correct_choices and (c in q.correct_choices)) %] \correctmark[% endif %]
       [% endfor %]
     \end{choicelist}
   [% else %]
@@ -123,7 +123,7 @@ Odpowiedz na wszystkie pytania. W pytaniach zamkniętych zaznacz jedną poprawn�
 [% for q in questions %]
   \item
   [% if q.is_closed and q.correct_choices and (q.correct_choices|length > 0) %]
-    {{ q.correct_choices|join(', ')|latex }}
+    {{ q.correct_choices|join(', ')|latex_math }}
   [% else %]
     —
   [% endif %]

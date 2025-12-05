@@ -5,6 +5,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 import json
+import random
 from typing import Callable, Dict, List, Tuple
 import re
 import unicodedata
@@ -17,7 +18,8 @@ from app.api.schemas.tests import (
     TestOut,
     QuestionOut,
     QuestionCreate,
-    QuestionUpdate
+    QuestionUpdate,
+    PdfExportConfig,
 )
 from app.application import dto
 from app.application.interfaces import OCRService, QuestionGenerator, UnitOfWork
@@ -29,6 +31,7 @@ from app.db.models import Test as TestRow
 from app.infrastructure.exporting import (
     compile_tex_to_pdf,
     render_test_to_tex,
+    render_custom_test_to_tex,
     test_to_xml_bytes,
 )
 
@@ -42,6 +45,7 @@ class TestService:
         tex_renderer: Callable[..., str] = render_test_to_tex,
         pdf_compiler: Callable[[str], bytes] = compile_tex_to_pdf,
         xml_serializer: Callable[[Dict], bytes] = test_to_xml_bytes,
+        custom_tex_renderer: Callable[[Dict], str] = render_custom_test_to_tex,
     ) -> None:
         self._uow_factory = uow_factory
         self._question_generator = question_generator
@@ -49,6 +53,7 @@ class TestService:
         self._render_test_to_tex = tex_renderer
         self._compile_tex_to_pdf = pdf_compiler
         self._test_to_xml = xml_serializer
+        self._render_custom_test_to_tex = custom_tex_renderer
 
     def generate_test_from_input(
         self,
@@ -181,6 +186,70 @@ class TestService:
         }
         filename = self._build_export_filename(detail.title, detail.test_id, suffix="xml")
         return self._test_to_xml(data), filename
+
+    def export_custom_test_pdf(
+        self,
+        *,
+        owner_id: int,
+        test_id: int,
+        config: PdfExportConfig,
+    ) -> Tuple[bytes, str]:
+        """
+        Export a test to a customized PDF using PdfExportConfig and the advanced LaTeX template.
+        """
+        detail = self.get_test_detail(owner_id=owner_id, test_id=test_id)
+        context = self._prepare_pdf_context(detail, config)
+        tex = self._render_custom_test_to_tex(context)
+        filename = self._build_export_filename(
+            detail.title, detail.test_id, suffix="pdf"
+        )
+        return self._compile_tex_to_pdf(tex), filename
+
+    @staticmethod
+    def _build_question_payload(q: QuestionOut) -> Dict:
+        choices = q.choices or []
+        correct = q.correct_choices or []
+        is_multi = bool(q.is_closed and correct and len(correct) > 1)
+        return {
+            "id": q.id,
+            "text": q.text,
+            "is_closed": q.is_closed,
+            "difficulty": q.difficulty,
+            "choices": choices,
+            "correct_choices": correct,
+            "is_multi": is_multi,
+        }
+
+    def _prepare_pdf_context(
+        self,
+        detail: TestDetailOut,
+        config: PdfExportConfig,
+    ) -> Dict:
+        """
+        Prepare context for the advanced PDF export template.
+        Supports single-variant and A/B variants scenarios.
+        """
+        questions = [self._build_question_payload(q) for q in detail.questions]
+
+        if config.generate_variants and len(questions) > 0:
+            variant_a = list(questions)
+            variant_b = list(questions)
+            random.shuffle(variant_b)
+            variants = [
+                {"name": "A", "questions": variant_a},
+                {"name": "B", "questions": variant_b},
+            ]
+        else:
+            variants = [{"name": None, "questions": questions}]
+
+        return {
+            "title": detail.title or f"Test #{detail.test_id}",
+            "test_id": detail.test_id,
+            "variants": variants,
+            "config": config,
+            "brand_hex": "4CAF4F",
+            "logo_path": "/app/app/templates/logo.png",
+        }
 
     def update_question(
         self,

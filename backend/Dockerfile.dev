@@ -12,6 +12,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     texlive-latex-recommended \
     texlive-latex-extra \
     texlive-fonts-recommended \
+    fonts-roboto \
     texlive-lang-polish \
     fonts-dejavu-core \
     fontconfig \

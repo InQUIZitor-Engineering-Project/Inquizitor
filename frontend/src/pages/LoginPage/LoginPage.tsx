@@ -17,12 +17,13 @@ import {
   ErrorMessage
 } from "./LoginPage.styles";
 
-import { Logo, LogosWrapper } from "../../styles/common.ts"
+import { Logo, LogosWrapper } from "../../styles/common.ts";
 import { Link, useNavigate } from "react-router-dom";
 import Button from "../../components/Button/Button";
 import { useAuth } from "../../context/AuthContext";
 import Footer from "../../components/Footer/Footer";
 import useDocumentTitle from "../../components/GeneralComponents/Hooks/useDocumentTitle.ts";
+import { Checkbox } from "../../components/GeneralComponents/Checkbox/Checkbox";
 
 
 const LoginPage: React.FC = () => {
@@ -96,13 +97,12 @@ const LoginPage: React.FC = () => {
                 {errorMessage && <ErrorMessage>{errorMessage}</ErrorMessage>}
 
                 <CheckboxWrapper htmlFor="showPassword">
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     id="showPassword"
                     checked={showPassword}
-                    onChange={() => setShowPassword((p) => !p)}
+                    onChange={(checked) => setShowPassword(checked)}
+                    label="Pokaż hasło"
                   />
-                  <span>Pokaż hasło</span>
                 </CheckboxWrapper>
 
                 <SubmitButtonWrapper>

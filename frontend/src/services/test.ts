@@ -26,6 +26,19 @@ export interface TestDetail {
   questions: QuestionOut[];
 }
 
+export type AnswerSpaceStyle = "grid" | "lines" | "blank";
+
+export interface PdfExportConfig {
+  answer_space_style: AnswerSpaceStyle;
+  space_height_cm: number;
+  include_answer_key: boolean;
+  generate_variants: boolean;
+  swap_order_variants?: boolean | null;
+  student_header: boolean;
+  use_scratchpad: boolean;
+  mark_multi_choice: boolean;
+}
+
 // ---- Nowe payloady do pytań ----
 
 export interface QuestionCreatePayload {
@@ -208,4 +221,28 @@ export async function deleteTest(
     }
     throw new Error(msg);
   }
+}
+
+export async function exportCustomPdf(
+  testId: number,
+  config: PdfExportConfig
+): Promise<Blob> {
+  const res = await fetch(`${API_BASE}/tests/${testId}/export/pdf/custom`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify(config),
+  });
+
+  if (!res.ok) {
+    let msg = "Nie udało się wyeksportować PDF";
+    try {
+      const data = await res.json();
+      if (data?.detail) msg = data.detail;
+    } catch {
+      // ignore parse error
+    }
+    throw new Error(msg);
+  }
+
+  return res.blob();
 }
