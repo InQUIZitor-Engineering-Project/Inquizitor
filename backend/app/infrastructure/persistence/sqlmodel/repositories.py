@@ -1,14 +1,16 @@
 from __future__ import annotations
 
 from typing import Iterable, List
+from datetime import datetime
 
 from sqlalchemy.orm import Session
 from sqlmodel import select
 
 from app.db import models as db_models
-from app.domain.models import File, Material, Question, Test, User
+from app.domain.models import File, Material, Question, Test, User, Job
 from app.domain.repositories import (
     FileRepository,
+    JobRepository,
     MaterialRepository,
     TestRepository,
     UserRepository,
@@ -166,10 +168,53 @@ class SqlModelMaterialRepository(MaterialRepository):
             self._session.commit()
 
 
+class SqlModelJobRepository(JobRepository):
+    def __init__(self, session: Session):
+        self._session = session
+
+    def add(self, job: Job) -> Job:
+        row = mappers.job_to_row(job)
+        self._session.add(row)
+        self._session.commit()
+        self._session.refresh(row)
+        return mappers.job_to_domain(row)
+
+    def update(self, job: Job) -> Job:
+        db_job = self._session.get(db_models.Job, job.id)
+        if not db_job:
+            raise ValueError(f"Job {job.id} not found")
+
+        db_job.job_type = job.job_type.value
+        db_job.status = job.status.value
+        db_job.result = job.result or None
+        db_job.error = job.error
+        db_job.payload = job.payload or {}
+        db_job.updated_at = job.updated_at or datetime.utcnow()
+
+        self._session.add(db_job)
+        self._session.commit()
+        self._session.refresh(db_job)
+        return mappers.job_to_domain(db_job)
+
+    def get(self, job_id: int) -> Job | None:
+        db_job = self._session.get(db_models.Job, job_id)
+        return mappers.job_to_domain(db_job) if db_job else None
+
+    def list_for_user(self, owner_id: int):
+        stmt = (
+            select(db_models.Job)
+            .where(db_models.Job.owner_id == owner_id)
+            .order_by(db_models.Job.created_at.desc())
+        )
+        rows = self._session.exec(stmt).all()
+        return [mappers.job_to_domain(row) for row in rows]
+
+
 __all__ = [
     "SqlModelUserRepository",
     "SqlModelTestRepository",
     "SqlModelFileRepository",
     "SqlModelMaterialRepository",
+    "SqlModelJobRepository",
 ]
 

@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: start start.backend start.frontend start.db stop logs migrate rebuild new-migration
+.PHONY: start start.backend start.frontend start.db start.celery stop logs migrate rebuild new-migration
 
 start:
 	docker compose up --build
@@ -12,7 +12,10 @@ start.frontend:
 	docker compose up web
 
 start.db:
-	docker compose up db
+	docker compose up db adminer
+
+start.celery:
+	docker compose up celery-worker
 
 stop:
 	docker compose down

@@ -1,7 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { PdfExportConfig } from "../../../services/test";
 import { exportCustomPdf } from "../../../services/test";
 import { useLoader } from "../../../components/Loader/GlobalLoader";
+import { useJobPolling } from "../../../hooks/useJobPolling";
+
+const API_BASE = import.meta.env.VITE_API_URL || "";
 
 const defaultPdfConfig: PdfExportConfig = {
   answer_space_style: "blank",
@@ -19,6 +22,9 @@ export interface UsePdfConfigResult {
   state: {
     pdfConfig: PdfExportConfig;
     pdfConfigOpen: boolean;
+    pdfJobStatus: string | null;
+    pdfJobId: number | null;
+    pdfInProgress: boolean;
   };
   actions: {
     setPdfConfigOpen: (next: boolean) => void;
@@ -32,6 +38,16 @@ const usePdfConfig = () => {
   const { withLoader } = useLoader();
   const [pdfConfig, setPdfConfig] = useState<PdfExportConfig>(defaultPdfConfig);
   const [pdfConfigOpen, setPdfConfigOpen] = useState(false);
+  const [pdfInProgress, setPdfInProgress] = useState(false);
+  const {
+    jobId,
+    status: jobStatus,
+    result: jobResult,
+    error: jobError,
+    isPolling,
+    startPolling,
+    reset: resetJobPolling,
+  } = useJobPolling();
 
   const updatePdfConfig = (updater: (cfg: PdfExportConfig) => PdfExportConfig) => {
     setPdfConfig((cfg) => updater(cfg));
@@ -41,24 +57,69 @@ const usePdfConfig = () => {
     setPdfConfig(defaultPdfConfig);
   };
 
-  const downloadCustomPdf = async (testId: number) => {
-    if (!testId) return;
-    await withLoader(async () => {
-      try {
-        const blob = await exportCustomPdf(testId, pdfConfig);
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = `test_${testId}_custom.pdf`;
-        a.click();
-        URL.revokeObjectURL(a.href);
-      } catch (e: any) {
-        alert(e.message || "Nie udało się wyeksportować spersonalizowanego PDF.");
-      }
-    });
+  const resolveUrl = (pathOrUrl: string) => {
+    if (!pathOrUrl) return "";
+    if (pathOrUrl.startsWith("http")) return pathOrUrl;
+    const normalized = pathOrUrl.startsWith("/") ? pathOrUrl : `/${pathOrUrl}`;
+    return `${API_BASE}${normalized}`;
   };
 
+  const downloadFromUrl = async (url: string, filename: string) => {
+    const token = localStorage.getItem("access_token");
+    const res = await fetch(url, {
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    });
+    if (!res.ok) {
+      throw new Error("Nie udało się pobrać pliku PDF.");
+    }
+    const blob = await res.blob();
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+
+  const downloadCustomPdf = async (testId: number) => {
+    if (!testId) return;
+    setPdfInProgress(true);
+    try {
+      const enqueue = await withLoader(() => exportCustomPdf(testId, pdfConfig));
+      resetJobPolling();
+      startPolling(enqueue.job_id);
+    } catch (e: any) {
+      setPdfInProgress(false);
+      alert(e.message || "Nie udało się zainicjować eksportu PDF.");
+      resetJobPolling();
+    }
+  };
+
+  useEffect(() => {
+    const normalized = (jobStatus || "").toLowerCase();
+    if (!normalized) return;
+
+    if (normalized === "done") {
+      const fileUrl = (jobResult as any)?.file_url || (jobResult as any)?.file_path;
+      const filename = (jobResult as any)?.filename || `test_${(jobResult as any)?.test_id || "export"}.pdf`;
+      if (!fileUrl) {
+        alert("Brak ścieżki do pliku w wyniku zadania.");
+      } else {
+        const resolved = resolveUrl(fileUrl);
+        downloadFromUrl(resolved, filename).catch((err) => {
+          alert(err.message || "Nie udało się pobrać pliku PDF.");
+        });
+      }
+      setPdfInProgress(false);
+      resetJobPolling();
+    } else if (normalized === "failed") {
+      alert(jobError || (jobResult as any)?.error || "Eksport PDF nie powiódł się.");
+      setPdfInProgress(false);
+      resetJobPolling();
+    }
+  }, [jobStatus, jobResult, jobError, resetJobPolling]);
+
   return {
-    state: { pdfConfig, pdfConfigOpen },
+    state: { pdfConfig, pdfConfigOpen, pdfJobStatus: jobStatus || null, pdfJobId: jobId, pdfInProgress: pdfInProgress || isPolling },
     actions: { setPdfConfigOpen, updatePdfConfig, resetPdfConfig, downloadCustomPdf },
   };
 };

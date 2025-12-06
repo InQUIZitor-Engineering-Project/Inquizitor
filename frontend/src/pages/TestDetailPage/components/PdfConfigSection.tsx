@@ -10,10 +10,15 @@ export interface PdfConfigSectionProps {
   onToggle: () => void;
   onChange: (updater: (cfg: PdfExportConfig) => PdfExportConfig) => void;
   onReset: () => void;
-  onDownload: () => void;
 }
 
-const PdfConfigSection: React.FC<PdfConfigSectionProps> = ({ config, isOpen, onToggle, onChange, onReset, onDownload }) => {
+const PdfConfigSection: React.FC<PdfConfigSectionProps> = ({
+  config,
+  isOpen,
+  onToggle,
+  onChange,
+  onReset,
+}) => {
   const theme = useTheme();
   const isActive =
     config.answer_space_style !== "blank" ||
@@ -189,8 +194,8 @@ const PdfConfigSection: React.FC<PdfConfigSectionProps> = ({ config, isOpen, onT
           <Button $variant="ghost" type="button" onClick={onReset}>
             Przywróć domyślne
           </Button>
-          <Button onClick={onDownload}>Pobierz PDF z tymi ustawieniami</Button>
         </Flex>
+
       </CollapsibleSection>
     </Box>
   );

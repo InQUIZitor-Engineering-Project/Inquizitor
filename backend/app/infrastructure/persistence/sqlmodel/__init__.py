@@ -11,12 +11,15 @@ from .mappers import (
     test_to_row,
     user_to_domain,
     user_to_row,
+    job_to_domain,
+    job_to_row,
 )
 from .repositories import (
     SqlModelFileRepository,
     SqlModelMaterialRepository,
     SqlModelTestRepository,
     SqlModelUserRepository,
+    SqlModelJobRepository,
 )
 
 __all__ = [
@@ -30,9 +33,12 @@ __all__ = [
     "test_to_row",
     "user_to_domain",
     "user_to_row",
+    "job_to_domain",
+    "job_to_row",
     "SqlModelFileRepository",
     "SqlModelMaterialRepository",
     "SqlModelTestRepository",
     "SqlModelUserRepository",
+    "SqlModelJobRepository",
 ]
 

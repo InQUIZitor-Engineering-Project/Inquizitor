@@ -10,7 +10,6 @@ export interface TitleBarProps {
   onSave: () => void;
   onCancel: () => void;
   onBeginEdit: () => void;
-  onDelete: () => void;
 }
 
 const TitleBar: React.FC<TitleBarProps> = ({
@@ -21,7 +20,6 @@ const TitleBar: React.FC<TitleBarProps> = ({
   onSave,
   onCancel,
   onBeginEdit,
-  onDelete,
 }) => {
   return (
     <Flex $align="center" $gap="sm" $wrap="wrap">
@@ -50,9 +48,6 @@ const TitleBar: React.FC<TitleBarProps> = ({
           <Button $variant="ghost" $size="sm" onClick={onBeginEdit} title="Edytuj tytuł">
             <img src={editIcon} alt="Edytuj" width={16} height={16} />
             Edytuj
-          </Button>
-          <Button $variant="danger" $size="sm" onClick={onDelete} title="Usuń test">
-            Usuń test
           </Button>
         </>
       )}

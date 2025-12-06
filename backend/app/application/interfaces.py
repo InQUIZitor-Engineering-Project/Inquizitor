@@ -9,6 +9,7 @@ from app.domain.repositories import (
     MaterialRepository,
     TestRepository,
     UserRepository,
+    JobRepository,
 )
 from app.domain.services import FileStorage, OCRService, QuestionGenerator
 
@@ -18,6 +19,7 @@ class UnitOfWork(Protocol):
     tests: TestRepository
     files: FileRepository
     materials: MaterialRepository
+    jobs: JobRepository
 
     def __enter__(self) -> "UnitOfWork":
         ...

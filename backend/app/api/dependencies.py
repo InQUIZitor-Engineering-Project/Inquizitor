@@ -6,7 +6,8 @@ from typing import TYPE_CHECKING, cast
 
 from fastapi import Depends, Request
 
-from app.application.services import AuthService, FileService, MaterialService, TestService, UserService
+from app.application.services import AuthService, FileService, MaterialService, TestService, UserService, JobService
+from app.domain.services import FileStorage
 
 if TYPE_CHECKING:  # pragma: no cover - only for type hints
     from app.bootstrap import AppContainer
@@ -36,6 +37,14 @@ def get_file_service(container=Depends(get_app_container)) -> FileService:
 def get_material_service(container=Depends(get_app_container)) -> MaterialService:
     return container.provide_material_service()
 
+
+def get_job_service(container=Depends(get_app_container)) -> JobService:
+    return container.provide_job_service()
+
+
+def get_export_storage(container=Depends(get_app_container)) -> FileStorage:
+    return container.provide_export_storage()
+
 def get_user_service(container=Depends(get_app_container)) -> UserService:
     return container.provide_user_service()
 
@@ -45,6 +54,8 @@ __all__ = [
     "get_test_service",
     "get_file_service",
     "get_material_service",
+    "get_job_service",
+    "get_export_storage",
     "get_user_service",
 ]
 

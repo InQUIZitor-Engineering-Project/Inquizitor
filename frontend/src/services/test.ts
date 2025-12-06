@@ -6,9 +6,21 @@ export interface TestOut {
   created_at: string;
 }
 
-export interface TestGenerateResponse {
-  test_id: number;
-  num_questions: number;
+export interface JobEnqueueResponse {
+  job_id: number;
+  status: string;
+}
+
+export interface JobOut {
+  id: number;
+  owner_id: number;
+  job_type: string;
+  status: string;
+  payload: Record<string, any>;
+  result?: Record<string, any> | null;
+  error?: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface QuestionOut {
@@ -114,13 +126,13 @@ export interface GenerateParams {
 
 export async function generateTest(
   params: GenerateParams
-): Promise<TestGenerateResponse> {
+): Promise<JobEnqueueResponse> {
   const res = await fetch(`${API_BASE}/tests/generate`, {
     method: "POST",
     headers: getAuthHeaders(),
     body: JSON.stringify(params),
   });
-  return handleJson<TestGenerateResponse>(res, "Błąd generowania testu");
+  return handleJson<JobEnqueueResponse>(res, "Błąd generowania testu");
 }
 
 export async function getTestDetail(testId: number): Promise<TestDetail> {
@@ -227,23 +239,31 @@ export async function deleteTest(
 export async function exportCustomPdf(
   testId: number,
   config: PdfExportConfig
-): Promise<Blob> {
+): Promise<JobEnqueueResponse> {
   const res = await fetch(`${API_BASE}/tests/${testId}/export/pdf/custom`, {
     method: "POST",
     headers: getAuthHeaders(),
     body: JSON.stringify(config),
   });
 
-  if (!res.ok) {
-    let msg = "Nie udało się wyeksportować PDF";
-    try {
-      const data = await res.json();
-      if (data?.detail) msg = data.detail;
-    } catch {
-      // ignore parse error
-    }
-    throw new Error(msg);
-  }
+  return handleJson<JobEnqueueResponse>(res, "Nie udało się zainicjować eksportu PDF");
+}
 
-  return res.blob();
+export async function exportPdf(
+  testId: number,
+  showAnswers: boolean = false
+): Promise<JobEnqueueResponse> {
+  const res = await fetch(`${API_BASE}/tests/${testId}/export/pdf?show_answers=${showAnswers}`, {
+    method: "GET",
+    headers: getAuthHeaders(false),
+  });
+  return handleJson<JobEnqueueResponse>(res, "Nie udało się zainicjować eksportu PDF");
+}
+
+// Jobs API
+export async function getJob(jobId: number): Promise<JobOut> {
+  const res = await fetch(`${API_BASE}/jobs/${jobId}`, {
+    headers: getAuthHeaders(false),
+  });
+  return handleJson<JobOut>(res, "Nie udało się pobrać statusu zadania");
 }

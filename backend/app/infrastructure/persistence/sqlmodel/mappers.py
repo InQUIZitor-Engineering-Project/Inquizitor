@@ -5,8 +5,8 @@ from pathlib import Path
 from typing import Iterable, Optional
 
 from app.db import models as db_models
-from app.domain.models import File, Material, Question, Test, User
-from app.domain.models.enums import ProcessingStatus, QuestionDifficulty
+from app.domain.models import File, Material, Question, Test, User, Job
+from app.domain.models.enums import ProcessingStatus, QuestionDifficulty, JobStatus, JobType
 
 
 def user_to_domain(row: db_models.User) -> User:
@@ -132,6 +132,42 @@ def material_to_row(material: Material) -> db_models.Material:
         extracted_text=material.extracted_text,
         processing_status=material.status.value,
         processing_error=material.processing_error,
+    )
+
+
+def job_to_domain(row: db_models.Job) -> Job:
+    status_value = (
+        row.status.value if isinstance(row.status, db_models.JobStatus) else str(row.status)
+    )
+    type_value = (
+        row.job_type.value
+        if isinstance(row.job_type, db_models.JobType)
+        else str(row.job_type)
+    )
+    return Job(
+        id=row.id,
+        owner_id=row.owner_id,
+        job_type=JobType(type_value),
+        status=JobStatus(status_value),
+        payload=row.payload or {},
+        result=row.result or None,
+        error=row.error,
+        created_at=row.created_at,
+        updated_at=row.updated_at,
+    )
+
+
+def job_to_row(job: Job) -> db_models.Job:
+    return db_models.Job(
+        id=job.id,
+        owner_id=job.owner_id,
+        job_type=job.job_type.value,
+        status=job.status.value,
+        payload=job.payload or {},
+        result=job.result or None,
+        error=job.error,
+        created_at=job.created_at or datetime.utcnow(),
+        updated_at=job.updated_at or datetime.utcnow(),
     )
 
 
