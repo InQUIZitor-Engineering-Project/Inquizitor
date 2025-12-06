@@ -1,12 +1,5 @@
 import React from "react";
-import {
-  ModalBackdrop,
-  ModalContent,
-  ModalTitle,
-  ModalText,
-  ModalButtonRow,
-} from "./ConfirmationModal.styles";
-import Button from "../Button/Button";
+import { Button, Box, Flex, Text, Heading } from "../../design-system/primitives";
 
 export interface ConfirmationModalProps {
   onCancel: () => void;
@@ -17,29 +10,52 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   onCancel,
   onConfirm,
 }) => {
-  const handleContentClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-  };
-
   return (
-    <ModalBackdrop onClick={onCancel}>
-      <ModalContent onClick={handleContentClick}>
-        <ModalTitle>Czy na pewno usunąć?</ModalTitle>
-        <ModalText>
-          Tej operacji nie można cofnąć. Wszystkie pytania w tym teście również
-          zostaną usunięte.
-        </ModalText>
-        <ModalButtonRow>
-          <Button variant="outline" onClick={onCancel}>
+    <Box
+      $display="flex"
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,0.45)",
+        backdropFilter: "blur(4px)",
+        zIndex: 1000,
+        padding: 16,
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+      onClick={onCancel}
+    >
+      <Box
+        $bg="#fff"
+        $radius="lg"
+        $shadow="md"
+        $p="lg"
+        style={{
+          width: "100%",
+          maxWidth: 600,
+          maxHeight: "90vh",
+          boxSizing: "border-box",
+          overflowY: "auto",
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <Heading $level="h3" as="h3" style={{ marginBottom: 8 }}>
+          Czy na pewno usunąć?
+        </Heading>
+        <Text $variant="body3" $tone="muted" style={{ marginBottom: 16 }}>
+          Tej operacji nie można cofnąć. Wszystkie pytania w tym teście również zostaną usunięte.
+        </Text>
+        <Flex $justify="flex-end" $gap="sm" $wrap="wrap">
+          <Button $variant="outline" $size="lg" onClick={onCancel}>
             Anuluj
           </Button>
 
-          <Button variant="danger" onClick={onConfirm}>
+          <Button $variant="danger" $size="lg" onClick={onConfirm}>
             Usuń
           </Button>
-        </ModalButtonRow>
-      </ModalContent>
-    </ModalBackdrop>
+        </Flex>
+      </Box>
+    </Box>
   );
 };
 

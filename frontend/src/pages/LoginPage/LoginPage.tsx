@@ -1,128 +1,117 @@
-import React, { useState } from "react";
-import {
-  PageWrapper,
-  MainContent,
-  Card,
-  LeftColumn,
-  Title,
-  Subtitle,
-  FormGrid,
-  FullWidthField,
-  FieldLabel,
-  TextInput,
-  CheckboxWrapper,
-  SubmitButtonWrapper,
-  RightColumn,
-  Illustration,
-  ErrorMessage
-} from "./LoginPage.styles";
-
-import { Logo, LogosWrapper } from "../../styles/common.ts";
+import React, { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import Button from "../../components/Button/Button";
+import { useTheme } from "styled-components";
+import { Stack, Heading, Text, Input, Button, Checkbox } from "../../design-system/primitives";
 import { useAuth } from "../../context/AuthContext";
-import Footer from "../../components/Footer/Footer";
-import useDocumentTitle from "../../components/GeneralComponents/Hooks/useDocumentTitle.ts";
-import { Checkbox } from "../../components/GeneralComponents/Checkbox/Checkbox";
-
+import useDocumentTitle from "../../hooks/useDocumentTitle";
+import loginIllustration from "../../assets/login.png";
+import AuthLayout from "../Auth/components/AuthLayout";
+import AuthLogos from "../Auth/components/AuthLogos";
 
 const LoginPage: React.FC = () => {
+  const theme = useTheme();
   const navigate = useNavigate();
   const { login } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-
   const [errorMessage, setErrorMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  useDocumentTitle("Zaloguj się | Inquizitor");
+
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setErrorMessage("");
     setLoading(true);
-
     try {
       await login(email, password);
       navigate("/dashboard");
     } catch (err: any) {
-      setErrorMessage(err.message);
+      setErrorMessage(err?.message || "Nie udało się zalogować.");
     } finally {
       setLoading(false);
     }
   };
 
-    useDocumentTitle("Zaloguj się | Inquizitor");
+  return (
+    <AuthLayout
+      illustrationSrc={loginIllustration}
+      illustrationAlt="Login Illustration"
+      left={
+        <Stack $gap="lg">
+          <AuthLogos />
 
-    return (
-    <PageWrapper>
-      <MainContent>
-        <Card>
-          <LeftColumn>
-            <LogosWrapper>
-              <Logo src="/src/assets/logo_book.png" alt="Inquizitor Full Logo" />
-              <Logo src="/src/assets/logo_tekst.png" alt="Inquizitor Icon Logo" />
-            </LogosWrapper>
-
-            <Title>Zaloguj się</Title>
-            <Subtitle>
+          <Stack $gap="xs">
+            <Heading $level="h2" as="h1">
+              Zaloguj się
+            </Heading>
+            <Text $variant="body2" $tone="muted">
               Nie masz jeszcze konta?{" "}
-              <Link to="/register">Zarejestruj się</Link>
-            </Subtitle>
+              <Link to="/register" style={{ color: theme.colors.brand.primary }}>
+                Zarejestruj się
+              </Link>
+            </Text>
+          </Stack>
 
-            <form onSubmit={handleSubmit}>
-              <FormGrid>
-                <FullWidthField>
-                  <FieldLabel htmlFor="email">Adres email</FieldLabel>
-                  <TextInput
-                    type="email"
-                    id="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </FullWidthField>
+          <form onSubmit={handleSubmit}>
+            <Stack $gap="md">
+              <Stack $gap="xs" as="label" htmlFor="email">
+                <Text as="span" $variant="body3" $tone="muted">
+                  Adres email
+                </Text>
+                <Input
+                  id="email"
+                  type="email"
+                  $fullWidth
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </Stack>
 
-                <FullWidthField>
-                  <FieldLabel htmlFor="password">Hasło</FieldLabel>
-                  <TextInput
-                    type={showPassword ? "text" : "password"}
-                    id="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                </FullWidthField>
+              <Stack $gap="xs" as="label" htmlFor="password">
+                <Text as="span" $variant="body3" $tone="muted">
+                  Hasło
+                </Text>
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  $fullWidth
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </Stack>
 
-                {errorMessage && <ErrorMessage>{errorMessage}</ErrorMessage>}
+              {errorMessage && (
+                <Text $variant="body3" $tone="danger">
+                  {errorMessage}
+                </Text>
+              )}
 
-                <CheckboxWrapper htmlFor="showPassword">
+              <Stack $gap="sm">
+                <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <Checkbox
                     id="showPassword"
                     checked={showPassword}
-                    onChange={(checked) => setShowPassword(checked)}
-                    label="Pokaż hasło"
+                    onChange={(e) => setShowPassword(e.target.checked)}
                   />
-                </CheckboxWrapper>
+                  <Text as="span" $variant="body3" $tone="muted">
+                    Pokaż hasło
+                  </Text>
+                </label>
 
-                <SubmitButtonWrapper>
-                  <Button type="submit" variant="primary" disabled={loading}>
-                    {loading ? "Loguję…" : "Zaloguj się →"}
-                  </Button>
-                </SubmitButtonWrapper>
-              </FormGrid>
-            </form>
-          </LeftColumn>
-
-          <RightColumn>
-            <Illustration src="/src/assets/login.png" alt="Login Illustration" />
-          </RightColumn>
-        </Card>
-      </MainContent>
-      
-      {/* 3. ADD FOOTER HERE */}
-      <Footer />
-    </PageWrapper>
+                <Button type="submit" $fullWidth $size="lg" disabled={loading}>
+                  {loading ? "Loguję…" : "Zaloguj się →"}
+                </Button>
+              </Stack>
+            </Stack>
+          </form>
+        </Stack>
+      }
+    />
   );
 };
 

@@ -1,0 +1,206 @@
+import { useState } from "react";
+import { useOutletContext, useParams } from "react-router-dom";
+import { useLoader } from "../../../components/Loader/GlobalLoader";
+import useDocumentTitle from "../../../hooks/useDocumentTitle";
+import useTestData, { sortQuestions } from "./useTestData";
+import useQuestionDraft from "./useQuestionDraft";
+import useTitleEdit from "./useTitleEdit";
+import usePdfConfig from "./usePdfConfig";
+import type { PdfExportConfig, TestDetail } from "../../../services/test";
+
+type LayoutCtx = { refreshSidebarTests: () => Promise<void> };
+
+type UseTestDetailResult = {
+  state: {
+    data: TestDetail | null;
+    draft: ReturnType<typeof useQuestionDraft>["state"]["draft"];
+    editingId: number | null;
+    isAdding: boolean;
+    isEditingTitle: boolean;
+    titleDraft: string;
+    pdfConfig: PdfExportConfig;
+    pdfConfigOpen: boolean;
+    testIdToDelete: number | null;
+    editorError: string | null;
+    savingEdit: boolean;
+    savingAdd: boolean;
+    loading: boolean;
+    error: string | null;
+  };
+  derived: {
+    closedCount: number;
+    openCount: number;
+    missingCorrectLive: boolean;
+    hasAnyChoice: boolean;
+    hasAnyCorrect: boolean;
+    ensureChoices: (choices?: string[] | null) => string[];
+  };
+  actions: {
+    startEdit: ReturnType<typeof useQuestionDraft>["actions"]["startEdit"];
+    startAdd: ReturnType<typeof useQuestionDraft>["actions"]["startAdd"];
+    cancelEdit: ReturnType<typeof useQuestionDraft>["actions"]["cancelEdit"];
+    toggleDraftClosed: ReturnType<typeof useQuestionDraft>["actions"]["toggleDraftClosed"];
+    setDraftDifficulty: ReturnType<typeof useQuestionDraft>["actions"]["setDraftDifficulty"];
+    onTextChange: ReturnType<typeof useQuestionDraft>["actions"]["onTextChange"];
+    updateDraftChoice: ReturnType<typeof useQuestionDraft>["actions"]["updateDraftChoice"];
+    toggleDraftCorrect: ReturnType<typeof useQuestionDraft>["actions"]["toggleDraftCorrect"];
+    addDraftChoiceRow: ReturnType<typeof useQuestionDraft>["actions"]["addDraftChoiceRow"];
+    removeChoiceRow: ReturnType<typeof useQuestionDraft>["actions"]["removeChoiceRow"];
+    handleSaveEdit: () => Promise<void>;
+    handleAdd: () => Promise<void>;
+    handleDelete: (qid: number) => Promise<void>;
+    beginTitleEdit: (title: string) => void;
+    saveTitle: () => Promise<void>;
+    cancelTitle: () => void;
+    setTitleDraft: (value: string) => void;
+    handleOpenDeleteModal: (testId: number) => void;
+    handleCloseModal: () => void;
+    handleConfirmDelete: () => Promise<void>;
+    setPdfConfigOpen: (next: boolean) => void;
+    setPdfConfig: (updater: (cfg: PdfExportConfig) => PdfExportConfig) => void;
+    resetPdfConfig: () => void;
+    handleDownloadCustomPdf: () => Promise<void>;
+    downloadXml: () => Promise<void>;
+  };
+};
+
+const useTestDetail = (): UseTestDetailResult => {
+  const { refreshSidebarTests } = useOutletContext<LayoutCtx>();
+  const { withLoader } = useLoader();
+  const { data, loading, error, refresh, deleteCurrent, setData } = useTestData();
+  const {
+    state: draftState,
+    derived: draftDerived,
+    actions: draftActions,
+  } = useQuestionDraft();
+  const { state: titleState, actions: titleActions } = useTitleEdit();
+  const { state: pdfState, actions: pdfActions } = usePdfConfig();
+
+  const [testIdToDelete, setTestIdToDelete] = useState<number | null>(null);
+
+  const { testId } = useParams<{ testId: string }>();
+  const testIdNum = Number(testId);
+  useDocumentTitle("Test | Inquizitor");
+
+  const setDataSorted = (next: TestDetail | null) => {
+    setData(next ? { ...next, questions: sortQuestions(next.questions) } : next);
+  };
+
+  const handleSaveEdit = async () => {
+    const next = await draftActions.handleSaveEdit(data);
+    if (next) setDataSorted(next);
+  };
+
+  const handleAdd = async () => {
+    await draftActions.handleAdd(data, refresh);
+  };
+
+  const handleDelete = async (qid: number) => {
+    await draftActions.handleDelete(data, qid, refresh);
+  };
+
+  const handleOpenDeleteModal = (id: number) => setTestIdToDelete(id);
+  const handleCloseModal = () => setTestIdToDelete(null);
+
+  const handleConfirmDelete = async () => {
+    if (testIdToDelete === null) return;
+    try {
+      await deleteCurrent(testIdToDelete);
+    } finally {
+      handleCloseModal();
+    }
+  };
+
+  const beginTitleEdit = (title: string) => titleActions.begin(title);
+  const saveTitle = async () => {
+    await titleActions.save(data, refreshSidebarTests, setDataSorted);
+  };
+  const cancelTitle = () => titleActions.cancel(data?.title);
+  const setTitleDraft = (value: string) => titleActions.change(value);
+
+  const handleDownloadCustomPdf = async () => {
+    if (!data?.test_id) return;
+    await pdfActions.downloadCustomPdf(data.test_id);
+  };
+
+  const downloadXml = async () => {
+    if (!testIdNum) return;
+    const url = `${import.meta.env.VITE_API_URL || "http://localhost:8000"}/tests/${testIdNum}/export/xml`;
+    const filename = `test_${testIdNum}.xml`;
+    const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
+    if (!token) return;
+    await withLoader(async () => {
+      try {
+        const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+        if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+        const blob = await res.blob();
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(a.href);
+      } catch (e: any) {
+        alert(`Nie udało się pobrać pliku: ${e.message || e}`);
+      }
+    });
+  };
+
+  const closedCount = data?.questions.filter((q) => q.is_closed).length || 0;
+  const openCount = data ? data.questions.length - closedCount : 0;
+
+  return {
+    state: {
+      data,
+      draft: draftState.draft,
+      editingId: draftState.editingId,
+      isAdding: draftState.isAdding,
+      isEditingTitle: titleState.isEditingTitle,
+      titleDraft: titleState.titleDraft,
+      pdfConfig: pdfState.pdfConfig,
+      pdfConfigOpen: pdfState.pdfConfigOpen,
+      testIdToDelete,
+      editorError: draftState.editorError,
+      savingEdit: draftState.savingEdit,
+      savingAdd: draftState.savingAdd,
+      loading,
+      error,
+    },
+    derived: {
+      closedCount,
+      openCount,
+      missingCorrectLive: draftDerived.missingCorrectLive,
+      hasAnyChoice: draftDerived.hasAnyChoice,
+      hasAnyCorrect: draftDerived.hasAnyCorrect,
+      ensureChoices: draftDerived.ensureChoices,
+    },
+    actions: {
+      startEdit: draftActions.startEdit,
+      startAdd: draftActions.startAdd,
+      cancelEdit: draftActions.cancelEdit,
+      toggleDraftClosed: draftActions.toggleDraftClosed,
+      setDraftDifficulty: draftActions.setDraftDifficulty,
+      onTextChange: draftActions.onTextChange,
+      updateDraftChoice: draftActions.updateDraftChoice,
+      toggleDraftCorrect: draftActions.toggleDraftCorrect,
+      addDraftChoiceRow: draftActions.addDraftChoiceRow,
+      removeChoiceRow: draftActions.removeChoiceRow,
+      handleSaveEdit,
+      handleAdd,
+      handleDelete,
+      beginTitleEdit,
+      saveTitle,
+      cancelTitle,
+      setTitleDraft,
+      handleOpenDeleteModal,
+      handleCloseModal,
+      handleConfirmDelete,
+      setPdfConfigOpen: pdfActions.setPdfConfigOpen,
+      setPdfConfig: pdfActions.updatePdfConfig,
+      resetPdfConfig: pdfActions.resetPdfConfig,
+      handleDownloadCustomPdf,
+      downloadXml,
+    },
+  };
+};
+
+export default useTestDetail;

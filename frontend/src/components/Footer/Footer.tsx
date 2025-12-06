@@ -1,11 +1,13 @@
 import React from "react";
-import { FooterContainer, FooterText } from "./Footer.styles";
+import { Box, Text } from "../../design-system/primitives";
 
 const Footer: React.FC = () => {
   return (
-    <FooterContainer>
-      <FooterText>© 2025 Inquizitor. Wszelkie prawa zastrzeżone.</FooterText>
-    </FooterContainer>
+    <Box as="footer" $bg="#f5f6f8" $py="sm" $px="md" style={{ marginTop: 20 }}>
+      <Text $variant="body4" $tone="muted" $align="center">
+        © 2025 Inquizitor. Wszelkie prawa zastrzeżone.
+      </Text>
+    </Box>
   );
 };
 

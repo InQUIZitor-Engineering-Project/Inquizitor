@@ -1,91 +1,126 @@
-import React from "react";
-import {
-  PageWrapper,
-  ContentWrapper,
-  HeroSection,
-  HeroText,
-  HeroTitle,
-  HeroSubtitle,
-  HeroImageWrapper,
-  HeroImage,
-  Section,
-  SectionTitle,
-  SectionText,
-  Highlight,
-  StatsRow,
-  StatCard,
-  StatNumber,
-  StatLabel,
-} from "./AboutUsPage.styles";
-
+import React, { type ReactNode } from "react";
+import { useTheme } from "styled-components";
+import { Box, Flex, Heading, Stack, Text } from "../../design-system/primitives";
 import Footer from "../../components/Footer/Footer";
 import onasImg from "../../assets/onas_nobackground2.png";
-import useDocumentTitle from "../../components/GeneralComponents/Hooks/useDocumentTitle";
+import useDocumentTitle from "../../hooks/useDocumentTitle";
 
 const AboutUsPage: React.FC = () => {
-
+  const theme = useTheme();
   useDocumentTitle("O nas | Inquizitor");
 
+  const Stat = ({ value, label }: { value: ReactNode; label: string }) => (
+    <Box
+      $bg="#fff"
+      $border="1px solid rgba(76, 175, 80, 0.12)"
+      $radius="xl"
+      $p="md"
+      $shadow="md"
+      $flex="1"
+      style={{ minWidth: 110 }}
+    >
+      <Text $variant="body1" $weight="medium" style={{ color: theme.colors.brand.primary }}>
+        {value}
+      </Text>
+      <Text $variant="body3" $tone="muted">
+        {label}
+      </Text>
+    </Box>
+  );
+
   return (
-    <PageWrapper>
-      <ContentWrapper>
-        <HeroSection>
-          <HeroText>
-            <HeroTitle>
-              <Highlight>Inquizitor</Highlight> powstaje,
-              aby ułatwić tworzenie nowoczesnych testów.
-            </HeroTitle>
+    <Flex
+      $direction="column"
+      $bg={theme.colors.neutral.silver}
+      style={{ minHeight: "calc(100vh - 40px)" }}
+    >
+      <Flex $flex={1} $width="100%" $justify="center" $overflow="hidden">
+        <Stack
+          $gap="lg"
+          style={{ width: "100%", maxWidth: 1200, padding: "40px 32px 24px" }}
+        >
+          <Box
+            $p="lg"
+            $radius="xl"
+            $bg="#fff"
+            $shadow="md"
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+              alignItems: "center",
+              gap: 32,
+            }}
+          >
+            <Stack $gap="md">
+              <Heading $level="h2" as="h2">
+                <Box as="span" style={{ color: theme.colors.brand.primary }}>
+                  Inquizitor
+                </Box>{" "}
+                powstaje, aby ułatwić tworzenie nowoczesnych testów.
+              </Heading>
 
-            <StatsRow>
-              <StatCard>
-                <StatNumber>3</StatNumber>
-                <StatLabel>osoby w zespole</StatLabel>
-              </StatCard>
-              <StatCard>
-                <StatNumber>AI</StatNumber>
-                <StatLabel>w sercu aplikacji</StatLabel>
-              </StatCard>
-              <StatCard>
-                <StatNumber>&infin;</StatNumber>
-                <StatLabel>możliwości testów</StatLabel>
-              </StatCard>
-            </StatsRow>
-          </HeroText>
+              <Flex $wrap="wrap" $gap="sm">
+                <Stat value={3} label="osoby w zespole" />
+                <Stat value="AI" label="w sercu aplikacji" />
+                <Stat value="∞" label="możliwości testów" />
+              </Flex>
+            </Stack>
 
-          <HeroImageWrapper>
-            <HeroImage src={onasImg} alt="Zespół Inquizitor" />
-          </HeroImageWrapper>
-        </HeroSection>
+            <Flex $justify="center">
+              <Box
+                as="img"
+                src={onasImg}
+                alt="Zespół Inquizitor"
+                style={{ maxWidth: "100%", height: "auto", display: "block" }}
+              />
+            </Flex>
+          </Box>
 
-        <Section>
-          <SectionTitle>Kim jesteśmy?</SectionTitle>
-          <SectionText>
-            Inquizitor powstał jako projekt inżynierski trójki studentów z Krakowa,
-            którzy na co dzień obserwowali, ile czasu zajmuje tworzenie rzetelnych
-            testów i kartkówek. Zamiast kolejnego „generatora pytań”, chcieliśmy
-            zbudować narzędzie, które:
-          </SectionText>
-          <SectionText as="ul">
-            <li> - rozumie materiał źródłowy, a nie tylko wycina losowe zdania,</li>
-            <li> - pozwala łatwo edytować pytania i odpowiedzi,</li>
-            <li> - umożliwia eksport do PDF i XML,</li>
-            <li> - pracuje wygodnie również przy większej liczbie testów.</li>
-          </SectionText>
-        </Section>
+          <Box $p="lg" $radius="xl" $bg="#fff" $shadow="md">
+            <Stack $gap="sm">
+              <Heading $level="h3" as="h3">
+                Kim jesteśmy?
+              </Heading>
+              <Text>
+                Inquizitor powstał jako projekt inżynierski trójki studentów z Krakowa,
+                którzy na co dzień obserwowali, ile czasu zajmuje tworzenie rzetelnych
+                testów i kartkówek. Zamiast kolejnego „generatora pytań”, chcieliśmy
+                zbudować narzędzie, które:
+              </Text>
+              <Box as="ul" style={{ margin: 0, paddingLeft: 18, listStyle: "disc" }}>
+                <li>
+                  <Text as="span">rozumie materiał źródłowy, a nie tylko wycina losowe zdania,</Text>
+                </li>
+                <li>
+                  <Text as="span">pozwala łatwo edytować pytania i odpowiedzi,</Text>
+                </li>
+                <li>
+                  <Text as="span">umożliwia eksport do PDF i XML,</Text>
+                </li>
+                <li>
+                  <Text as="span">pracuje wygodnie również przy większej liczbie testów.</Text>
+                </li>
+              </Box>
+            </Stack>
+          </Box>
 
-        <Section>
-          <SectionTitle>Dokąd zmierzamy?</SectionTitle>
-          <SectionText>
-            Naszym celem jest stworzenie kompletnej platformy do przygotowywania
-            testów: z automatycznym generowaniem tytułów, statystykami profilu,
-            rozbudowanym panelem użytkownika oraz łatwym wdrożeniem w szkołach,
-            firmach i na uczelniach.
-          </SectionText>
-        </Section>
+          <Box $p="lg" $radius="xl" $bg="#fff" $shadow="md">
+            <Stack $gap="sm">
+              <Heading $level="h3" as="h3">
+                Dokąd zmierzamy?
+              </Heading>
+              <Text>
+                Naszym celem jest stworzenie kompletnej platformy do przygotowywania testów:
+                z automatycznym generowaniem tytułów, statystykami profilu, rozbudowanym
+                panelem użytkownika oraz łatwym wdrożeniem w szkołach, firmach i na uczelniach.
+              </Text>
+            </Stack>
+          </Box>
 
-        <Footer />
-      </ContentWrapper>
-    </PageWrapper>
+          <Footer />
+        </Stack>
+      </Flex>
+    </Flex>
   );
 };
 

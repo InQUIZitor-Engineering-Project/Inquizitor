@@ -37,7 +37,7 @@ const IndexChip = styled.span`
 
 const QuestionCard: React.FC<QuestionCardProps> = ({ index, title, meta, actions, children }) => {
   return (
-    <Card $p="lg">
+    <Card $p="lg" $shadow="md" $variant="elevated">
       <Stack $gap="md">
         <HeaderRow>
           <TitleRow>

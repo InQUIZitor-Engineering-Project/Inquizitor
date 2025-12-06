@@ -203,29 +203,22 @@
     [% endfor %]
     \end{enumerate}
 
+    % --- BRUDNOPIS PER WARIANT ---
+    [% if cfg.use_scratchpad %]
+      \par
+      \ifdim\dimexpr\pagegoal-\pagetotal\relax>0.5\textheight
+          \vspace{1cm}
+          \section*{\textcolor{brand}{Brudnopis}}
+          \begin{answergrid}[height=\dimexpr\pagegoal-\pagetotal-2.5cm\relax]\end{answergrid}
+      \else
+          \newpage
+          \section*{\textcolor{brand}{Brudnopis}}
+          \begin{answergrid}[height=23cm]\end{answergrid}
+      \fi
+    [% endif %]
+
     [% if not loop.last %]\newpage[% endif %]
 [% endfor %]
-
-
-% --- 1. INTELIGENTNY BRUDNOPIS ---
-[% if cfg.use_scratchpad %]
-  % Upewniamy się, że tryb wertykalny jest aktywny
-  \par 
-  % Logika: Obliczamy pozostałe miejsce (pagegoal - pagetotal)
-  % Jeśli pozostało więcej niż 0.5 wysokości tekstu:
-  \ifdim\dimexpr\pagegoal-\pagetotal\relax>0.5\textheight
-      % --- WSTAW TU ---
-      \vspace{1cm}
-      \section*{\textcolor{brand}{Brudnopis}}
-      % Obliczamy wysokość kratki: Pozostałe miejsce minus ~2.5cm na nagłówek i marginesy
-      \begin{answergrid}[height=\dimexpr\pagegoal-\pagetotal-2.5cm\relax]\end{answergrid}
-  \else
-      % --- NOWA STRONA ---
-      \newpage
-      \section*{\textcolor{brand}{Brudnopis}}
-      \begin{answergrid}[height=23cm]\end{answergrid}
-  \fi
-[% endif %]
 
 
 % --- 2. KLUCZ ODPOWIEDZI (Zawsze na końcu) ---
