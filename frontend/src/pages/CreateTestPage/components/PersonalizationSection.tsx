@@ -1,5 +1,5 @@
 import React from "react";
-import { Box, Divider, Textarea, Text } from "../../../design-system/primitives";
+import { Box, Divider, Textarea } from "../../../design-system/primitives";
 import { CollapsibleSection, FormField } from "../../../design-system/patterns";
 
 export interface PersonalizationSectionProps {

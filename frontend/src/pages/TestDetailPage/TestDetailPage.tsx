@@ -75,8 +75,6 @@ const TestDetailPage: React.FC = () => {
             onToggle={() => actions.setPdfConfigOpen(!state.pdfConfigOpen)}
             onChange={(updater) => actions.setPdfConfig((cfg) => updater(cfg))}
             onReset={actions.resetPdfConfig}
-            onDownloadPdf={actions.handleDownloadCustomPdf}
-            onDownloadXml={actions.downloadXml}
           />
 
           <Box>
