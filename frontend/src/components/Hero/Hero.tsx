@@ -4,6 +4,7 @@ import { useAuth } from "../../context/AuthContext";
 import { getMyTests } from "../../services/test";
 import { Box, Flex, Stack, Heading, Text, Button } from "../../design-system/primitives";
 import { useLoader } from "../Loader/GlobalLoader";
+import heroImg from "../../assets/landing_main.png";
 
 const Hero: React.FC = () => {
   const { user } = useAuth();
@@ -67,7 +68,7 @@ const Hero: React.FC = () => {
         <Flex $justify="center" style={{ flex: "1 1 400px", minWidth: 280 }}>
           <Box
             as="img"
-            src="/src/assets/landing_main.png"
+            src={heroImg}
             alt="Hero Illustration"
             style={{ width: "100%", maxWidth: 520, objectFit: "contain" }}
           />

@@ -7,6 +7,7 @@ import ProfileHeader from "./components/ProfileHeader";
 import AccountInfoCard from "./components/AccountInfoCard";
 import StatsCard from "./components/StatsCard";
 import PasswordCard from "./components/PasswordCard";
+import profileIllustration from "../../assets/profile.png";
 
 const API_BASE = import.meta.env.VITE_API_URL || "";
 
@@ -156,7 +157,7 @@ const ProfilePage: React.FC = () => {
       <ProfileHeader
         fullName={profile ? `${profile.first_name} ${profile.last_name}` : undefined}
         subtitle="Zarządzaj swoim kontem, przeglądaj statystyki quizów i personalizuj swoje doświadczenie w Inquizitor."
-        illustrationSrc="/src/assets/profile.png"
+        illustrationSrc={profileIllustration}
         error={loadError}
       />
 

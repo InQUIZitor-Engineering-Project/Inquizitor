@@ -12,6 +12,8 @@ import { Logo, LogosWrapper } from "../../styles/common";
 import { useAuth } from "../../context/AuthContext";
 import { HashLink } from "react-router-hash-link";
 import { useLoader } from "../../components/Loader/GlobalLoader";
+import logoBook from "../../assets/logo_book.png";
+import logoText from "../../assets/logo_tekst.png";
 
 const Navbar: React.FC = () => {
   const { user, logout } = useAuth();
@@ -40,8 +42,8 @@ const Navbar: React.FC = () => {
     <NavbarContainer>
       <Link to="/" onClick={triggerQuickLoader} style={{ minWidth: 0 }}>
         <LogosWrapper>
-          <Logo src="/src/assets/logo_book.png" alt="Inquizitor Book Logo" />
-          <Logo src="/src/assets/logo_tekst.png" alt="Inquizitor Text Logo" />
+          <Logo src={logoBook} alt="Inquizitor Book Logo" />
+          <Logo src={logoText} alt="Inquizitor Text Logo" />
         </LogosWrapper>
       </Link>
 

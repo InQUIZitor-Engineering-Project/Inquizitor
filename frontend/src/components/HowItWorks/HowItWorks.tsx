@@ -1,6 +1,9 @@
 import React from "react";
 import { Box, Stack, Heading, Text, Flex } from "../../design-system/primitives";
 import StepCard from "./StepCard";
+import uploadIcon from "../../assets/icons/upload.png";
+import quizIcon from "../../assets/icons/quiz.png";
+import shareIcon from "../../assets/icons/share.png";
 
 interface HowItWorksProps {
   id?: string;
@@ -30,17 +33,17 @@ const HowItWorks: React.FC<HowItWorksProps> = ({ id }) => {
         style={{ width: "100%", maxWidth: 1200, justifyContent: "center" }}
       >
         <StepCard
-          iconSrc="/src/assets/icons/upload.png"
+          iconSrc={uploadIcon}
           title="Prześlij plik"
           description="Wgraj swoje materiały w jednym z obsługiwanych formatów, np. PDF lub JPG"
         />
         <StepCard
-          iconSrc="/src/assets/icons/quiz.png"
+          iconSrc={quizIcon}
           title="Generuj quiz"
           description="Sztuczna inteligencja przetworzy materiały i wygeneruje zadania – w pełni dopasowane do Twoich potrzeb"
         />
         <StepCard
-          iconSrc="/src/assets/icons/share.png"
+          iconSrc={shareIcon}
           title="Udostępnij"
           description="Gotowy quiz możesz z łatwością pobrać i wykorzystać na swojej lekcji"
         />

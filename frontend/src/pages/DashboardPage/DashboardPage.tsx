@@ -6,9 +6,10 @@ import ConfirmationModal from "../../components/ConfirmationModal/ConfirmationMo
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import useDashboard from "./hooks/useDashboard";
 import EmptyState from "./components/EmptyState";
+import dashboardWelcome from "../../assets/dashboard_welcome.png";
 
-const EMPTY_ILLUSTRATION = "/src/assets/dashboard_welcome.png";
-const HUB_ILLUSTRATION = "/src/assets/dashboard_welcome.png";
+const EMPTY_ILLUSTRATION = dashboardWelcome;
+const HUB_ILLUSTRATION = dashboardWelcome;
 
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate();

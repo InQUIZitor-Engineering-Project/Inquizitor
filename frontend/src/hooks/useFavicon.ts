@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
+import defaultFavicon from "../assets/logo_book.png";
 
-const useFavicon = (iconPath: string = "../../../assets/logo_book.png") => {
+const useFavicon = (iconPath: string = defaultFavicon) => {
   useEffect(() => {
     let link = document.querySelector<HTMLLinkElement>("link[rel~='icon']");
 
