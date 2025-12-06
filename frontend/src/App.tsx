@@ -16,7 +16,7 @@ import FAQPage from './pages/FAQPage/FAQPage';
 import CreateTestPage from "./pages/CreateTestPage/CreateTestPage";
 import MainLayout from "./layouts/MainLayout";
 
-import ScrollToTop from "./components/GeneralComponents/ScrollToTop/ScrollToTop";
+import ScrollToTop from "./components/ScrollToTop/ScrollToTop";
 
 const ProtectedRoute: React.FC<{ children: JSX.Element }> = ({ children }) => {
   const { user, loading } = useAuth();

@@ -1,34 +1,16 @@
-import React, { useState, useEffect } from "react";
-import {
-  PageWrapper,
-  Card,
-  LeftColumn,
-  Title,
-  Subtitle,
-  FormGrid,
-  FullWidthField,
-  FieldLabel,
-  TextInput,
-  Notes,
-  CheckboxWrapper,
-  SubmitButtonWrapper,
-  RightColumn,
-  Illustration,
-  ErrorMessage,
-  MainContent,
-  ModalOverlay,
-  ModalContent,
-  LinkButton,
-  CloseButton,
-} from "./RegisterPage.styles";
-import { Logo, LogosWrapper } from "../../styles/common.ts"
+import React, { useState, useEffect, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import Button from "../../components/Button/Button";
+import { useTheme } from "styled-components";
+import { Stack, Heading, Text, Input, Button, Checkbox, Flex } from "../../design-system/primitives";
 import { registerUser } from "../../services/auth";
-import Footer from "../../components/Footer/Footer.tsx";
-import useDocumentTitle from "../../components/GeneralComponents/Hooks/useDocumentTitle.ts";
+import useDocumentTitle from "../../hooks/useDocumentTitle";
+import loginIllustration from "../../assets/login.png";
+import AuthLayout from "../Auth/components/AuthLayout";
+import AuthLogos from "../Auth/components/AuthLogos";
+import TermsModal from "./components/TermsModal";
 
 const RegisterPage: React.FC = () => {
+  const theme = useTheme();
   const navigate = useNavigate();
 
   const [firstName, setFirstName] = useState("");
@@ -41,26 +23,14 @@ const RegisterPage: React.FC = () => {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const [termsHtml, setTermsHtml] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (isModalOpen && !termsHtml) {
-      fetch("/terms.html")
-        .then((response) => {
-            if (!response.ok) throw new Error("Failed to load terms");
-            return response.text();
-        })
-        .then((data) => setTermsHtml(data))
-        .catch((err) => {
-            console.error(err);
-            setTermsHtml("<p>Błąd ładowania regulaminu. Proszę spróbować później.</p>");
-        });
-    }
-  }, [isModalOpen, termsHtml]);
+    // keep for future side effects if needed
+  }, [isModalOpen]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setErrorMessage("");
 
@@ -94,138 +64,159 @@ const RegisterPage: React.FC = () => {
   useDocumentTitle("Rejestracja | Inquizitor");
 
   return (
-    <PageWrapper>
-      <MainContent>
-        <Card>
-          <LeftColumn>
-            <LogosWrapper>
-              <Logo src="/src/assets/logo_book.png" alt="Inquizitor Full Logo" />
-              <Logo src="/src/assets/logo_tekst.png" alt="Inquizitor Icon Logo" />
-            </LogosWrapper>
+    <>
+      <AuthLayout
+        illustrationSrc={loginIllustration}
+        illustrationAlt="Rejestracja Illustration"
+        left={
+          <Stack $gap="lg">
+            <AuthLogos />
 
-            <Title>Zarejestruj się</Title>
-            <Subtitle>
-              Masz już konto?{" "}
-              <Link to="/login">Zaloguj się</Link>
-            </Subtitle>
+            <Stack $gap="xs">
+              <Heading $level="h2" as="h1">
+                Zarejestruj się
+              </Heading>
+              <Text $variant="body2" $tone="muted">
+                Masz już konto?{" "}
+                <Link to="/login" style={{ color: theme.colors.brand.primary }}>
+                  Zaloguj się
+                </Link>
+              </Text>
+            </Stack>
 
             <form onSubmit={handleSubmit}>
-              <FormGrid>
-                <div>
-                  <FieldLabel htmlFor="firstName">Imię</FieldLabel>
-                  <TextInput
-                    id="firstName"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                  />
-                </div>
+              <Stack $gap="md">
+                <Flex $gap="md" $wrap="wrap">
+                  <Stack $gap="xs" as="label" htmlFor="firstName" style={{ flex: "1 1 160px" }}>
+                    <Text as="span" $variant="body3" $tone="muted">
+                      Imię
+                    </Text>
+                    <Input
+                      id="firstName"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      $fullWidth
+                    />
+                  </Stack>
 
-                <div>
-                  <FieldLabel htmlFor="lastName">Nazwisko</FieldLabel>
-                  <TextInput
-                    id="lastName"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                  />
-                </div>
+                  <Stack $gap="xs" as="label" htmlFor="lastName" style={{ flex: "1 1 160px" }}>
+                    <Text as="span" $variant="body3" $tone="muted">
+                      Nazwisko
+                    </Text>
+                    <Input
+                      id="lastName"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      $fullWidth
+                    />
+                  </Stack>
+                </Flex>
 
-                <FullWidthField>
-                  <FieldLabel htmlFor="email">Adres email</FieldLabel>
-                  <TextInput
-                    type="email"
+                <Stack $gap="xs" as="label" htmlFor="email">
+                  <Text as="span" $variant="body3" $tone="muted">
+                    Adres email
+                  </Text>
+                  <Input
                     id="email"
+                    type="email"
+                    $fullWidth
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />
-                </FullWidthField>
+                </Stack>
 
-                <div>
-                  <FieldLabel htmlFor="password">Hasło</FieldLabel>
-                  <TextInput
-                    type={showPassword ? "text" : "password"}
-                    id="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
-                </div>
+                <Flex $gap="md" $wrap="wrap">
+                  <Stack $gap="xs" as="label" htmlFor="password" style={{ flex: "1 1 160px" }}>
+                    <Text as="span" $variant="body3" $tone="muted">
+                      Hasło
+                    </Text>
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      $fullWidth
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                    />
+                  </Stack>
 
-                <div>
-                  <FieldLabel htmlFor="confirmPassword">Potwierdź hasło</FieldLabel>
-                  <TextInput
-                    type={showPassword ? "text" : "password"}
-                    id="confirmPassword"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                  />
-                </div>
+                  <Stack $gap="xs" as="label" htmlFor="confirmPassword" style={{ flex: "1 1 160px" }}>
+                    <Text as="span" $variant="body3" $tone="muted">
+                      Potwierdź hasło
+                    </Text>
+                    <Input
+                      id="confirmPassword"
+                      type={showPassword ? "text" : "password"}
+                      $fullWidth
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                    />
+                  </Stack>
+                </Flex>
 
-                <Notes>
+                <Text $variant="body3" $tone="muted">
                   Użyj co najmniej 8 znaków, łącząc litery, cyfry i symbole
-                </Notes>
+                </Text>
 
-                <CheckboxWrapper htmlFor="showPassword">
-                  <input
-                    type="checkbox"
+                <label style={{ display: "flex", alignItems: "center", gap: 8 }} htmlFor="showPassword">
+                  <Checkbox
                     id="showPassword"
+                    $size={18}
+                    style={{ flexShrink: 0 }}
                     checked={showPassword}
-                    onChange={() => setShowPassword((prev) => !prev)}
+                    onChange={(e) => setShowPassword(e.target.checked)}
                   />
-                  <span>Pokaż hasło</span>
-                </CheckboxWrapper>
+                  <Text as="span" $variant="body3" $tone="muted">
+                    Pokaż hasło
+                  </Text>
+                </label>
 
-                <CheckboxWrapper htmlFor="termsAccepted">
-                  <input
-                    type="checkbox"
+                <label style={{ display: "flex", alignItems: "flex-start", gap: 8 }} htmlFor="termsAccepted">
+                  <Checkbox
                     id="termsAccepted"
+                    $size={18}
+                    style={{ flexShrink: 0 }}
                     checked={termsAccepted}
-                    onChange={() => setTermsAccepted((prev) => !prev)}
+                    onChange={(e) => setTermsAccepted(e.target.checked)}
                   />
-                  <span>
-                    Akceptuję Warunki Użytkowania i Politykę Prywatności. Oświadczam, że posiadam prawa do materiałów i wyrażam zgodę na ich przetworzenie przez AI.{" "}
-                    <LinkButton type="button" onClick={() => setIsModalOpen(true)}>
-                        Więcej informacji
-                    </LinkButton>
-                  </span>
-                </CheckboxWrapper>  
+                  <Text $variant="body3" $tone="muted">
+                    Akceptuję Warunki Użytkowania i Politykę Prywatności. Oświadczam, że posiadam
+                    prawa do materiałów i wyrażam zgodę na ich przetworzenie przez AI.{" "}
+                    <button
+                      type="button"
+                      onClick={() => setIsModalOpen(true)}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        color: theme.colors.brand.primary,
+                        cursor: "pointer",
+                        padding: 0,
+                        textDecoration: "underline",
+                      }}
+                    >
+                      Więcej informacji
+                    </button>
+                  </Text>
+                </label>
 
-                {errorMessage && <ErrorMessage>{errorMessage}</ErrorMessage>}
+                {errorMessage && (
+                  <Text $variant="body3" $tone="danger">
+                    {errorMessage}
+                  </Text>
+                )}
 
-                <SubmitButtonWrapper>
-                  <Button type="submit" variant="primary" disabled={loading}>
-                    {loading ? "Tworzę konto..." : "Stwórz konto →"}
-                  </Button>
-                </SubmitButtonWrapper>
-              </FormGrid>
+                <Button type="submit" $fullWidth $size="lg" disabled={loading}>
+                  {loading ? "Tworzę konto..." : "Stwórz konto →"}
+                </Button>
+              </Stack>
             </form>
-          </LeftColumn>
-
-          <RightColumn>
-            <Illustration src="/src/assets/login.png" alt="Rejestracja Illustration" />
-          </RightColumn>
-        </Card>
-      </MainContent>
-      <Footer/>
+          </Stack>
+        }
+      />
 
       {isModalOpen && (
-              <ModalOverlay onClick={() => setIsModalOpen(false)}>
-                <ModalContent onClick={(e) => e.stopPropagation()}>
-                  <CloseButton onClick={() => setIsModalOpen(false)}>&times;</CloseButton>
-                  
-                  {/* Render the fetched HTML safely */}
-                  {termsHtml ? (
-                      <div dangerouslySetInnerHTML={{ __html: termsHtml }} />
-                  ) : (
-                      <p style={{textAlign: 'center', padding: '20px'}}>Ładowanie treści...</p>
-                  )}
-
-                  <div style={{marginTop: '20px', textAlign: 'right'}}>
-                      <Button variant="primary" onClick={() => setIsModalOpen(false)}>Zamknij</Button>
-                  </div>
-                </ModalContent>
-              </ModalOverlay>
-            )}
-      
-    </PageWrapper>
+        <TermsModal onClose={() => setIsModalOpen(false)} />
+      )}
+    </>
   );
 };
 

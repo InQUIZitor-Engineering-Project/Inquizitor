@@ -95,7 +95,7 @@ const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
 
   if (withCard) {
     return (
-      <Card $p="lg" $shadow="4px" $variant="elevated">
+      <Card $p="lg" $shadow="md" $variant="elevated">
         {content}
       </Card>
     );

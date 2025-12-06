@@ -1,40 +1,12 @@
 import React, { useEffect, useState } from "react";
+import { Flex, Stack, Box } from "../../design-system/primitives";
 import Footer from "../../components/Footer/Footer";
 import { useLoader } from "../../components/Loader/GlobalLoader";
-
-import {
-  PageWrapper,
-  ContentWrapper,
-  HeaderRow,
-  UserInfoBlock,
-  Greeting,
-  Subtext,
-  UserMeta,
-  MetaPill,
-  IllustrationWrapper,
-  ProfileIllustration,
-  MainGrid,
-  Card,
-  CardHeaderRow,
-  CardHint,
-  StatsGrid,
-  StatBox,
-  StatLabel,
-  StatValue,
-  SecondaryValue,
-  Divider,
-  BarSection,
-  BarRow,
-  BarLabel,
-  BarTrack,
-  BarFill,
-  PasswordCard,
-  FormField,
-  SaveButton,
-  ErrorText,
-  SuccessText,
-} from "./ProfilePage.styles";
-import useDocumentTitle from "../../components/GeneralComponents/Hooks/useDocumentTitle";
+import useDocumentTitle from "../../hooks/useDocumentTitle";
+import ProfileHeader from "./components/ProfileHeader";
+import AccountInfoCard from "./components/AccountInfoCard";
+import StatsCard from "./components/StatsCard";
+import PasswordCard from "./components/PasswordCard";
 
 const API_BASE = import.meta.env.VITE_API_URL || "";
 
@@ -177,293 +149,59 @@ const ProfilePage: React.FC = () => {
 
   // --- Helpery do statystyk ---
 
-  const totalQuestions = stats?.total_questions ?? 0;
-  const avgQuestions =
-    stats && typeof stats.avg_questions_per_test === "number"
-      ? stats.avg_questions_per_test
-      : 0;
-
-  // Breakdown będzie użyty tylko jeśli backend zwróci te pola
-  const hasBreakdown =
-    !!stats &&
-    (stats.total_closed_questions !== undefined ||
-      stats.total_open_questions !== undefined ||
-      stats.total_easy_questions !== undefined ||
-      stats.total_medium_questions !== undefined ||
-      stats.total_hard_questions !== undefined);
-
-  const pct = (value: number | undefined) => {
-    if (!stats || !totalQuestions || !value) return 0;
-    return Math.round((value / totalQuestions) * 100);
-  };
-
   useDocumentTitle("Profil | Inquizitor");
+
+  const pageContent = (
+    <Stack $gap="xl" style={{ width: "100%", maxWidth: 1100, margin: "0 auto", padding: "32px 16px" }}>
+      <ProfileHeader
+        fullName={profile ? `${profile.first_name} ${profile.last_name}` : undefined}
+        subtitle="Zarządzaj swoim kontem, przeglądaj statystyki quizów i personalizuj swoje doświadczenie w Inquizitor."
+        illustrationSrc="/src/assets/profile.png"
+        error={loadError}
+      />
+
+      <Flex $gap="lg" $wrap="wrap">
+        <Stack $gap="lg" style={{ flex: "2 1 520px", minWidth: 320 }}>
+          <AccountInfoCard
+            firstName={profile?.first_name}
+            lastName={profile?.last_name}
+            email={profile?.email}
+            userId={profile?.id}
+          />
+          <StatsCard stats={stats} />
+        </Stack>
+
+        <Box style={{ flex: "1 1 320px", minWidth: 300 }}>
+          <PasswordCard
+            oldPassword={oldPassword}
+            newPassword={newPassword}
+            confirmPassword={confirmPassword}
+            onOldChange={setOldPassword}
+            onNewChange={setNewPassword}
+            onConfirmChange={setConfirmPassword}
+            onSubmit={handlePasswordChange}
+            error={passwordError}
+            success={passwordSuccess}
+          />
+        </Box>
+      </Flex>
+    </Stack>
+  );
 
   if (loading) {
     return (
-      <PageWrapper>
-        <ContentWrapper />
+      <Flex $direction="column" $bg="#f5f6f8" style={{ minHeight: "100vh" }}>
+        {pageContent}
         <Footer />
-      </PageWrapper>
+      </Flex>
     );
   }
 
   return (
-    <PageWrapper>
-      <ContentWrapper>
-        <HeaderRow>
-          <UserInfoBlock>
-            <Greeting>
-              {profile
-                ? `${profile.first_name} ${profile.last_name}`
-                : "Twój profil"}
-            </Greeting>
-            <Subtext>
-              Zarządzaj swoim kontem, przeglądaj statystyki quizów i
-              personalizuj swoje doświadczenie w Inquizitor.
-            </Subtext>
-
-            {loadError && <ErrorText>{loadError}</ErrorText>}
-          </UserInfoBlock>
-
-          <IllustrationWrapper>
-            <ProfileIllustration
-              src="/src/assets/profile.png"
-              alt="Profil użytkownika"
-            />
-          </IllustrationWrapper>
-        </HeaderRow>
-
-        <MainGrid>
-          {/* LEWA KOLUMNA: Dane konta + Statystyki */}
-          <div>
-            {/* Dane konta */}
-            <Card>
-              <CardHeaderRow>
-                <h3>Dane konta</h3>
-              </CardHeaderRow>
-              {profile && (
-                <>
-                  <CardHint>
-                    To są podstawowe informacje powiązane z Twoim kontem.
-                  </CardHint>
-                  <StatsGrid>
-                    <StatBox>
-                      <StatLabel>Imię i nazwisko</StatLabel>
-                      <StatValue>
-                        {profile.first_name} {profile.last_name}
-                      </StatValue>
-                    </StatBox>
-                    <StatBox>
-                      <StatLabel>Adres e-mail</StatLabel>
-                      <StatValue>{profile.email}</StatValue>
-                    </StatBox>
-                    <StatBox>
-                      <StatLabel>ID użytkownika</StatLabel>
-                      <StatValue>{profile.id}</StatValue>
-                    </StatBox>
-                  </StatsGrid>
-                </>
-              )}
-            </Card>
-
-            {/* Statystyki */}
-            <Card style={{ marginTop: 16 }}>
-              <CardHeaderRow>
-                <h3>Twoje statystyki</h3>
-                <CardHint>
-                  Podsumowanie aktywności na podstawie wygenerowanych testów.
-                </CardHint>
-              </CardHeaderRow>
-
-              <StatsGrid>
-                <StatBox>
-                  <StatLabel>Testy</StatLabel>
-                  <StatValue>{stats?.total_tests ?? 0}</StatValue>
-                  <SecondaryValue>łącznie wygenerowanych</SecondaryValue>
-                </StatBox>
-
-                <StatBox>
-                  <StatLabel>Pytania</StatLabel>
-                  <StatValue>{totalQuestions}</StatValue>
-                  <SecondaryValue>we wszystkich testach</SecondaryValue>
-                </StatBox>
-
-                <StatBox>
-                  <StatLabel>Śr. pytań / test</StatLabel>
-                  <StatValue>{avgQuestions.toFixed(1)}</StatValue>
-                  <SecondaryValue>efektywność generowania</SecondaryValue>
-                </StatBox>
-
-                <StatBox>
-                  <StatLabel>Materiały</StatLabel>
-                  <StatValue>{stats?.total_files ?? 0}</StatValue>
-                  <SecondaryValue>wgrane pliki źródłowe</SecondaryValue>
-                </StatBox>
-              </StatsGrid>
-
-              {/* Struktura pytań - tylko jeśli backend zwraca breakdown */}
-              {hasBreakdown && totalQuestions > 0 ? (
-                <>
-                  <Divider />
-                  <BarSection>
-                    <CardHint>Struktura Twoich pytań</CardHint>
-
-                    {stats?.total_closed_questions !== undefined && (
-                      <BarRow>
-                        <BarLabel>Zamknięte</BarLabel>
-                        <BarTrack>
-                          <BarFill
-                            $color="rgba(33, 150, 243, 0.65)"
-                            $width={pct(stats.total_closed_questions)}
-                          />
-                        </BarTrack>
-                        <span>
-                          {stats.total_closed_questions} (
-                          {pct(stats.total_closed_questions)}%)
-                        </span>
-                      </BarRow>
-                    )}
-
-                    {stats?.total_open_questions !== undefined && (
-                      <BarRow>
-                        <BarLabel>Otwarte</BarLabel>
-                        <BarTrack>
-                          <BarFill
-                            $color="rgba(156, 39, 176, 0.65)"
-                            $width={pct(stats.total_open_questions)}
-                          />
-                        </BarTrack>
-                        <span>
-                          {stats.total_open_questions} (
-                          {pct(stats.total_open_questions)}%)
-                        </span>
-                      </BarRow>
-                    )}
-
-                    {stats?.total_easy_questions !== undefined && (
-                      <BarRow>
-                        <BarLabel>Łatwe</BarLabel>
-                        <BarTrack>
-                          <BarFill
-                            $color="rgba(76, 175, 80, 0.8)"
-                            $width={pct(stats.total_easy_questions)}
-                          />
-                        </BarTrack>
-                        <span>
-                          {stats.total_easy_questions} (
-                          {pct(stats.total_easy_questions)}%)
-                        </span>
-                      </BarRow>
-                    )}
-
-                    {stats?.total_medium_questions !== undefined && (
-                      <BarRow>
-                        <BarLabel>Średnie</BarLabel>
-                        <BarTrack>
-                          <BarFill
-                            $color="rgba(255, 193, 7, 0.9)"
-                            $width={pct(stats.total_medium_questions)}
-                          />
-                        </BarTrack>
-                        <span>
-                          {stats.total_medium_questions} (
-                          {pct(stats.total_medium_questions)}%)
-                        </span>
-                      </BarRow>
-                    )}
-
-                    {stats?.total_hard_questions !== undefined && (
-                      <BarRow>
-                        <BarLabel>Trudne</BarLabel>
-                        <BarTrack>
-                          <BarFill
-                            $color="rgba(244, 67, 54, 0.9)"
-                            $width={pct(stats.total_hard_questions)}
-                          />
-                        </BarTrack>
-                        <span>
-                          {stats.total_hard_questions} (
-                          {pct(stats.total_hard_questions)}%)
-                        </span>
-                      </BarRow>
-                    )}
-                  </BarSection>
-                </>
-              ) : (
-                <>
-                  <Divider />
-                  <CardHint>
-                    Szczegółowa struktura pytań będzie dostępna po dodaniu
-                    dodatkowych statystyk w systemie.
-                  </CardHint>
-                </>
-              )}
-
-              {stats?.last_test_created_at && (
-                <>
-                  <Divider />
-                  <CardHint>
-                    Ostatni test wygenerowano:{" "}
-                    {new Date(
-                      stats.last_test_created_at,
-                    ).toLocaleString("pl-PL")}
-                  </CardHint>
-                </>
-              )}
-            </Card>
-          </div>
-
-          {/* PRAWA KOLUMNA: Zmiana hasła */}
-          <div>
-            <PasswordCard as="form" onSubmit={handlePasswordChange}>
-              <CardHeaderRow>
-                <h3>Zmień hasło</h3>
-                <CardHint>
-                  Użyj silnego, unikalnego hasła, aby zabezpieczyć swoje konto.
-                </CardHint>
-              </CardHeaderRow>
-
-              <FormField>
-                <label>Aktualne hasło</label>
-                <input
-                  type="password"
-                  value={oldPassword}
-                  onChange={(e) => setOldPassword(e.target.value)}
-                  placeholder="Wpisz aktualne hasło"
-                />
-              </FormField>
-
-              <FormField>
-                <label>Nowe hasło</label>
-                <input
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Minimum 8 znaków"
-                />
-              </FormField>
-
-              <FormField>
-                <label>Powtórz nowe hasło</label>
-                <input
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Powtórz nowe hasło"
-                />
-              </FormField>
-
-              <SaveButton type="submit">Zapisz nowe hasło</SaveButton>
-
-              {passwordError && <ErrorText>{passwordError}</ErrorText>}
-              {passwordSuccess && <SuccessText>{passwordSuccess}</SuccessText>}
-            </PasswordCard>
-          </div>
-        </MainGrid>
-      </ContentWrapper>
+    <Flex $direction="column" $bg="#f5f6f8" style={{ minHeight: "100vh" }}>
+      {pageContent}
       <Footer />
-    </PageWrapper>
+    </Flex>
   );
 };
 

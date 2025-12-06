@@ -15,8 +15,17 @@ export const Segmented = styled.div`
     background: transparent;
     color: ${({ theme }) => theme.colors.neutral.dGrey};
     cursor: pointer;
+    transition: all 0.15s ease-in-out;
   }
 
+  /* Generic active state (brand) */
+  .is-active {
+    background: ${({ theme }) => theme.colors.brand.primary};
+    color: ${({ theme }) => theme.colors.neutral.white};
+    box-shadow: ${({ theme }) => theme.shadows["2px"] || "0 2px 8px rgba(0,0,0,0.12)"};
+  }
+
+  /* Legacy dual-color states kept for backwards compatibility */
   .is-active-closed {
     background: rgba(33, 150, 243, 0.12);
     color: #1565c0;
