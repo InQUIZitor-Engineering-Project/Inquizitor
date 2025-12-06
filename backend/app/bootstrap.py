@@ -6,7 +6,7 @@ from typing import Optional
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.application.services import AuthService, FileService, MaterialService, TestService, UserService
+from app.application.services import AuthService, FileService, MaterialService, TestService, UserService, JobService
 from app.application.unit_of_work import SqlAlchemyUnitOfWork
 from app.core.config import Settings, get_settings
 from app.db.session import get_session_factory, init_db
@@ -18,8 +18,9 @@ from app.infrastructure import (
     SqlModelMaterialRepository,
     SqlModelTestRepository,
     SqlModelUserRepository,
+    SqlModelJobRepository,
 )
-from app.api.routers import auth, files, materials, tests, users
+from app.api.routers import auth, files, materials, tests, users, jobs
 from app.infrastructure.extractors.extract_composite import composite_text_extractor
 
 try:  # pragma: no cover - optional dependency
@@ -37,6 +38,7 @@ class AppContainer:
         self._ocr_service = DefaultOCRService()
         self._file_storage = LocalFileStorage()
         self._materials_storage = LocalFileStorage(base_dir=Path("uploads/materials"))
+        self._exports_storage = LocalFileStorage(base_dir=Path("uploads/exports"))
         self._session_factory = get_session_factory(settings)
 
     @property
@@ -57,6 +59,9 @@ class AppContainer:
     def provide_file_storage(self) -> LocalFileStorage:
         return self._file_storage
 
+    def provide_export_storage(self) -> LocalFileStorage:
+        return self._exports_storage
+
     def provide_user_repository(self, session) -> SqlModelUserRepository:
         return SqlModelUserRepository(session)
 
@@ -68,6 +73,9 @@ class AppContainer:
 
     def provide_material_repository(self, session) -> SqlModelMaterialRepository:
         return SqlModelMaterialRepository(session)
+
+    def provide_job_repository(self, session) -> SqlModelJobRepository:
+        return SqlModelJobRepository(session)
 
     def provide_unit_of_work(self) -> SqlAlchemyUnitOfWork:
         return SqlAlchemyUnitOfWork(self._session_factory)
@@ -92,6 +100,9 @@ class AppContainer:
         return UserService(
             lambda: self.provide_unit_of_work()
         )
+
+    def provide_job_service(self) -> JobService:
+        return JobService(lambda: self.provide_unit_of_work())
 
     def provide_material_service(self) -> MaterialService:
         return MaterialService(
@@ -161,6 +172,7 @@ def create_app(settings_override: Optional[Settings] = None) -> FastAPI:
     app.include_router(files.router, prefix="/files", tags=["files"])
     app.include_router(tests.router, prefix="/tests", tags=["tests"])
     app.include_router(materials.router)
+    app.include_router(jobs.router)
 
     return app
 

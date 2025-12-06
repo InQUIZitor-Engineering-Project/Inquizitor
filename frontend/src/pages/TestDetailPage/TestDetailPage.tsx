@@ -1,13 +1,12 @@
 import React from "react";
-import { Box, Flex, Stack } from "../../design-system/primitives";
+import { Box, Flex, Stack, Button } from "../../design-system/primitives";
 import Footer from "../../components/Footer/Footer";
-import ConfirmationModal from "../../components/ConfirmationModal/ConfirmationModal";
 import useTestDetail from "./hooks/useTestDetail";
 import TitleBar from "./components/TitleBar";
 import MetaSummary from "./components/MetaSummary";
 import QuestionsSection from "./components/QuestionsSection";
-import DownloadActions from "./components/DownloadActions";
 import PdfConfigSection from "./components/PdfConfigSection";
+import { AlertBar } from "../../design-system/patterns";
 
 const TestDetailPage: React.FC = () => {
   const { state, derived, actions } = useTestDetail();
@@ -30,7 +29,6 @@ const TestDetailPage: React.FC = () => {
             onSave={actions.saveTitle}
             onCancel={actions.cancelTitle}
             onBeginEdit={() => actions.beginTitleEdit(data.title)}
-            onDelete={() => actions.handleOpenDeleteModal(data.test_id)}
           />
 
           <MetaSummary
@@ -71,27 +69,28 @@ const TestDetailPage: React.FC = () => {
             }}
           />
 
-          <DownloadActions
-            onDownloadPdf={actions.handleDownloadCustomPdf}
-            onDownloadXml={actions.downloadXml}
-          />
-
           <PdfConfigSection
             config={state.pdfConfig}
             isOpen={state.pdfConfigOpen}
             onToggle={() => actions.setPdfConfigOpen(!state.pdfConfigOpen)}
             onChange={(updater) => actions.setPdfConfig((cfg) => updater(cfg))}
             onReset={actions.resetPdfConfig}
-            onDownload={actions.handleDownloadCustomPdf}
+            onDownloadPdf={actions.handleDownloadCustomPdf}
+            onDownloadXml={actions.downloadXml}
           />
 
+          <Box>
+            <Flex $gap="sm" $align="center" $wrap="wrap" $mt="sm">
+              <Button onClick={actions.handleDownloadCustomPdf}>Pobierz PDF</Button>
+              <Button onClick={actions.downloadXml}>Pobierz XML</Button>
+              <AlertBar variant="warning">
+                Test został wygenerowany przez AI i może zawierać błędy. Zweryfikuj go przed pobraniem.
+              </AlertBar>
+            </Flex>
+          </Box>
+
           <Footer />
-          {state.testIdToDelete !== null && (
-            <ConfirmationModal
-              onCancel={actions.handleCloseModal}
-              onConfirm={actions.handleConfirmDelete}
-            />
-          )}
+          {/* Usunięto przycisk "Usuń test" – modal nieużywany */}
         </Stack>
       </Box>
     </Flex>

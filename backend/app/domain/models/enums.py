@@ -14,11 +14,28 @@ class ProcessingStatus(Enum):
     DONE = "done"
     FAILED = "failed"
 
+class JobStatus(Enum):
+    PENDING = "pending"
+    RUNNING = "running"
+    DONE = "done"
+    FAILED = "failed"
+
+class JobType(Enum):
+    TEST_GENERATION = "test_generation"
+    PDF_EXPORT = "pdf_export"
+    MATERIAL_PROCESSING = "material_processing"
+
 
 class MaterialType(Enum):
     FILE = "file"
     TEXT = "text"
 
 
-__all__ = ["QuestionDifficulty", "ProcessingStatus", "MaterialType"]
+__all__ = [
+    "QuestionDifficulty",
+    "ProcessingStatus",
+    "MaterialType",
+    "JobStatus",
+    "JobType",
+]
 

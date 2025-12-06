@@ -10,12 +10,14 @@ from app.domain.repositories import (
     MaterialRepository,
     TestRepository,
     UserRepository,
+    JobRepository,
 )
 from app.infrastructure.persistence.sqlmodel import (
     SqlModelFileRepository,
     SqlModelMaterialRepository,
     SqlModelTestRepository,
     SqlModelUserRepository,
+    SqlModelJobRepository,
 )
 
 
@@ -27,6 +29,7 @@ class SqlAlchemyUnitOfWork(AbstractContextManager):
         self.tests: Optional[TestRepository] = None
         self.files: Optional[FileRepository] = None
         self.materials: Optional[MaterialRepository] = None
+        self.jobs: Optional[JobRepository] = None
 
     def __enter__(self) -> "SqlAlchemyUnitOfWork":
         self.session = self._session_factory()
@@ -35,6 +38,7 @@ class SqlAlchemyUnitOfWork(AbstractContextManager):
         self.tests = SqlModelTestRepository(self.session)
         self.files = SqlModelFileRepository(self.session)
         self.materials = SqlModelMaterialRepository(self.session)
+        self.jobs = SqlModelJobRepository(self.session)
         return self
 
     def __exit__(self, exc_type, exc, tb) -> None:

@@ -1,9 +1,10 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
-import { generateTest, type TestGenerateResponse } from "../../../services/test";
+import { generateTest } from "../../../services/test";
 import { uploadMaterial, type MaterialUploadResponse } from "../../../services/materials";
 import { useLoader } from "../../../components/Loader/GlobalLoader";
 import useDocumentTitle from "../../../hooks/useDocumentTitle";
+import { useJobPolling } from "../../../hooks/useJobPolling";
 
 type LayoutCtx = { refreshSidebarTests: () => Promise<void> };
 
@@ -39,6 +40,11 @@ export interface UseGenerateTestFormResult {
     genError: string | null;
     genLoading: boolean;
   };
+  job: {
+    jobId: number | null;
+    jobStatus: string | null;
+    jobPolling: boolean;
+  };
   refs: {
     fileInputRef: React.RefObject<HTMLInputElement | null>;
   };
@@ -64,6 +70,15 @@ const useGenerateTestForm = (): UseGenerateTestFormResult => {
   const navigate = useNavigate();
   const { refreshSidebarTests } = useOutletContext<LayoutCtx>();
   const { withLoader } = useLoader();
+  const {
+    jobId,
+    status: jobStatus,
+    result: jobResult,
+    error: jobError,
+    isPolling: jobPolling,
+    startPolling,
+    reset: resetJobPolling,
+  } = useJobPolling();
 
   const [sourceType, setSourceType] = useState<"text" | "material">("text");
   const [sourceContent, setSourceContent] = useState("");
@@ -199,7 +214,7 @@ const useGenerateTestForm = (): UseGenerateTestFormResult => {
     }
 
     try {
-      const resp = await withLoader(() =>
+      const enqueue = await withLoader(() =>
         generateTest({
           closed: {
             true_false: tfCount,
@@ -214,16 +229,39 @@ const useGenerateTestForm = (): UseGenerateTestFormResult => {
           additional_instructions: instructions.trim() || undefined,
           file_id: sourceType === "material" ? materialData?.file_id : undefined,
         })
-      ) as TestGenerateResponse;
+      );
 
-      await refreshSidebarTests();
-      navigate(`/tests/${resp.test_id}`);
+      resetJobPolling();
+      startPolling(enqueue.job_id);
     } catch (err: any) {
       setGenError(err.message || "Wystąpił błąd przy generowaniu testu. Spróbuj ponownie.");
-    } finally {
       setGenLoading(false);
+      resetJobPolling();
+    } finally {
+      // zakończymy loading po wyniku joba
     }
   };
+
+  useEffect(() => {
+    const normalized = (jobStatus || "").toLowerCase();
+    if (!normalized) return;
+
+    if (normalized === "done") {
+      const testId = (jobResult as any)?.test_id;
+      if (testId) {
+        void refreshSidebarTests();
+        navigate(`/tests/${testId}`);
+      } else {
+        setGenError("Zadanie zakończone, ale brak identyfikatora testu.");
+      }
+      setGenLoading(false);
+      resetJobPolling();
+    } else if (normalized === "failed") {
+      setGenError(jobError || (jobResult as any)?.error || "Generowanie nie powiodło się.");
+      setGenLoading(false);
+      resetJobPolling();
+    }
+  }, [jobStatus, jobResult, jobError, navigate, refreshSidebarTests, resetJobPolling]);
 
   return {
     state: {
@@ -253,7 +291,8 @@ const useGenerateTestForm = (): UseGenerateTestFormResult => {
       difficultyLocked,
       difficultyMismatch,
     },
-    status: { genError, genLoading },
+    status: { genError, genLoading: genLoading || jobPolling },
+    job: { jobId, jobStatus, jobPolling },
     refs: { fileInputRef },
     actions: {
       setSourceType,

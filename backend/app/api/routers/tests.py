@@ -1,10 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 
-from app.api.dependencies import get_test_service
+from app.api.dependencies import get_test_service, get_job_service
 from app.api.schemas.tests import (
     TestDetailOut,
     TestGenerateRequest,
-    TestGenerateResponse,
     QuestionOut,
     QuestionCreate,
     QuestionUpdate,
@@ -12,27 +11,30 @@ from app.api.schemas.tests import (
     TestOut,
     PdfExportConfig,
 )
+from app.api.schemas.jobs import JobEnqueueResponse
 from app.application.services import TestService
+from app.application.services import JobService
 from app.core.security import get_current_user
 from app.db.models import User
+from app.domain.models.enums import JobType
+from app.tasks.tests import generate_test_task, export_test_pdf_task, export_custom_test_pdf_task
 
 router = APIRouter()
 
 
-@router.post("/generate", response_model=TestGenerateResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/generate", response_model=JobEnqueueResponse, status_code=status.HTTP_202_ACCEPTED)
 def generate_test(
     req: TestGenerateRequest,
     current_user: User = Depends(get_current_user),
-    test_service: TestService = Depends(get_test_service),
+    job_service: JobService = Depends(get_job_service),
 ):
-    try:
-        return test_service.generate_test_from_input(
-            request=req, owner_id=current_user.id
-        )
-    except ValueError as exc:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
-    except Exception as exc:  # noqa: BLE001
-        raise HTTPException(status_code=500, detail=f"LLM error: {exc}") from exc
+    job = job_service.create_job(
+        owner_id=current_user.id,
+        job_type=JobType.TEST_GENERATION,
+        payload=req.model_dump(),
+    )
+    generate_test_task.delay(job.id, current_user.id, req.model_dump())
+    return JobEnqueueResponse(job_id=job.id, status=job.status.value)
 
 
 @router.get("/{test_id}", response_model=TestDetailOut)
@@ -117,51 +119,51 @@ def delete_question(
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
-@router.get("/{test_id}/export/pdf")
+@router.get("/{test_id}/export/pdf", response_model=JobEnqueueResponse)
 def export_pdf(
     test_id: int,
     show_answers: bool = False,
     current_user: User = Depends(get_current_user),
     test_service: TestService = Depends(get_test_service),
+    job_service: JobService = Depends(get_job_service),
 ):
     try:
-        pdf_bytes, filename = test_service.export_test_pdf(
-            owner_id=current_user.id, test_id=test_id, show_answers=show_answers
-        )
+        test_service.get_test_detail(owner_id=current_user.id, test_id=test_id)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
-    return Response(
-        pdf_bytes,
-        media_type="application/pdf",
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    job = job_service.create_job(
+        owner_id=current_user.id,
+        job_type=JobType.PDF_EXPORT,
+        payload={"test_id": test_id, "show_answers": show_answers},
     )
+    export_test_pdf_task.delay(job.id, current_user.id, test_id, show_answers)
+    return JobEnqueueResponse(job_id=job.id, status=job.status.value)
 
 
-@router.post("/{test_id}/export/pdf/custom")
+@router.post("/{test_id}/export/pdf/custom", response_model=JobEnqueueResponse)
 def export_custom_pdf(
     test_id: int,
     config: PdfExportConfig,
     current_user: User = Depends(get_current_user),
     test_service: TestService = Depends(get_test_service),
+    job_service: JobService = Depends(get_job_service),
 ):
     """
     Export a test as a customized PDF according to PdfExportConfig.
     """
     try:
-        pdf_bytes, filename = test_service.export_custom_test_pdf(
-            owner_id=current_user.id,
-            test_id=test_id,
-            config=config,
-        )
+        test_service.get_test_detail(owner_id=current_user.id, test_id=test_id)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
-    return Response(
-        pdf_bytes,
-        media_type="application/pdf",
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    job = job_service.create_job(
+        owner_id=current_user.id,
+        job_type=JobType.PDF_EXPORT,
+        payload={"test_id": test_id, "config": config.model_dump()},
     )
+    export_custom_test_pdf_task.delay(job.id, current_user.id, test_id, config.model_dump())
+    return JobEnqueueResponse(job_id=job.id, status=job.status.value)
 
 
 @router.get("/{test_id}/export/xml")

@@ -1,8 +1,10 @@
 import os
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from pathlib import Path
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status, Response
+from fastapi.responses import FileResponse
 
-from app.api.dependencies import get_file_service
+from app.api.dependencies import get_file_service, get_export_storage
 from app.api.schemas.tests import FileUploadResponse
 from app.application.services import FileService
 from app.core.security import get_current_user
@@ -41,6 +43,30 @@ def upload_text(
 ):
     """Temporary endpoint returning the provided text payload."""
     return {"text": payload.get("text", "")}
+
+
+@router.get("/exports/{file_path:path}")
+def download_export(
+    file_path: str,
+    current_user: User = Depends(get_current_user),
+    export_storage=Depends(get_export_storage),
+):
+    # basic path traversal protection
+    if ".." in file_path:
+        raise HTTPException(status_code=400, detail="Invalid filename")
+
+    base = Path(export_storage._base_dir) if hasattr(export_storage, "_base_dir") else Path("uploads/exports")
+    abs_path = (base / file_path).resolve()
+
+    try:
+        abs_path.relative_to(base.resolve())
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid path") from None
+
+    if not abs_path.exists():
+        raise HTTPException(status_code=404, detail="File not found")
+
+    return FileResponse(path=abs_path, media_type="application/pdf", filename=abs_path.name)
 
 
 __all__ = ["router"]

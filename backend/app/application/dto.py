@@ -7,8 +7,9 @@ from typing import Any, Dict, Iterable, List, Optional
 
 from app.api.schemas.materials import MaterialOut
 from app.api.schemas.tests import TestOut, TestDetailOut, QuestionOut
+from app.api.schemas.jobs import JobOut
 from app.api.schemas.users import UserRead
-from app.domain.models import Material, Question, Test, User
+from app.domain.models import Material, Question, Test, User, Job
 
 def _as_list(value: Any) -> Optional[List[str]]:
     """
@@ -104,6 +105,20 @@ def to_materials_out(materials: Iterable[Material]) -> List[MaterialOut]:
     return [to_material_out(m) for m in materials]
 
 
+def to_job_out(job: Job) -> JobOut:
+    return JobOut(
+        id=job.id,
+        owner_id=job.owner_id,
+        job_type=job.job_type.value,
+        status=job.status.value,
+        payload=job.payload or {},
+        result=job.result,
+        error=job.error,
+        created_at=job.created_at,
+        updated_at=job.updated_at,
+    )
+
+
 __all__ = [
     "to_user_read",
     "to_test_out",
@@ -113,4 +128,5 @@ __all__ = [
     "to_test_detail",
     "to_material_out",
     "to_materials_out",
+    "to_job_out",
 ]

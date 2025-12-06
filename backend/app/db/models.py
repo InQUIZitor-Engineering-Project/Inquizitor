@@ -3,7 +3,7 @@ from datetime import datetime
 from sqlmodel import SQLModel, Field, Relationship
 from enum import Enum
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy import Column, ForeignKey, Integer
+from sqlalchemy import Column, ForeignKey, Integer, Enum as SAEnum
 
 class User(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -76,6 +76,17 @@ class ProcessingStatus(str, Enum):
     done = "done"
     failed = "failed"
 
+class JobStatus(str, Enum):
+    pending = "pending"
+    running = "running"
+    done = "done"
+    failed = "failed"
+
+class JobType(str, Enum):
+    test_generation = "test_generation"
+    pdf_export = "pdf_export"
+    material_processing = "material_processing"
+
 class Material(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     owner_id: int = Field(foreign_key="user.id", index=True)
@@ -90,3 +101,15 @@ class Material(SQLModel, table=True):
 
     owner: Optional[User] = Relationship(back_populates="materials")
     file: Optional[File] = Relationship(back_populates="material")
+
+
+class Job(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    owner_id: int = Field(foreign_key="user.id", index=True)
+    job_type: JobType = Field(sa_column=Column("job_type", SAEnum(JobType), index=True))
+    status: JobStatus = Field(sa_column=Column("status", SAEnum(JobStatus), index=True))
+    payload: dict = Field(default_factory=dict, sa_column=Column(JSONB))
+    result: Optional[dict] = Field(default=None, sa_column=Column(JSONB, nullable=True))
+    error: Optional[str] = Field(default=None)
+    created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
+    updated_at: datetime = Field(default_factory=datetime.utcnow, index=True)

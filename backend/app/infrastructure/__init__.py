@@ -5,6 +5,7 @@ from .persistence.sqlmodel import (
     SqlModelMaterialRepository,
     SqlModelTestRepository,
     SqlModelUserRepository,
+    SqlModelJobRepository,
 )
 from .storage import LocalFileStorage
 from .exporting import compile_tex_to_pdf, render_test_to_tex, test_to_xml_bytes
@@ -16,6 +17,7 @@ __all__ = [
     "SqlModelMaterialRepository",
     "SqlModelTestRepository",
     "SqlModelUserRepository",
+    "SqlModelJobRepository",
     "LocalFileStorage",
     "render_test_to_tex",
     "compile_tex_to_pdf",
