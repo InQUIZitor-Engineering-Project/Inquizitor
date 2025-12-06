@@ -181,17 +181,6 @@ export const TitleActions = styled.div`
   gap: 8px;
 `;
 
-
-export const EditorCard = styled.div`
-  ${({ theme }) => css`
-    background: ${theme.colors.neutral.white};
-    border: 1px solid ${theme.colors.neutral.greyBlue};
-    border-radius: ${theme.radii.lg};
-    padding: ${theme.spacing.md};
-    box-shadow: ${theme.elevation.md};
-  `}
-`;
-
 export const EditorToolbar = styled.div`
   display: flex;
   gap: ${({ theme }) => theme.spacing.sm};
@@ -229,24 +218,24 @@ export const Segmented = styled.div`
   padding: 4px;
   border-radius: ${({ theme }) => theme.radii.pill};
   background: ${({ theme }) => theme.colors.tint.t5};
-  gap: 4px;
+  gap: 6px;
 
   button {
     font-size: 12px;
-    padding: 6px 10px;
+    padding: 6px 14px;
     border-radius: ${({ theme }) => theme.radii.pill};
     border: 0;
     background: transparent;
     color: ${({ theme }) => theme.colors.neutral.dGrey};
     cursor: pointer;
+    transition: all 0.15s ease-in-out;
   }
-  .is-active-closed {
-    background: ${({ theme }) => theme.colors.tint.t5};
-    color: ${({ theme }) => theme.colors.brand.info};
-  }
+
+  .is-active-closed,
   .is-active-open {
-    background: ${({ theme }) => theme.colors.tint.t4};
-    color: ${({ theme }) => theme.colors.brand.secondary};
+    background: ${({ theme }) => theme.colors.brand.primary};
+    color: ${({ theme }) => theme.colors.neutral.white};
+    box-shadow: ${({ theme }) => theme.shadows["2px"]};
   }
 `;
 

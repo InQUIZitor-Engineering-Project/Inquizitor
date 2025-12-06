@@ -46,7 +46,6 @@ import {
   TitleEditIconBtn,
   HeaderInput,
   TitleActions,
-  EditorCard,
   EditorToolbar,
   Segmented,
   EditorActions,
@@ -572,92 +571,89 @@ const TestDetailPage: React.FC = () => {
             if (isEditing) {
               return (
               <QuestionItem key={q.id}>
-                <EditorCard>
-                  <EditorToolbar>
-                    <Segmented>
-                      <button
-                        className={draft.is_closed ? "is-active-closed" : ""}
-                        onClick={() => toggleDraftClosed(true)}
-                        type="button"
-                      >
-                        Zamknięte
-                      </button>
-                      <button
-                        className={!draft.is_closed ? "is-active-open" : ""}
-                        onClick={() => toggleDraftClosed(false)}
-                        type="button"
-                      >
-                        Otwarte
-                      </button>
-                    </Segmented>
-
-                    <Select
-                      value={draft.difficulty || 1}
-                      onChange={(e) => setDraftDifficulty(Number(e.target.value))}
-                      aria-label="Poziom trudności"
+                <EditorToolbar>
+                  <Segmented>
+                    <button
+                      className={draft.is_closed ? "is-active-closed" : ""}
+                      onClick={() => toggleDraftClosed(true)}
+                      type="button"
                     >
-                      <option value={1}>Łatwe</option>
-                      <option value={2}>Średnie</option>
-                      <option value={3}>Trudne</option>
-                    </Select>
-                  </EditorToolbar>
+                      Zamknięte
+                    </button>
+                    <button
+                      className={!draft.is_closed ? "is-active-open" : ""}
+                      onClick={() => toggleDraftClosed(false)}
+                      type="button"
+                    >
+                      Otwarte
+                    </button>
+                  </Segmented>
 
-                  <Textarea
-                    $fullWidth
-                    $minHeight="140px"
-                    value={draft.text || ""}
-                    onChange={(e) => onTextChange(e.target.value)}
-                    placeholder="Wpisz treść pytania…"
+                  <Select
+                    value={draft.difficulty || 1}
+                    onChange={(e) => setDraftDifficulty(Number(e.target.value))}
+                    aria-label="Poziom trudności"
+                  >
+                    <option value={1}>Łatwe</option>
+                    <option value={2}>Średnie</option>
+                    <option value={3}>Trudne</option>
+                  </Select>
+                </EditorToolbar>
+
+                <Textarea
+                  $fullWidth
+                  $minHeight="140px"
+                  value={draft.text || ""}
+                  onChange={(e) => onTextChange(e.target.value)}
+                  placeholder="Wpisz treść pytania…"
+                />
+
+                {draft.is_closed && (
+                  <ChoiceEditor
+                    items={ensureChoices(draft.choices).map((choice) => {
+                      const value = choice ?? "";
+                      return {
+                        value,
+                        isCorrect: (draft.correct_choices || []).includes(value),
+                      };
+                    })}
+                    onChange={(index, value) => updateDraftChoice(index, value)}
+                    onToggleCorrect={(index, next) => {
+                      const currentValue = ensureChoices(draft.choices)[index] ?? "";
+                      toggleDraftCorrect(currentValue, next);
+                    }}
+                    onRemove={(index) => removeChoiceRow(index)}
+                    onAdd={addDraftChoiceRow}
+                    addLabel="+ Dodaj odpowiedź"
                   />
+                )}
 
-                  {draft.is_closed && (
-                    <ChoiceEditor
-                      items={ensureChoices(draft.choices).map((choice) => {
-                        const value = choice ?? "";
-                        return {
-                          value,
-                          isCorrect: (draft.correct_choices || []).includes(value),
-                        };
-                      })}
-                      onChange={(index, value) => updateDraftChoice(index, value)}
-                      onToggleCorrect={(index, next) => {
-                        const currentValue = ensureChoices(draft.choices)[index] ?? "";
-                        toggleDraftCorrect(currentValue, next);
-                      }}
-                      onRemove={(index) => removeChoiceRow(index)}
-                      onAdd={addDraftChoiceRow}
-                      addLabel="+ Dodaj odpowiedź"
-                    />
-                  )}
+                {!draft.is_closed && (
+                  <div
+                    style={{
+                      marginTop: 10,
+                      fontSize: 12,
+                      color: "#6b7280",
+                      fontStyle: "italic",
+                    }}
+                  >
+                    Pytanie otwarte — odpowiedź udzielana przez zdającego.
+                  </div>
+                )}
+                {missingCorrectLive && !editorError && (
+                  <ErrorNote>Zaznacz przynajmniej jedną poprawną odpowiedź.</ErrorNote>
+                )}
 
-                  {!draft.is_closed && (
-                    <div
-                      style={{
-                        marginTop: 10,
-                        fontSize: 12,
-                        color: "#6b7280",
-                        fontStyle: "italic",
-                      }}
-                    >
-                      Pytanie otwarte — odpowiedź udzielana przez zdającego.
-                    </div>
-                  )}
-                  {missingCorrectLive && !editorError && (
-                    <ErrorNote>Zaznacz przynajmniej jedną poprawną odpowiedź.</ErrorNote>
-                  )}
-
-                  {editorError && <ErrorNote>{editorError}</ErrorNote>}
-                  <EditorActions>
-                    <Button onClick={handleSaveEdit} disabled={savingEdit}>
-                      Zapisz
-                    </Button>
-                    <Button $variant="danger" onClick={cancelEdit}>
-                      Anuluj
-                    </Button>
-                  </EditorActions>
-                </EditorCard>
-              </QuestionItem>
-
+                {editorError && <ErrorNote>{editorError}</ErrorNote>}
+                <EditorActions>
+                  <Button onClick={handleSaveEdit} disabled={savingEdit}>
+                    Zapisz
+                  </Button>
+                  <Button $variant="danger" onClick={cancelEdit}>
+                    Anuluj
+                  </Button>
+                </EditorActions>
+            </QuestionItem>
               );
             }
             // VIEW MODE
@@ -736,7 +732,6 @@ const TestDetailPage: React.FC = () => {
         </Flex>
           {isAdding && (
             <QuestionItem>
-              <EditorCard>
                 <EditorToolbar>
                   <Segmented>
                     <button
@@ -818,7 +813,6 @@ const TestDetailPage: React.FC = () => {
                     Anuluj
                   </Button>
                 </EditorActions>
-              </EditorCard>
             </QuestionItem>
           )}
         <Flex $gap="sm" $mt="lg" $align="center" $wrap="wrap">
