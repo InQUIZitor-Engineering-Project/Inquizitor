@@ -38,7 +38,7 @@ const FAQPage: React.FC = () => {
       style={{ minHeight: "calc(100vh - 40px)" }}
     >
       <Flex $flex={1} $width="100%" $justify="center">
-        <PageSection $py="xl">
+        <PageSection $py="lg">
           <PageContainer>
             <Stack $gap="xl" style={{ width: "100%" }}>
               <Box

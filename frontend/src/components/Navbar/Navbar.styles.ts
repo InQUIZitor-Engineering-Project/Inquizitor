@@ -21,6 +21,11 @@ export const NavbarContainer = styled.nav`
   @media (max-width: 900px) {
     padding: 10px 0;
   }
+
+  @media (max-width: 768px) {
+    min-height: 64px;
+    padding: 8px 0;
+  }
 `;
 
 export const NavHeader = styled.div`

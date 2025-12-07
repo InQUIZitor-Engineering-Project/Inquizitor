@@ -73,7 +73,7 @@ const AboutUsPage: React.FC = () => {
       style={{ minHeight: "calc(100vh - 40px)" }}
     >
       <Flex $flex={1} $width="100%" $justify="center" $overflow="hidden">
-        <PageSection $py="xl">
+        <PageSection $py="lg">
           <PageContainer>
             <Stack
               $gap="lg"
