@@ -1,6 +1,7 @@
 import styled from "styled-components";
+import { NAVBAR_HEIGHT } from "../Navbar/Navbar.styles";
 
-export const SidebarWrapper = styled.aside`
+export const SidebarWrapper = styled.aside<{ $isDrawerOpen?: boolean }>`
   display: flex;
   flex-direction: column;
   padding: 24px;
@@ -9,6 +10,20 @@ export const SidebarWrapper = styled.aside`
   width: 280px;
   height: 100%; 
   overflow: hidden;
+
+  @media (max-width: 1024px) {
+    position: fixed;
+    top: ${NAVBAR_HEIGHT}px;
+    left: 0;
+    height: calc(100vh - ${NAVBAR_HEIGHT}px);
+    max-height: calc(100vh - ${NAVBAR_HEIGHT}px);
+    width: 280px;
+    max-width: 82vw;
+    transform: translateX(${({ $isDrawerOpen }) => ($isDrawerOpen ? "0" : "-100%")});
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    z-index: 110;
+    border-right: 1px solid ${({ theme }) => theme.colors.neutral.greyBlue};
+  }
 `;
 
 export const SearchInput = styled.input`

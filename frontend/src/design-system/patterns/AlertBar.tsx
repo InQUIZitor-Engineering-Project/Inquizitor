@@ -34,7 +34,7 @@ const variantStyles = {
 
 const AlertContainer = styled(Flex)<{ $variant: AlertVariant }>`
   padding: 8px 12px;
-  border-radius: ${({ theme }) => theme.radii.pill};
+  border-radius: ${({ theme }) => theme.radii.md};
   align-items: center;
   gap: ${({ theme }) => theme.spacing.xs};
   ${({ $variant }) => variantStyles[$variant]}

@@ -1,12 +1,18 @@
 import React, { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useTheme } from "styled-components";
+import styled, { useTheme } from "styled-components";
 import { Stack, Heading, Text, Input, Button, Checkbox } from "../../design-system/primitives";
 import { useAuth } from "../../context/AuthContext";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import loginIllustration from "../../assets/login.png";
 import AuthLayout from "../Auth/components/AuthLayout";
 import AuthLogos from "../Auth/components/AuthLogos";
+
+const MobileHide = styled.div`
+  @media (max-width: 768px) {
+    display: none;
+  }
+`;
 
 const LoginPage: React.FC = () => {
   const theme = useTheme();
@@ -41,7 +47,9 @@ const LoginPage: React.FC = () => {
       illustrationAlt="Login Illustration"
       left={
         <Stack $gap="lg">
-          <AuthLogos />
+          <MobileHide>
+            <AuthLogos />
+          </MobileHide>
 
           <Stack $gap="xs">
             <Heading $level="h2" as="h1">

@@ -1,8 +1,36 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import styled from "styled-components";
 import { Box, Flex, Divider, Select, Input, Checkbox, Button } from "../../../design-system/primitives";
 import { CollapsibleSection, FormField } from "../../../design-system/patterns";
 import type { PdfExportConfig } from "../../../services/test";
 import { useTheme } from "styled-components";
+
+const ConfigGrid = styled(Box)`
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: ${({ theme }) => theme.spacing.sm};
+  margin-bottom: ${({ theme }) => theme.spacing.md};
+
+  ${({ theme }) => theme.media.down("sm")} {
+    grid-template-columns: 1fr;
+    gap: ${({ theme }) => theme.spacing.sm};
+  }
+`;
+
+const ErrorText = styled.span`
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  font-size: 11px;
+  line-height: 12px;
+  color: ${({ theme }) => theme.colors.danger.main};
+  pointer-events: none;
+`;
+
+const FieldWrapper = styled.div`
+  position: relative;
+  display: block;
+`;
 
 export interface PdfConfigSectionProps {
   config: PdfExportConfig;
@@ -28,6 +56,59 @@ const PdfConfigSection: React.FC<PdfConfigSectionProps> = ({
     config.use_scratchpad ||
     !config.mark_multi_choice;
 
+  const [spaceHeight, setSpaceHeight] = useState(String(config.space_height_cm ?? 3));
+  const [spaceHeightError, setSpaceHeightError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setSpaceHeight(String(config.space_height_cm ?? 3));
+    setSpaceHeightError(null);
+  }, [config.space_height_cm]);
+
+  const validateSpaceHeight = (raw: string): string | null => {
+    if (raw === "") return "Podaj liczbę od 1 do 10 (co 0.5).";
+    const num = Number(raw);
+    if (Number.isNaN(num)) return "Wpisz liczbę.";
+    if (num < 1 || num > 10) return "Zakres: 1–10 cm.";
+    const isStep = Math.abs(num * 2 - Math.round(num * 2)) < 1e-6;
+    if (!isStep) return "Dozwolone przyrosty co 0.5 cm.";
+    return null;
+  };
+
+  const commitSpaceHeight = (raw: string) => {
+    const error = validateSpaceHeight(raw);
+    if (error) {
+      setSpaceHeightError(error);
+      return;
+    }
+    setSpaceHeightError(null);
+    const num = Number(raw);
+    onChange((cfg) => ({
+      ...cfg,
+      space_height_cm: num,
+    }));
+  };
+
+  const handleSpaceHeightChange = (raw: string) => {
+    setSpaceHeight(raw);
+    setSpaceHeightError(null);
+  };
+
+  const handleSpaceHeightBlur = () => {
+    if (spaceHeight === "") {
+      // pokaż błąd, ale nie nadpisuj stanu config
+      setSpaceHeightError("Podaj liczbę od 1 do 10 (co 0.5).");
+      return;
+    }
+    commitSpaceHeight(spaceHeight);
+  };
+
+  const handleSpaceHeightKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      commitSpaceHeight(spaceHeight);
+      (e.target as HTMLInputElement).blur();
+    }
+  };
+
   return (
     <Box $mt="lg" $mb="sm">
       <CollapsibleSection
@@ -41,14 +122,7 @@ const PdfConfigSection: React.FC<PdfConfigSectionProps> = ({
         <Box $my="sm">
           <Divider />
         </Box>
-        <Box
-          $display="grid"
-          style={{
-            gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-            gap: theme.spacing.sm,
-            marginBottom: theme.spacing.md,
-          }}
-        >
+        <ConfigGrid>
           <FormField label="Styl pola odpowiedzi" fullWidth>
             <Select
               value={config.answer_space_style}
@@ -66,22 +140,27 @@ const PdfConfigSection: React.FC<PdfConfigSectionProps> = ({
           </FormField>
 
           <FormField label="Wysokość pola odpowiedzi (cm)" fullWidth>
-            <Input
-              $size="sm"
-              type="number"
-              min={1}
-              max={10}
-              step={0.5}
-              value={config.space_height_cm}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                onChange((cfg) => ({
-                  ...cfg,
-                  space_height_cm: Math.max(1, Math.min(10, Number(e.target.value) || 1)),
-                }))
-              }
-            />
+            <FieldWrapper style={spaceHeightError ? { paddingBottom: 14 } : undefined}>
+              <Input
+                $size="sm"
+                $fullWidth
+                type="number"
+                inputMode="decimal"
+                step={0.5}
+                min={1}
+                max={10}
+                placeholder="1-10"
+                value={spaceHeight}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  handleSpaceHeightChange(e.target.value)
+                }
+                onBlur={handleSpaceHeightBlur}
+                onKeyDown={handleSpaceHeightKeyDown}
+              />
+              {spaceHeightError && <ErrorText>{spaceHeightError}</ErrorText>}
+            </FieldWrapper>
           </FormField>
-        </Box>
+        </ConfigGrid>
 
         <FormField fullWidth>
           <Flex $align="center" $gap="xs">

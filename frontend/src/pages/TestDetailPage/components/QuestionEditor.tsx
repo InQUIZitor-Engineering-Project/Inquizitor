@@ -103,9 +103,15 @@ const QuestionEditor: React.FC<QuestionEditorProps> = ({
       )}
 
       {missingCorrectLive && !editorError && (
-        <AlertBar variant="danger">Zaznacz przynajmniej jedną poprawną odpowiedź.</AlertBar>
+        <div style={{ textAlign: "center" }}>
+          <AlertBar variant="danger">Zaznacz przynajmniej jedną poprawną odpowiedź.</AlertBar>
+        </div>
       )}
-      {editorError && <AlertBar variant="danger">{editorError}</AlertBar>}
+      {editorError && (
+        <div style={{ textAlign: "center" }}>
+          <AlertBar variant="danger">{editorError}</AlertBar>
+        </div>
+      )}
 
       <Flex $gap="sm" $justify="flex-end" $wrap="wrap">
         <Button onClick={onSave} disabled={saving}>

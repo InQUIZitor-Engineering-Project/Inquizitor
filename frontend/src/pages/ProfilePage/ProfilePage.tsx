@@ -8,6 +8,7 @@ import AccountInfoCard from "./components/AccountInfoCard";
 import StatsCard from "./components/StatsCard";
 import PasswordCard from "./components/PasswordCard";
 import profileIllustration from "../../assets/profile.png";
+import { PageContainer, PageSection } from "../../design-system/patterns";
 
 const API_BASE = import.meta.env.VITE_API_URL || "";
 
@@ -153,40 +154,44 @@ const ProfilePage: React.FC = () => {
   useDocumentTitle("Profil | Inquizitor");
 
   const pageContent = (
-    <Stack $gap="xl" style={{ width: "100%", maxWidth: 1100, margin: "0 auto", padding: "32px 16px" }}>
-      <ProfileHeader
-        fullName={profile ? `${profile.first_name} ${profile.last_name}` : undefined}
-        subtitle="Zarządzaj swoim kontem, przeglądaj statystyki quizów i personalizuj swoje doświadczenie w Inquizitor."
-        illustrationSrc={profileIllustration}
-        error={loadError}
-      />
-
-      <Flex $gap="lg" $wrap="wrap">
-        <Stack $gap="lg" style={{ flex: "2 1 520px", minWidth: 320 }}>
-          <AccountInfoCard
-            firstName={profile?.first_name}
-            lastName={profile?.last_name}
-            email={profile?.email}
-            userId={profile?.id}
+    <PageSection $py="xl">
+      <PageContainer>
+        <Stack $gap="xl" style={{ width: "100%" }}>
+          <ProfileHeader
+            fullName={profile ? `${profile.first_name} ${profile.last_name}` : undefined}
+            subtitle="Zarządzaj swoim kontem, przeglądaj statystyki quizów i personalizuj swoje doświadczenie w Inquizitor."
+            illustrationSrc={profileIllustration}
+            error={loadError}
           />
-          <StatsCard stats={stats} />
+
+          <Flex $gap="lg" $wrap="wrap">
+            <Stack $gap="lg" style={{ flex: "2 1 520px", minWidth: 320 }}>
+              <AccountInfoCard
+                firstName={profile?.first_name}
+                lastName={profile?.last_name}
+                email={profile?.email}
+                userId={profile?.id}
+              />
+              <StatsCard stats={stats} />
+            </Stack>
+
+            <Box style={{ flex: "1 1 320px", minWidth: 300 }}>
+              <PasswordCard
+                oldPassword={oldPassword}
+                newPassword={newPassword}
+                confirmPassword={confirmPassword}
+                onOldChange={setOldPassword}
+                onNewChange={setNewPassword}
+                onConfirmChange={setConfirmPassword}
+                onSubmit={handlePasswordChange}
+                error={passwordError}
+                success={passwordSuccess}
+              />
+            </Box>
+          </Flex>
         </Stack>
-
-        <Box style={{ flex: "1 1 320px", minWidth: 300 }}>
-          <PasswordCard
-            oldPassword={oldPassword}
-            newPassword={newPassword}
-            confirmPassword={confirmPassword}
-            onOldChange={setOldPassword}
-            onNewChange={setNewPassword}
-            onConfirmChange={setConfirmPassword}
-            onSubmit={handlePasswordChange}
-            error={passwordError}
-            success={passwordSuccess}
-          />
-        </Box>
-      </Flex>
-    </Stack>
+      </PageContainer>
+    </PageSection>
   );
 
   if (loading) {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useTheme } from "styled-components";
+import styled, { useTheme } from "styled-components";
 import { Stack, Heading, Text, Input, Button, Checkbox, Flex } from "../../design-system/primitives";
 import { registerUser } from "../../services/auth";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
@@ -8,6 +8,12 @@ import loginIllustration from "../../assets/login.png";
 import AuthLayout from "../Auth/components/AuthLayout";
 import AuthLogos from "../Auth/components/AuthLogos";
 import TermsModal from "./components/TermsModal";
+
+const MobileHide = styled.div`
+  @media (max-width: 768px) {
+    display: none;
+  }
+`;
 
 const RegisterPage: React.FC = () => {
   const theme = useTheme();
@@ -70,7 +76,9 @@ const RegisterPage: React.FC = () => {
         illustrationAlt="Rejestracja Illustration"
         left={
           <Stack $gap="lg">
+          <MobileHide>
             <AuthLogos />
+          </MobileHide>
 
             <Stack $gap="xs">
               <Heading $level="h2" as="h1">

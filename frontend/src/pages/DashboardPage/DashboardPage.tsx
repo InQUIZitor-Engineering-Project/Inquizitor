@@ -7,6 +7,7 @@ import useDocumentTitle from "../../hooks/useDocumentTitle";
 import useDashboard from "./hooks/useDashboard";
 import EmptyState from "./components/EmptyState";
 import dashboardWelcome from "../../assets/dashboard_welcome.png";
+import { PageContainer, PageSection } from "../../design-system/patterns";
 
 const EMPTY_ILLUSTRATION = dashboardWelcome;
 const HUB_ILLUSTRATION = dashboardWelcome;
@@ -23,29 +24,37 @@ const DashboardPage: React.FC = () => {
 
   if (tests.length === 0) {
     return (
-      <EmptyState
-        illustrationSrc={EMPTY_ILLUSTRATION}
-        title="Stwórz swój pierwszy test, aby zacząć!"
-        actionLabel="+ Utwórz nowy"
-        onAction={handleCreate}
-      />
+      <PageSection $py="xl">
+        <PageContainer>
+          <EmptyState
+            illustrationSrc={EMPTY_ILLUSTRATION}
+            title="Stwórz swój pierwszy test, aby zacząć!"
+            actionLabel="+ Utwórz nowy"
+            onAction={handleCreate}
+          />
+        </PageContainer>
+      </PageSection>
     );
   }
 
   return (
     <Flex $direction="column" $bg="#f5f6f8" style={{ minHeight: "calc(100vh - 40px)" }}>
-      <Flex $flex={1} $width="100%" $justify="center">
-        <Stack style={{ width: "100%" }}>
-          <EmptyState
-            illustrationSrc={HUB_ILLUSTRATION}
-            title="Witaj w panelu InQUIZitor!"
-            description="Wybierz istniejący test z panelu bocznego, aby zobaczyć szczegóły, lub utwórz nowy."
-            actionLabel="+ Utwórz nowy"
-            onAction={handleCreate}
-            isHub
-          />
-        </Stack>
-      </Flex>
+      <PageSection $py="xl">
+        <PageContainer>
+          <Flex $flex={1} $width="100%" $justify="center">
+            <Stack style={{ width: "100%" }}>
+              <EmptyState
+                illustrationSrc={HUB_ILLUSTRATION}
+                title="Witaj w panelu InQUIZitor!"
+                description="Wybierz istniejący test z panelu bocznego, aby zobaczyć szczegóły, lub utwórz nowy."
+                actionLabel="+ Utwórz nowy"
+                onAction={handleCreate}
+                isHub
+              />
+            </Stack>
+          </Flex>
+        </PageContainer>
+      </PageSection>
 
       <Footer />
 

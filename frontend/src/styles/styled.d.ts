@@ -113,5 +113,32 @@ declare module "styled-components" {
       gutter: string;
       margin: string;
     };
+    breakpoints: {
+      xs: number;
+      sm: number;
+      md: number;
+      lg: number;
+      xl: number;
+    };
+    media: {
+      up: (bp: "xs" | "sm" | "md" | "lg" | "xl") => string;
+      down: (bp: "xs" | "sm" | "md" | "lg" | "xl") => string;
+      between: (
+        from: "xs" | "sm" | "md" | "lg" | "xl",
+        to: "xs" | "sm" | "md" | "lg" | "xl"
+      ) => string;
+    };
+    contentWidth: {
+      sm: string;
+      md: string;
+      lg: string;
+      xl: string;
+    };
+    pagePadding: {
+      sm: string;
+      md: string;
+      lg: string;
+      xl: string;
+    };
   }
 }

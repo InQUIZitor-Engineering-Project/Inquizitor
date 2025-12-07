@@ -14,6 +14,8 @@ export interface SidebarProps {
   onSelect: (testId: number) => void;
   onCreateNew: () => void;
   onDelete: (testId: number) => void;
+  isDrawerOpen?: boolean;
+  onCloseDrawer?: () => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -21,6 +23,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   onSelect,
   onCreateNew,
   onDelete,
+  isDrawerOpen,
+  onCloseDrawer,
 }) => {
   const [query, setQuery] = useState("");
 
@@ -39,7 +43,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   };
 
   return (
-    <SidebarWrapper>
+    <SidebarWrapper $isDrawerOpen={isDrawerOpen}>
       <SearchInput
         placeholder="Wyszukaj…"
         value={query}
@@ -54,7 +58,13 @@ const Sidebar: React.FC<SidebarProps> = ({
           </div>
         ) : (
           filtered.map((t) => (
-            <TestItem key={t.id} onClick={() => onSelect(t.id)}>
+            <TestItem
+              key={t.id}
+              onClick={() => {
+                onSelect(t.id);
+                onCloseDrawer?.();
+              }}
+            >
               <span>{t.title}</span>
               <DeleteIcon
                 src={trashIcon}
@@ -67,7 +77,14 @@ const Sidebar: React.FC<SidebarProps> = ({
         )}
       </TestList>
 
-      <CreateNewButton onClick={onCreateNew}>+ Utwórz nowy</CreateNewButton>
+      <CreateNewButton
+        onClick={() => {
+          onCreateNew();
+          onCloseDrawer?.();
+        }}
+      >
+        + Utwórz nowy
+      </CreateNewButton>
     </SidebarWrapper>
   );
 };

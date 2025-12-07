@@ -25,6 +25,23 @@ const Row = styled.div`
   border: 1px solid ${({ theme }) => theme.colors.neutral.greyBlue};
   border-radius: ${({ theme }) => theme.radii.md};
   padding: ${({ theme }) => theme.spacing.sm};
+
+  ${({ theme }) => theme.media.down("sm")} {
+    grid-template-columns: 36px 1fr;
+    grid-template-rows: auto auto;
+    align-items: start;
+  }
+`;
+
+const ActionsRow = styled.div`
+  display: flex;
+  gap: ${({ theme }) => theme.spacing.xs};
+  flex-wrap: wrap;
+  justify-content: flex-start;
+
+  ${({ theme }) => theme.media.down("sm")} {
+    grid-column: 2 / 3;
+  }
 `;
 
 const LetterBubble = styled.span`
@@ -59,19 +76,21 @@ const ChoiceEditor: React.FC<ChoiceEditorProps> = ({
             onChange={(e) => onChange(index, e.target.value)}
             placeholder={`Odpowiedź ${String.fromCharCode(65 + index)}`}
           />
-          <Button
-            $variant={item.isCorrect ? "success" : "outline"}
-            $size="sm"
-            onClick={() => onToggleCorrect(index, !item.isCorrect)}
-            title={item.isCorrect ? "Usuń oznaczenie poprawnej" : "Oznacz jako poprawną"}
-          >
-            {item.isCorrect ? "Poprawna" : "Ustaw jako poprawną"}
-          </Button>
-          {onRemove && (
-            <Button $variant="danger" $size="sm" onClick={() => onRemove(index)} title="Usuń odpowiedź">
-              Usuń
+          <ActionsRow>
+            <Button
+              $variant={item.isCorrect ? "success" : "outline"}
+              $size="sm"
+              onClick={() => onToggleCorrect(index, !item.isCorrect)}
+              title={item.isCorrect ? "Usuń oznaczenie poprawnej" : "Oznacz jako poprawną"}
+            >
+              {item.isCorrect ? "Poprawna" : "Ustaw jako poprawną"}
             </Button>
-          )}
+            {onRemove && (
+              <Button $variant="danger" $size="sm" onClick={() => onRemove(index)} title="Usuń odpowiedź">
+                Usuń
+              </Button>
+            )}
+          </ActionsRow>
         </Row>
       ))}
       {onAdd && (

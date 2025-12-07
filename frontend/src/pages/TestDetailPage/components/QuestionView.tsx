@@ -1,4 +1,5 @@
 import React from "react";
+import styled from "styled-components";
 import { MathText } from "../../../components/MathText/MathText";
 import { Badge, Button, Flex, Text } from "../../../design-system/primitives";
 import { QuestionCard } from "../../../design-system/patterns";
@@ -19,6 +20,14 @@ export interface QuestionViewProps {
   choiceRenderer: () => React.ReactNode;
 }
 
+const MetaRow = styled(Flex)`
+  ${({ theme }) => theme.media.down("sm")} {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+  }
+`;
+
 const QuestionView: React.FC<QuestionViewProps> = ({ question, index, onEdit, onDelete, choiceRenderer }) => {
   return (
     <QuestionCard
@@ -29,7 +38,7 @@ const QuestionView: React.FC<QuestionViewProps> = ({ question, index, onEdit, on
         </Text>
       }
       meta={
-        <Flex $gap="xs" $wrap="nowrap" $justify="flex-end">
+        <MetaRow $gap="xs" $wrap="nowrap" $justify="flex-end">
           <Badge
             $variant={question.difficulty === 1 ? "success" : question.difficulty === 2 ? "warning" : "danger"}
           >
@@ -45,7 +54,7 @@ const QuestionView: React.FC<QuestionViewProps> = ({ question, index, onEdit, on
           >
             {question.is_closed ? "Zamknięte" : "Otwarte"}
           </Badge>
-        </Flex>
+        </MetaRow>
       }
       actions={
         <Flex $gap="sm" $wrap="wrap">

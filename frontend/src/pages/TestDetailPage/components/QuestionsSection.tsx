@@ -140,11 +140,6 @@ const QuestionsSection: React.FC<QuestionsSectionProps> = ({
               Dodaj nowe pytanie
             </Text>
           }
-          meta={
-            <Text $variant="body4" $tone="muted">
-              Uzupełnij treść i zapisz, karta pozostaje w tym samym stylu.
-            </Text>
-          }
         >
           <QuestionEditor
             draft={draft}

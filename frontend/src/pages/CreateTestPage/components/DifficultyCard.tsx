@@ -1,5 +1,5 @@
 import React from "react";
-import { useTheme } from "styled-components";
+import styled, { useTheme } from "styled-components";
 import { Stack, Heading, Text, Box, Divider } from "../../../design-system/primitives";
 import CounterControl from "./CounterControl";
 import SummaryPills from "./SummaryPills";
@@ -46,6 +46,25 @@ const DifficultyCard: React.FC<DifficultyCardProps> = ({
     { label: "Suma", value: totalDifficulty, bg: PALETTE.total.bg, fg: PALETTE.total.fg },
   ];
 
+  const CountersGrid = styled(Box)`
+    display: grid;
+    grid-template-columns: repeat(3, minmax(140px, 1fr));
+    gap: ${theme.spacing.md};
+
+    ${({ theme }) => theme.media.down("md")} {
+      grid-template-columns: repeat(2, minmax(160px, 1fr));
+    }
+
+    ${({ theme }) => theme.media.down("sm")} {
+      grid-template-columns: 1fr;
+      justify-items: center;
+
+      > * {
+        width: 100%;
+      }
+    }
+  `;
+
   return (
     <Box $p="lg" $radius="xl" $bg="#fff" $shadow="md">
       <Stack $gap="md">
@@ -60,13 +79,7 @@ const DifficultyCard: React.FC<DifficultyCardProps> = ({
 
         <SummaryPills items={pills} />
 
-        <Box
-          $display="grid"
-          style={{
-            gridTemplateColumns: "repeat(3, minmax(140px, 1fr))",
-            gap: theme.spacing.md,
-          }}
-        >
+        <CountersGrid>
           <CounterControl
             label="Łatwe"
             value={easyCount}
@@ -85,7 +98,7 @@ const DifficultyCard: React.FC<DifficultyCardProps> = ({
             onChange={onChangeHard}
             disabled={difficultyLocked}
           />
-        </Box>
+        </CountersGrid>
 
         <Divider />
         <DistributionBar easyPct={easyPct} medPct={medPct} hardPct={hardPct} disabled={difficultyLocked} />

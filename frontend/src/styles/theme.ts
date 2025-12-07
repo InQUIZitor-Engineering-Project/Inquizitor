@@ -1,5 +1,36 @@
 import type { DefaultTheme } from "styled-components";
 
+const breakpoints = {
+  xs: 0,
+  sm: 480,
+  md: 768,
+  lg: 1024,
+  xl: 1280,
+} as const;
+
+type BreakpointKey = keyof typeof breakpoints;
+
+const media = {
+  up: (bp: BreakpointKey) => `@media (min-width: ${breakpoints[bp]}px)`,
+  down: (bp: BreakpointKey) => `@media (max-width: ${breakpoints[bp]}px)`,
+  between: (from: BreakpointKey, to: BreakpointKey) =>
+    `@media (min-width: ${breakpoints[from]}px) and (max-width: ${breakpoints[to]}px)`,
+} as const;
+
+const contentWidth = {
+  sm: "100%",
+  md: "720px",
+  lg: "960px",
+  xl: "1180px",
+} as const;
+
+const pagePadding = {
+  sm: "16px",
+  md: "20px",
+  lg: "24px",
+  xl: "32px",
+} as const;
+
 const theme: DefaultTheme = {
   colors: {
     neutral: {
@@ -173,6 +204,11 @@ const theme: DefaultTheme = {
     gutter: "24px",
     margin: "144px",
   },
+  breakpoints,
+  media,
+  contentWidth,
+  pagePadding,
 };
 
 export default theme;
+export { breakpoints, media, contentWidth, pagePadding };
