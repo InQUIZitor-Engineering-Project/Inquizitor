@@ -15,7 +15,7 @@ const SearchBar: React.FC<Props> = ({ value, onChange }) => (
     $shadow="md"
     $px="md"
     $py="sm"
-    style={{ maxWidth: 520 }}
+    style={{ maxWidth: 520, width: "100%" }}
   >
     <Text as="span" $variant="body2" $tone="subtle" style={{ fontSize: 16 }}>
       🔍
@@ -23,7 +23,7 @@ const SearchBar: React.FC<Props> = ({ value, onChange }) => (
     <Input
       $fullWidth
       $size="md"
-      placeholder="Wpisz pytanie, np. „eksport do PDF”, „poziom trudności”…"
+      placeholder="Wpisz pytanie..."
       value={value}
       onChange={(e) => onChange(e.target.value)}
       style={{ border: "none", boxShadow: "none" }}

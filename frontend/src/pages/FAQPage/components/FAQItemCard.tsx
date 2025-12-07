@@ -24,11 +24,17 @@ const FAQItemCard: React.FC<Props> = ({ item, active, onToggle }) => {
         border: "1px solid rgba(0,0,0,0.04)",
         cursor: "pointer",
         textAlign: "left",
+        width: "100%",
         transition: "all 0.16s ease-in-out",
       }}
     >
-      <Flex $align="flex-start" $justify="space-between" $gap="sm">
-        <Text as="span" $variant="body2" $weight="medium" style={{ flex: 1 }}>
+      <Flex $align="flex-start" $justify="space-between" $gap="sm" $wrap="wrap">
+        <Text
+          as="span"
+          $variant="body2"
+          $weight="medium"
+          style={{ flex: 1, minWidth: 0, overflowWrap: "break-word", wordBreak: "break-word" }}
+        >
           {item.question}
         </Text>
         <Badge
@@ -37,6 +43,7 @@ const FAQItemCard: React.FC<Props> = ({ item, active, onToggle }) => {
             background: "rgba(76, 175, 80, 0.14)",
             color: theme.colors.brand.primary,
             border: "1px solid rgba(76, 175, 80, 0.35)",
+            flexShrink: 0,
           }}
         >
           {item.tag}

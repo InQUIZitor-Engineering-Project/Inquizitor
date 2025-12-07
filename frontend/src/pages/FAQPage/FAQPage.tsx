@@ -9,6 +9,21 @@ import useFaq from "./hooks/useFaq";
 import SearchBar from "./components/SearchBar";
 import FAQCategoryColumn from "./components/FAQCategoryColumn";
 import { PageContainer, PageSection } from "../../design-system/patterns";
+import styled from "styled-components";
+
+const CardsGrid = styled(Box)`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 24px;
+
+  ${({ theme }) => theme.media.down("md")} {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  }
+
+  @media (max-width: 640px) {
+    grid-template-columns: 1fr;
+  }
+`;
 
 const FAQPage: React.FC = () => {
   const theme = useTheme();
@@ -60,13 +75,7 @@ const FAQPage: React.FC = () => {
                 </Flex>
               </Box>
 
-              <Box
-                $p="lg"
-                $radius="xl"
-                $bg="#fff"
-                $shadow="md"
-                style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 24 }}
-              >
+              <CardsGrid $p="lg" $radius="xl" $bg="#fff" $shadow="md">
                 {categoriesOrder.map((category) => {
                   const items = grouped[category];
                   if (!items || items.length === 0) return null;
@@ -80,7 +89,7 @@ const FAQPage: React.FC = () => {
                     />
                   );
                 })}
-              </Box>
+              </CardsGrid>
             </Stack>
           </PageContainer>
         </PageSection>

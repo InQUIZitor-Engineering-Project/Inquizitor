@@ -41,6 +41,53 @@ const Inner = styled(Flex)`
   }
 `;
 
+const ContentFlex = styled(Flex)`
+  align-items: center;
+  flex-wrap: wrap;
+  gap: ${({ theme }) => theme.spacing.xl};
+
+  ${({ theme }) => theme.media.down("lg")} {
+    flex-direction: column;
+    align-items: stretch;
+    gap: ${({ theme }) => theme.spacing.lg};
+
+    > * {
+      flex: 1 1 100%;
+      min-width: 0;
+    }
+  }
+`;
+
+const Illustration = styled(Box)`
+  width: 100%;
+  max-width: 420px;
+
+  ${({ theme }) => theme.media.down("sm")} {
+    max-width: 320px;
+    margin: 0 auto;
+  }
+`;
+
+const LeftColumn = styled(Box)`
+  flex: 1 1 360px;
+  min-width: 300px;
+
+  ${({ theme }) => theme.media.down("lg")} {
+    min-width: 0;
+    flex: 1 1 100%;
+  }
+`;
+
+const IllustrationColumn = styled(Flex)`
+  flex: 1 1 280px;
+  min-width: 240px;
+
+  ${({ theme }) => theme.media.down("lg")} {
+    min-width: 0;
+    flex: 1 1 100%;
+  }
+`;
+
 interface AuthLayoutProps {
   left: React.ReactNode;
   illustrationSrc: string;
@@ -60,18 +107,18 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ left, illustrationSrc, illustra
               $p="xl"
               style={{ width: "100%", maxWidth: 960 }}
             >
-              <Flex $gap="xl" $wrap="wrap" style={{ alignItems: "center" }}>
-                <Box style={{ flex: "1 1 360px", minWidth: 300 }}>{left}</Box>
+              <ContentFlex>
+                <LeftColumn>{left}</LeftColumn>
 
-                <Flex $justify="center" $align="center" style={{ flex: "1 1 280px", minWidth: 240 }}>
-                  <Box
+                <IllustrationColumn $justify="center" $align="center">
+                  <Illustration
                     as="img"
                     src={illustrationSrc}
                     alt={illustrationAlt}
-                    style={{ width: "100%", maxWidth: 420, objectFit: "contain" }}
+                    style={{ width: "100%", objectFit: "contain" }}
                   />
-                </Flex>
-              </Flex>
+                </IllustrationColumn>
+              </ContentFlex>
             </Box>
           </Flex>
         </PageContainer>

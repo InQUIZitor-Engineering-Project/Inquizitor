@@ -15,7 +15,13 @@ const HeroSection = styled(Box)`
   align-items: center;
 
   ${({ theme }) => theme.media.down("md")} {
-    min-height: calc(100vh - ${NAVBAR_HEIGHT}px);
+    /* prefer dynamic viewport height on mobile (hides browser chrome) */
+    @supports (height: 100dvh) {
+      min-height: calc(100dvh - ${NAVBAR_HEIGHT}px);
+    }
+    @supports not (height: 100dvh) {
+      min-height: calc(100vh - ${NAVBAR_HEIGHT}px);
+    }
   }
 `;
 
