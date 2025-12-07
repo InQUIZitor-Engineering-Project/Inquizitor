@@ -1,5 +1,5 @@
 import React, { useState, useEffect, type FormEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import styled, { useTheme } from "styled-components";
 import { Stack, Heading, Text, Input, Button, Checkbox, Flex } from "../../design-system/primitives";
 import { registerUser } from "../../services/auth";
@@ -17,7 +17,6 @@ const MobileHide = styled.div`
 
 const RegisterPage: React.FC = () => {
   const theme = useTheme();
-  const navigate = useNavigate();
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
