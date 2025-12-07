@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Iterable, Optional
 
 from app.db import models as db_models
-from app.domain.models import File, Material, Question, Test, User, Job
+from app.domain.models import File, Material, Question, Test, User, Job, PendingVerification
 from app.domain.models.enums import ProcessingStatus, QuestionDifficulty, JobStatus, JobType
 
 
@@ -168,6 +168,32 @@ def job_to_row(job: Job) -> db_models.Job:
         error=job.error,
         created_at=job.created_at or datetime.utcnow(),
         updated_at=job.updated_at or datetime.utcnow(),
+    )
+
+
+def pending_verification_to_row(p: PendingVerification) -> db_models.PendingEmailVerification:
+    return db_models.PendingEmailVerification(
+        id=p.id,
+        email=p.email,
+        hashed_password=p.hashed_password,
+        first_name=p.first_name,
+        last_name=p.last_name,
+        token_hash=p.token_hash,
+        expires_at=p.expires_at,
+        created_at=p.created_at or datetime.utcnow(),
+    )
+
+
+def pending_verification_to_domain(row: db_models.PendingEmailVerification) -> PendingVerification:
+    return PendingVerification(
+        id=row.id,
+        email=row.email,
+        hashed_password=row.hashed_password,
+        first_name=row.first_name,
+        last_name=row.last_name,
+        token_hash=row.token_hash,
+        expires_at=row.expires_at,
+        created_at=row.created_at,
     )
 
 

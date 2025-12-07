@@ -18,6 +18,14 @@ export interface Token {
   token_type: string;
 }
 
+export interface RegistrationRequested {
+  message: string;
+}
+
+export interface VerificationResponse extends Token {
+  redirect_url?: string | null;
+}
+
 const API_BASE = import.meta.env.VITE_API_URL || "";
 
 function toPolishEmailError(msg: string): string {
@@ -68,7 +76,7 @@ function translateError(detail: any): string {
   return "Coś poszło nie tak.";
 }
 
-export async function registerUser(data: UserCreate): Promise<UserRead> {
+export async function registerUser(data: UserCreate): Promise<RegistrationRequested> {
   const res = await fetch(`${API_BASE}/auth/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -83,6 +91,18 @@ export async function registerUser(data: UserCreate): Promise<UserRead> {
     catch {
     }
     throw new Error(message);
+  }
+  return res.json();
+}
+
+export async function verifyEmail(token: string, redirect: boolean = false): Promise<VerificationResponse> {
+  const url = new URL(`${API_BASE}/auth/verify-email`);
+  url.searchParams.set("token", token);
+  if (redirect) url.searchParams.set("redirect", "true");
+  const res = await fetch(url.toString(), { method: "GET" });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Nie udało się zweryfikować adresu e-mail.");
   }
   return res.json();
 }

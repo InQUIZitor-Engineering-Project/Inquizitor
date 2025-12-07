@@ -87,6 +87,12 @@ class GeminiQuestionGenerator(QuestionGenerator):
                 contents=prompt,
             )
         except Exception as exc:  # noqa: BLE001
+            message = str(exc)
+            # Map quota/rate errors to ValueError so they surface to the user and don't look like 500s
+            if "RESOURCE_EXHAUSTED" in message or "quota" in message.lower() or "429" in message:
+                raise ValueError(
+                    "Limit zapytań do Gemini został przekroczony. Spróbuj ponownie za chwilę."
+                ) from exc
             raise RuntimeError(f"Gemini request failed: {exc}") from exc
 
         raw_output = (response.text or "").strip()
@@ -148,7 +154,7 @@ class GeminiQuestionGenerator(QuestionGenerator):
             if is_closed and raw_choices:
                 if not isinstance(raw_choices, list):
                     raise ValueError("Pole 'choices' musi być listą.")
-                choices = [str(c) for c in raw_choices]
+                choices = [str(c).strip() for c in raw_choices if str(c).strip()]
 
             correct_choices: List[str] = []
             if is_closed and raw_correct:
@@ -163,7 +169,14 @@ class GeminiQuestionGenerator(QuestionGenerator):
                         raise ValueError(
                             "Pole 'correct_choices' musi być listą indeksów lub stringów."
                         )
-                    correct_choices = [str(c) for c in raw_correct]
+                    correct_choices = [str(c).strip() for c in raw_correct if str(c).strip()]
+
+                # Ensure correct_choices is a subset of choices to satisfy domain constraints
+                if choices and correct_choices:
+                    correct_choices = [c for c in correct_choices if c in choices]
+                # Deduplicate while preserving order
+                seen = set()
+                correct_choices = [c for c in correct_choices if not (c in seen or seen.add(c))]
 
             if not is_closed:
                 choices = []

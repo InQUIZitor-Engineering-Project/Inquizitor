@@ -5,6 +5,7 @@ from .question import Question
 from .test import Test
 from .user import User
 from .job import Job
+from .pending_verification import PendingVerification
 
 __all__ = [
     "ProcessingStatus",
@@ -17,5 +18,6 @@ __all__ = [
     "Test",
     "User",
     "Job",
+    "PendingVerification",
 ]
 

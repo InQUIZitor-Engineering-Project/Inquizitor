@@ -2,13 +2,14 @@ import os
 
 from pathlib import Path
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status, Response
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 
 from app.api.dependencies import get_file_service, get_export_storage
 from app.api.schemas.tests import FileUploadResponse
 from app.application.services import FileService
 from app.core.security import get_current_user
 from app.db.models import User
+from app.infrastructure.storage import R2FileStorage
 
 router = APIRouter()
 
@@ -54,6 +55,26 @@ def download_export(
     # basic path traversal protection
     if ".." in file_path:
         raise HTTPException(status_code=400, detail="Invalid filename")
+
+    # For R2 and other remote storages, proxy the file through the API to avoid CORS.
+    if isinstance(export_storage, R2FileStorage):
+        try:
+            obj = export_storage._client.get_object(Bucket=export_storage._bucket, Key=file_path)  # type: ignore[attr-defined]
+            data = obj["Body"].read()
+            return Response(
+                content=data,
+                media_type=obj.get("ContentType") or "application/pdf",
+                headers={"Content-Disposition": f'attachment; filename="{Path(file_path).name}"'},
+            )
+        except Exception:
+            # fall back to presigned URL redirect if direct fetch fails
+            generated = export_storage.get_url(stored_path=file_path)
+            if generated.startswith("http"):
+                return RedirectResponse(url=generated)
+
+    generated = export_storage.get_url(stored_path=file_path)
+    if generated.startswith("http"):
+        return RedirectResponse(url=generated)
 
     base = Path(export_storage._base_dir) if hasattr(export_storage, "_base_dir") else Path("uploads/exports")
     abs_path = (base / file_path).resolve()

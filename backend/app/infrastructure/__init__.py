@@ -7,8 +7,9 @@ from .persistence.sqlmodel import (
     SqlModelUserRepository,
     SqlModelJobRepository,
 )
-from .storage import LocalFileStorage
+from .storage import LocalFileStorage, R2FileStorage
 from .exporting import compile_tex_to_pdf, render_test_to_tex, test_to_xml_bytes
+from .email import ResendEmailSender
 
 __all__ = [
     "GeminiQuestionGenerator",
@@ -19,8 +20,10 @@ __all__ = [
     "SqlModelUserRepository",
     "SqlModelJobRepository",
     "LocalFileStorage",
+    "R2FileStorage",
     "render_test_to_tex",
     "compile_tex_to_pdf",
     "test_to_xml_bytes",
+    "ResendEmailSender",
 ]
 

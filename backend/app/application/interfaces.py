@@ -10,6 +10,7 @@ from app.domain.repositories import (
     TestRepository,
     UserRepository,
     JobRepository,
+    PendingVerificationRepository,
 )
 from app.domain.services import FileStorage, OCRService, QuestionGenerator
 
@@ -20,6 +21,7 @@ class UnitOfWork(Protocol):
     files: FileRepository
     materials: MaterialRepository
     jobs: JobRepository
+    pending_verifications: PendingVerificationRepository
 
     def __enter__(self) -> "UnitOfWork":
         ...

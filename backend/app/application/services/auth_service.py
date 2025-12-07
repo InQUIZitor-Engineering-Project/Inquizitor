@@ -4,10 +4,11 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 from typing import Callable
+import secrets
+import hashlib
 
 from app.api.schemas.auth import Token
-from app.api.schemas.users import UserCreate, UserRead
-from app.application import dto
+from app.api.schemas.users import UserCreate
 from app.application.interfaces import UnitOfWork
 from app.core.config import get_settings
 from app.core.security import (
@@ -16,6 +17,7 @@ from app.core.security import (
     verify_password,
 )
 from app.domain.models import User
+from app.domain.models import PendingVerification
 
 
 class AuthService:
@@ -32,8 +34,8 @@ class AuthService:
         self._password_verifier = password_verifier
         self._token_issuer = token_issuer
 
-    def register_user(self, payload: UserCreate) -> UserRead:
-        """Creates a new user if the e-mail does not yet exist."""
+    def register_user(self, payload: UserCreate) -> None:
+        """Creates pending verification and enqueues verification email."""
 
         with self._uow_factory() as uow:
             existing = uow.users.get_by_email(payload.email)
@@ -41,7 +43,16 @@ class AuthService:
                 raise ValueError("Email already registered")
 
             hashed_password = self._password_hasher(payload.password)
-            user = User(
+            settings = get_settings()
+            if not settings.FRONTEND_BASE_URL:
+                raise ValueError("FRONTEND_BASE_URL is not configured")
+            expires_minutes = settings.EMAIL_VERIFICATION_EXP_MIN
+
+            raw_token = secrets.token_urlsafe(32)
+            token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
+            expires_at = datetime.utcnow() + timedelta(minutes=expires_minutes)
+
+            pending = User(
                 id=None,
                 email=payload.email,
                 hashed_password=hashed_password,
@@ -50,9 +61,26 @@ class AuthService:
                 created_at=datetime.utcnow(),
             )
 
-            created_user = uow.users.add(user)
+            pending_entry = PendingVerification(
+                id=None,
+                email=pending.email,
+                hashed_password=hashed_password,
+                first_name=pending.first_name,
+                last_name=pending.last_name,
+                token_hash=token_hash,
+                expires_at=expires_at,
+                created_at=datetime.utcnow(),
+            )
+            uow.pending_verifications.upsert(pending_entry)
 
-        return dto.to_user_read(created_user)
+        from app.tasks.email import send_verification_email_task  # local import to avoid cycles
+
+        verify_url = f"{settings.FRONTEND_BASE_URL.rstrip('/')}/verify-email?token={raw_token}"
+        send_verification_email_task.delay(
+            to_email=pending.email,
+            verify_url=verify_url,
+            expires_minutes=expires_minutes,
+        )
 
     def authenticate_user(self, *, email: str, password: str) -> User:
         """Validates credentials and returns the domain user."""
@@ -73,6 +101,38 @@ class AuthService:
             expires_delta=expires_delta,
         )
         return Token(access_token=token, token_type="bearer")
+
+    def verify_and_create_user(self, *, token: str) -> Token:
+        settings = get_settings()
+        token_hash = hashlib.sha256(token.encode()).hexdigest()
+        with self._uow_factory() as uow:
+            pending = uow.pending_verifications.get_by_token_hash(token_hash)
+            if not pending:
+                raise ValueError("Invalid or expired token")
+            if pending.expires_at < datetime.utcnow():
+                uow.pending_verifications.delete_by_email(pending.email)
+                raise ValueError("Token expired")
+            if uow.users.get_by_email(pending.email):
+                uow.pending_verifications.delete_by_email(pending.email)
+                raise ValueError("Email already registered")
+
+            user = User(
+                id=None,
+                email=pending.email,
+                hashed_password=pending.hashed_password,
+                first_name=pending.first_name,
+                last_name=pending.last_name,
+                created_at=datetime.utcnow(),
+            )
+            created = uow.users.add(user)
+            uow.pending_verifications.delete_by_email(pending.email)
+
+        expires_delta = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        token_str = self._token_issuer(
+            data={"sub": created.email},
+            expires_delta=expires_delta,
+        )
+        return Token(access_token=token_str, token_type="bearer")
 
 
 __all__ = ["AuthService"]

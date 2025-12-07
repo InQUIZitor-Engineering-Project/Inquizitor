@@ -69,7 +69,7 @@ export interface UseGenerateTestFormResult {
 const useGenerateTestForm = (): UseGenerateTestFormResult => {
   const navigate = useNavigate();
   const { refreshSidebarTests } = useOutletContext<LayoutCtx>();
-  const { withLoader } = useLoader();
+  const { startLoading, stopLoading } = useLoader();
   const {
     jobId,
     status: jobStatus,
@@ -214,28 +214,28 @@ const useGenerateTestForm = (): UseGenerateTestFormResult => {
     }
 
     try {
-      const enqueue = await withLoader(() =>
-        generateTest({
-          closed: {
-            true_false: tfCount,
-            single_choice: singleCount,
-            multi_choice: multiCount,
-          },
-          num_open: openCount,
-          easy: easyCount,
-          medium: mediumCount,
-          hard: hardCount,
-          text: textPayload || undefined,
-          additional_instructions: instructions.trim() || undefined,
-          file_id: sourceType === "material" ? materialData?.file_id : undefined,
-        })
-      );
+      startLoading();
+      const enqueue = await generateTest({
+        closed: {
+          true_false: tfCount,
+          single_choice: singleCount,
+          multi_choice: multiCount,
+        },
+        num_open: openCount,
+        easy: easyCount,
+        medium: mediumCount,
+        hard: hardCount,
+        text: textPayload || undefined,
+        additional_instructions: instructions.trim() || undefined,
+        file_id: sourceType === "material" ? materialData?.file_id : undefined,
+      });
 
       resetJobPolling();
       startPolling(enqueue.job_id);
     } catch (err: any) {
       setGenError(err.message || "Wystąpił błąd przy generowaniu testu. Spróbuj ponownie.");
       setGenLoading(false);
+      stopLoading();
       resetJobPolling();
     } finally {
       // zakończymy loading po wyniku joba
@@ -255,10 +255,12 @@ const useGenerateTestForm = (): UseGenerateTestFormResult => {
         setGenError("Zadanie zakończone, ale brak identyfikatora testu.");
       }
       setGenLoading(false);
+      stopLoading();
       resetJobPolling();
     } else if (normalized === "failed") {
       setGenError(jobError || (jobResult as any)?.error || "Generowanie nie powiodło się.");
       setGenLoading(false);
+      stopLoading();
       resetJobPolling();
     }
   }, [jobStatus, jobResult, jobError, navigate, refreshSidebarTests, resetJobPolling]);

@@ -17,6 +17,18 @@ class User(SQLModel, table=True):
     files: List["File"] = Relationship(back_populates="owner")
     materials: List["Material"] = Relationship(back_populates="owner")
 
+
+class PendingEmailVerification(SQLModel, table=True):
+    __tablename__ = "pending_email_verification"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    email: str = Field(index=True, unique=True, max_length=100)
+    hashed_password: str
+    first_name: Optional[str] = Field(default=None, max_length=50)
+    last_name: Optional[str] = Field(default=None, max_length=50)
+    token_hash: str = Field(index=True, max_length=128)
+    expires_at: datetime = Field(index=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
+
 class Test(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     owner_id: int = Field(foreign_key="user.id", index=True)

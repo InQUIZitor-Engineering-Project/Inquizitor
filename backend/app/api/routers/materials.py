@@ -11,7 +11,7 @@ from app.db.models import User
 
 router = APIRouter(prefix="/materials", tags=["materials"])
 
-_ALLOWED_EXTENSIONS = [".pdf", ".docx", ".txt", ".md", ".png", ".jpg"]
+_ALLOWED_EXTENSIONS = [".pdf", ".docx", ".txt", ".md", ".png", ".jpg", ".jpeg"]
 
 
 @router.post("/upload", response_model=MaterialOut)

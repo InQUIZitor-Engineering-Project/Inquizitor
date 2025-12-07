@@ -7,13 +7,14 @@ from sqlalchemy.orm import Session
 from sqlmodel import select
 
 from app.db import models as db_models
-from app.domain.models import File, Material, Question, Test, User, Job
+from app.domain.models import File, Material, Question, Test, User, Job, PendingVerification
 from app.domain.repositories import (
     FileRepository,
     JobRepository,
     MaterialRepository,
     TestRepository,
     UserRepository,
+    PendingVerificationRepository,
 )
 
 from . import mappers
@@ -210,11 +211,52 @@ class SqlModelJobRepository(JobRepository):
         return [mappers.job_to_domain(row) for row in rows]
 
 
+class SqlModelPendingVerificationRepository(PendingVerificationRepository):
+    def __init__(self, session: Session):
+        self._session = session
+
+    def upsert(self, pending: PendingVerification) -> PendingVerification:
+        stmt = select(db_models.PendingEmailVerification).where(db_models.PendingEmailVerification.email == pending.email)
+        existing = self._session.exec(stmt).first()
+        if existing:
+            existing.hashed_password = pending.hashed_password
+            existing.first_name = pending.first_name
+            existing.last_name = pending.last_name
+            existing.token_hash = pending.token_hash
+            existing.expires_at = pending.expires_at
+            existing.created_at = pending.created_at
+            db_obj = existing
+        else:
+            db_obj = mappers.pending_verification_to_row(pending)
+            self._session.add(db_obj)
+        self._session.commit()
+        self._session.refresh(db_obj)
+        return mappers.pending_verification_to_domain(db_obj)
+
+    def get_by_email(self, email: str) -> PendingVerification | None:
+        stmt = select(db_models.PendingEmailVerification).where(db_models.PendingEmailVerification.email == email)
+        row = self._session.exec(stmt).first()
+        return mappers.pending_verification_to_domain(row) if row else None
+
+    def get_by_token_hash(self, token_hash: str) -> PendingVerification | None:
+        stmt = select(db_models.PendingEmailVerification).where(db_models.PendingEmailVerification.token_hash == token_hash)
+        row = self._session.exec(stmt).first()
+        return mappers.pending_verification_to_domain(row) if row else None
+
+    def delete_by_email(self, email: str) -> None:
+        stmt = select(db_models.PendingEmailVerification).where(db_models.PendingEmailVerification.email == email)
+        row = self._session.exec(stmt).first()
+        if row:
+            self._session.delete(row)
+            self._session.commit()
+
+
 __all__ = [
     "SqlModelUserRepository",
     "SqlModelTestRepository",
     "SqlModelFileRepository",
     "SqlModelMaterialRepository",
     "SqlModelJobRepository",
+    "SqlModelPendingVerificationRepository",
 ]
 

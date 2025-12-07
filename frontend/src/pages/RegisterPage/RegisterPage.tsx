@@ -30,6 +30,7 @@ const RegisterPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -52,13 +53,14 @@ const RegisterPage: React.FC = () => {
 
     setLoading(true);
     try {
+      setSuccessMessage("");
       await registerUser({
         first_name: firstName,  
         last_name: lastName,    
         email,
         password,
       });
-      navigate("/login");
+      setSuccessMessage("Sprawdź swoją skrzynkę e-mail, wysłaliśmy link aktywacyjny.");
     } catch (err: any) {
       const msg = String(err?.message || "Błąd rejestracji");
       setErrorMessage(msg);
@@ -94,6 +96,11 @@ const RegisterPage: React.FC = () => {
 
             <form onSubmit={handleSubmit}>
               <Stack $gap="md">
+                {successMessage ? (
+                  <Text $variant="body2" $tone="success">
+                    {successMessage}
+                  </Text>
+                ) : null}
                 <Flex $gap="md" $wrap="wrap">
                   <Stack $gap="xs" as="label" htmlFor="firstName" style={{ flex: "1 1 160px" }}>
                     <Text as="span" $variant="body3" $tone="muted">

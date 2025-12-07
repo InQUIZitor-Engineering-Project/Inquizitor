@@ -1,0 +1,44 @@
+FROM python:3.11-slim
+
+# Python runtime opts
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
+
+# System dependencies (PDF/LaTeX, OCR, libmagic)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl ca-certificates fontconfig \
+    texlive-xetex \
+    texlive-latex-recommended \
+    texlive-latex-extra \
+    texlive-fonts-recommended \
+    texlive-lang-polish \
+    fonts-roboto \
+    fonts-dejavu-core \
+    libmagic1 \
+    tesseract-ocr \
+    tesseract-ocr-pol \
+    tesseract-ocr-eng \
+    poppler-utils \
+    libcairo2 \
+    libpango-1.0-0 \
+    libpangoft2-1.0-0 \
+    libgdk-pixbuf-2.0-0 \
+    libjpeg62-turbo \
+    zlib1g \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Install dependencies first to leverage layer caching
+COPY requirements.txt /app/requirements.txt
+RUN pip install --upgrade pip && \
+    pip install --no-deps -r /app/requirements.txt
+
+# Copy application code
+COPY . /app
+
+EXPOSE 8000
+
+# Default command (can be overridden by compose)
+CMD ["gunicorn", "app.main:app", "--workers", "4", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000", "--timeout", "120"]

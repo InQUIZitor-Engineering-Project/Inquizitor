@@ -6,6 +6,7 @@ import logging
 logger = logging.getLogger(__name__)
 import json
 import random
+from pathlib import Path
 from typing import Callable, Dict, List, Tuple
 import re
 import unicodedata
@@ -22,7 +23,7 @@ from app.api.schemas.tests import (
     PdfExportConfig,
 )
 from app.application import dto
-from app.application.interfaces import OCRService, QuestionGenerator, UnitOfWork
+from app.application.interfaces import OCRService, QuestionGenerator, UnitOfWork, FileStorage
 from app.domain.events import TestGenerated
 from app.domain.models import Test as TestDomain
 from app.domain.models.enums import QuestionDifficulty
@@ -36,6 +37,7 @@ from app.infrastructure.exporting import (
     test_to_xml_bytes,
 )
 from app.infrastructure.llm.gemini import GeminiQuestionGenerator
+from app.infrastructure.extractors.extract_composite import composite_text_extractor
 
 class TestService:
     def __init__(
@@ -44,6 +46,7 @@ class TestService:
         *,
         question_generator: QuestionGenerator,
         ocr_service: OCRService,
+        storage: FileStorage,
         tex_renderer: Callable[..., str] = render_test_to_tex,
         pdf_compiler: Callable[[str], bytes] = compile_tex_to_pdf,
         xml_serializer: Callable[[Dict], bytes] = test_to_xml_bytes,
@@ -52,6 +55,7 @@ class TestService:
         self._uow_factory = uow_factory
         self._question_generator = question_generator
         self._ocr_service = ocr_service
+        self._storage = storage
         self._render_test_to_tex = tex_renderer
         self._compile_tex_to_pdf = pdf_compiler
         self._test_to_xml = xml_serializer
@@ -233,9 +237,19 @@ class TestService:
                 source_file = uow.files.get(request.file_id)
                 if not source_file or source_file.owner_id != owner_id:
                     raise ValueError("File not found")
-                source_text = self._ocr_service.extract_text(
-                    file_path=str(source_file.stored_path)
-                )
+                with self._storage.download_to_temp(
+                    stored_path=str(source_file.stored_path)
+                ) as local_path:
+                    local_path = Path(local_path)
+                    # Prefer composite extractor (text layer + PDF OCR fallback). If still empty, fallback to raw OCR.
+                    source_text = composite_text_extractor(local_path, None).strip()
+                    if not source_text:
+                        source_text = (
+                            self._ocr_service.extract_text(file_path=str(local_path))
+                            or ""
+                        ).strip()
+                if not source_text:
+                    raise ValueError("Could not extract text from the provided file.")
                 base_title = source_file.filename
 
             try:

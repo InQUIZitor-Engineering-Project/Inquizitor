@@ -1,7 +1,8 @@
-import React, { useState, type FormEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useEffect, useState, type FormEvent } from "react";
+import { Link, useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import styled, { useTheme } from "styled-components";
 import { Stack, Heading, Text, Input, Button, Checkbox } from "../../design-system/primitives";
+import AlertBar from "../../design-system/patterns/AlertBar";
 import { useAuth } from "../../context/AuthContext";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import loginIllustration from "../../assets/login.png";
@@ -18,14 +19,31 @@ const LoginPage: React.FC = () => {
   const theme = useTheme();
   const navigate = useNavigate();
   const { login } = useAuth();
+  const [searchParams] = useSearchParams();
+  const location = useLocation() as { state?: { verifiedMessage?: string; verifiedError?: string } };
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [infoMessage, setInfoMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   useDocumentTitle("Zaloguj się | Inquizitor");
+
+  useEffect(() => {
+    const verifiedParam = (searchParams.get("verified") || "").toLowerCase();
+    const stateMsg = location.state?.verifiedMessage;
+    const stateErr = location.state?.verifiedError;
+
+    if (verifiedParam === "success") {
+      setInfoMessage(stateMsg || "Konto zostało potwierdzone. Możesz się zalogować.");
+      setErrorMessage("");
+    } else if (verifiedParam === "error") {
+      setInfoMessage(null);
+      if (stateErr) setErrorMessage(stateErr);
+    }
+  }, [location.state, searchParams]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -93,11 +111,9 @@ const LoginPage: React.FC = () => {
                 />
               </Stack>
 
-              {errorMessage && (
-                <Text $variant="body3" $tone="danger">
-                  {errorMessage}
-                </Text>
-              )}
+              {infoMessage && <AlertBar variant="success">{infoMessage}</AlertBar>}
+
+              {errorMessage && <AlertBar variant="danger">{errorMessage}</AlertBar>}
 
               <Stack $gap="sm">
                 <label style={{ display: "flex", alignItems: "center", gap: 8 }}>

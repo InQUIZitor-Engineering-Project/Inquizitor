@@ -2,8 +2,6 @@ from __future__ import annotations
 
 import logging
 
-from pathlib import Path
-
 from app.api.schemas.tests import TestGenerateRequest, PdfExportConfig
 from app.celery_app import celery_app
 from app.domain.models.enums import JobStatus
@@ -69,12 +67,7 @@ def export_test_pdf_task(self, job_id: int, owner_id: int, test_id: int, show_an
             filename=filename,
             content=pdf_bytes,
         )
-        rel_path = Path(stored_path)
-        try:
-            rel_path = rel_path.relative_to(export_storage._base_dir)  # type: ignore[attr-defined]
-        except Exception:
-            pass
-        file_url = f"/files/exports/{rel_path}".replace("//", "/")
+        file_url = export_storage.get_url(stored_path=stored_path)
         job_service.update_job_status(
             job_id=job_id,
             status=JobStatus.DONE,
@@ -117,12 +110,7 @@ def export_custom_test_pdf_task(self, job_id: int, owner_id: int, test_id: int, 
             filename=filename,
             content=pdf_bytes,
         )
-        rel_path = Path(stored_path)
-        try:
-            rel_path = rel_path.relative_to(export_storage._base_dir)  # type: ignore[attr-defined]
-        except Exception:
-            pass
-        file_url = f"/files/exports/{rel_path}".replace("//", "/")
+        file_url = export_storage.get_url(stored_path=stored_path)
         job_service.update_job_status(
             job_id=job_id,
             status=JobStatus.DONE,

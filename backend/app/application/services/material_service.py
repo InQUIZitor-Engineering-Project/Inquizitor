@@ -47,23 +47,25 @@ class MaterialService:
             filename=filename,
             content=content,
         )
-        stored_path = Path(stored_path_str)
-        size_bytes = stored_path.stat().st_size if stored_path.exists() else len(content)
-        mime_type = self._detect_mime(stored_path)
+        with self._storage.download_to_temp(stored_path=stored_path_str) as local_path:
+            local = Path(local_path)
+            size_bytes = local.stat().st_size if local.exists() else len(content)
+            mime_type = self._detect_mime(local)
+            raw_text = self._text_extractor(local, mime_type)
+
         checksum = hashlib.sha256(content).hexdigest()
 
         file_domain = FileDomain(
             id=None,
             owner_id=owner_id,
             filename=filename,
-            stored_path=stored_path,
+            stored_path=Path(stored_path_str),
             uploaded_at=datetime.utcnow(),
         )
 
         with self._uow_factory() as uow:
             file_record = uow.files.add(file_domain)
 
-            raw_text = self._text_extractor(stored_path, mime_type)
             normalized_text = self._sanitize_text(raw_text)
 
             status = (

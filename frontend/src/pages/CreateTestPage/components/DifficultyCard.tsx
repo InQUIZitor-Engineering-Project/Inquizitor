@@ -1,5 +1,5 @@
 import React from "react";
-import styled, { useTheme } from "styled-components";
+import styled from "styled-components";
 import { Stack, Heading, Text, Box, Divider } from "../../../design-system/primitives";
 import CounterControl from "./CounterControl";
 import SummaryPills from "./SummaryPills";
@@ -22,6 +22,25 @@ export interface DifficultyCardProps {
   onChangeHard: (v: number) => void;
 }
 
+const CountersGrid = styled(Box)`
+  display: grid;
+  grid-template-columns: repeat(3, minmax(140px, 1fr));
+  gap: ${({ theme }) => theme.spacing.md};
+
+  ${({ theme }) => theme.media.down("md")} {
+    grid-template-columns: repeat(2, minmax(160px, 1fr));
+  }
+
+  ${({ theme }) => theme.media.down("sm")} {
+    grid-template-columns: 1fr;
+    justify-items: center;
+
+    > * {
+      width: 100%;
+    }
+  }
+`;
+
 const DifficultyCard: React.FC<DifficultyCardProps> = ({
   easyCount,
   mediumCount,
@@ -37,33 +56,12 @@ const DifficultyCard: React.FC<DifficultyCardProps> = ({
   onChangeMedium,
   onChangeHard,
 }) => {
-  const theme = useTheme();
-
   const pills = [
     { label: "Łatwe", value: easyCount, bg: PALETTE.diff.easyBg, fg: PALETTE.diff.easyFg },
     { label: "Średnie", value: mediumCount, bg: PALETTE.diff.medBg, fg: PALETTE.diff.medFg },
     { label: "Trudne", value: hardCount, bg: PALETTE.diff.hardBg, fg: PALETTE.diff.hardFg },
     { label: "Suma", value: totalDifficulty, bg: PALETTE.total.bg, fg: PALETTE.total.fg },
   ];
-
-  const CountersGrid = styled(Box)`
-    display: grid;
-    grid-template-columns: repeat(3, minmax(140px, 1fr));
-    gap: ${theme.spacing.md};
-
-    ${({ theme }) => theme.media.down("md")} {
-      grid-template-columns: repeat(2, minmax(160px, 1fr));
-    }
-
-    ${({ theme }) => theme.media.down("sm")} {
-      grid-template-columns: 1fr;
-      justify-items: center;
-
-      > * {
-        width: 100%;
-      }
-    }
-  `;
 
   return (
     <Box $p="lg" $radius="xl" $bg="#fff" $shadow="md">

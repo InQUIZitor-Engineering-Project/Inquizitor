@@ -6,6 +6,7 @@ import { useLoader } from "../components/Loader/GlobalLoader";
 interface AuthContextType {
   user: UserRead | null;
   login: (email: string, password: string) => Promise<void>;
+  loginWithToken: (token: string) => Promise<void>;
   logout: () => void;
   loading: boolean;
 }
@@ -49,12 +50,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await withLoader(async () => {
       const tokenData: Token = await loginUser(email, password);
       localStorage.setItem("access_token", tokenData.access_token);
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/users/me`, {
-        headers: { Authorization: `Bearer ${tokenData.access_token}` },
-      });
-      if (!res.ok) throw new Error("Failed to fetch user after login");
-      const user = await res.json();
-      setUser(user);
+      await fetchAndSetUser(tokenData.access_token);
+    });
+  };
+
+  const fetchAndSetUser = async (token: string) => {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/users/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) throw new Error("Failed to fetch user");
+    const user = await res.json();
+    setUser(user);
+  };
+
+  const loginWithToken = async (token: string) => {
+    await withLoader(async () => {
+      localStorage.setItem("access_token", token);
+      await fetchAndSetUser(token);
     });
   };
 
@@ -64,7 +76,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, loginWithToken, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );

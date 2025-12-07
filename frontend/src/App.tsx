@@ -14,6 +14,7 @@ import AboutUsPage from './pages/AboutUsPage/AboutUsPage';
 import FAQPage from './pages/FAQPage/FAQPage';
 import CreateTestPage from "./pages/CreateTestPage/CreateTestPage";
 import MainLayout from "./layouts/MainLayout";
+import VerifyEmailPage from "./pages/VerifyEmailPage/VerifyEmailPage";
 
 import ScrollToTop from "./components/ScrollToTop/ScrollToTop";
 
@@ -89,6 +90,7 @@ const App: React.FC = () => {
               </PublicOnlyRoute>
             }
           />
+          <Route path="/verify-email" element={<VerifyEmailPage />} />
           <Route
             path="/profile"
             element={
