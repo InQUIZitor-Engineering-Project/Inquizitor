@@ -19,12 +19,16 @@ const CreateTestPage: React.FC = () => {
           <PageContainer>
             <Stack style={{ width: "100%" }} $gap="lg">
               <Stack $gap="xs">
-                <Heading as="h1" $level="h2">
-                  Utwórz test dopasowany do swoich potrzeb
-                </Heading>
-                <Text $variant="body2" $tone="muted">
-                  Wgraj materiał lub wklej treść, wybierz typ pytań oraz poziom trudności, a my wygenerujemy gotowy test.
-                </Text>
+              <Heading as="h1" $level="h2" style={{ fontSize: "clamp(24px, 5vw, 32px)", lineHeight: "1.25" }}>
+                Utwórz test dopasowany do swoich potrzeb
+              </Heading>
+              <Text
+                $variant="body2"
+                $tone="muted"
+                style={{ fontSize: "clamp(14px, 4vw, 16px)", lineHeight: "1.4" }}
+              >
+                Wgraj materiał lub wklej treść, wybierz typ pytań oraz poziom trudności, a my wygenerujemy gotowy test.
+              </Text>
               </Stack>
 
               <SourceSection

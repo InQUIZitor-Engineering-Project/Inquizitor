@@ -21,6 +21,7 @@ import logoBook from "../../assets/logo_book.png";
 import logoText from "../../assets/logo_tekst.png";
 import hamburgerIcon from "../../assets/hamburger.png";
 import { PageContainer } from "../../design-system/patterns";
+import { Flex } from "../../design-system/primitives";
 
 const Navbar: React.FC = () => {
   const { user, logout } = useAuth();
@@ -147,19 +148,21 @@ const Navbar: React.FC = () => {
             </LogosWrapper>
           </Link>
 
-          {user && showSidebarToggle && (
-            <SidebarToggleButton onClick={toggleSidebarDrawer}>
-              Testy
-            </SidebarToggleButton>
-          )}
+          <Flex $align="center" $gap="xs">
+            {user && showSidebarToggle && (
+              <SidebarToggleButton onClick={toggleSidebarDrawer}>
+                Testy
+              </SidebarToggleButton>
+            )}
 
-          <MobileToggle
-            aria-label="Przełącz nawigację"
-            aria-expanded={menuOpen}
-            onClick={() => setMenuOpen((o) => !o)}
-          >
-            <img src={hamburgerIcon} alt="" style={{ width: 24, height: 24 }} />
-          </MobileToggle>
+            <MobileToggle
+              aria-label="Przełącz nawigację"
+              aria-expanded={menuOpen}
+              onClick={() => setMenuOpen((o) => !o)}
+            >
+              <img src={hamburgerIcon} alt="" style={{ width: 24, height: 24 }} />
+            </MobileToggle>
+          </Flex>
         </NavHeader>
 
         <NavContent $open={menuOpen}>
@@ -195,9 +198,6 @@ const Navbar: React.FC = () => {
           <ButtonGroup>
             {user ? (
               <>
-                {showSidebarToggle && (
-                  <SidebarToggleButton onClick={toggleSidebarDrawer}>Testy</SidebarToggleButton>
-                )}
                 <RegisterButton as="button" onClick={() => handleNavClick("/profile")}>
                   {user.first_name} →
                 </RegisterButton>
