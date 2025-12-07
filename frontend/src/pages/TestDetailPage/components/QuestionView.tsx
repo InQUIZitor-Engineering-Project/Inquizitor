@@ -1,18 +1,8 @@
 import React from "react";
 import { MathText } from "../../../components/MathText/MathText";
 import { Badge, Button, Flex, Text } from "../../../design-system/primitives";
-import styled from "styled-components";
 import { QuestionCard } from "../../../design-system/patterns";
 import type { QuestionOut } from "../../../services/test";
-
-const MetaBar = styled(Flex)`
-  flex-direction: row;
-
-  ${({ theme }) => theme.media.down("sm")} {
-    flex-direction: column;
-    align-items: flex-end;
-  }
-`;
 
 const getDifficultyLabel = (d: number) => {
   if (d === 1) return "Łatwe";
@@ -39,7 +29,7 @@ const QuestionView: React.FC<QuestionViewProps> = ({ question, index, onEdit, on
         </Text>
       }
       meta={
-        <MetaBar $gap="xs" $wrap="wrap" $justify="flex-end">
+        <Flex $gap="xs" $wrap="nowrap" $justify="flex-end">
           <Badge
             $variant={question.difficulty === 1 ? "success" : question.difficulty === 2 ? "warning" : "danger"}
           >
@@ -55,7 +45,7 @@ const QuestionView: React.FC<QuestionViewProps> = ({ question, index, onEdit, on
           >
             {question.is_closed ? "Zamknięte" : "Otwarte"}
           </Badge>
-        </MetaBar>
+        </Flex>
       }
       actions={
         <Flex $gap="sm" $wrap="wrap">

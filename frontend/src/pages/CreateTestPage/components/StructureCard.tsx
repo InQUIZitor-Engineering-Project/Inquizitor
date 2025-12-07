@@ -1,5 +1,5 @@
 import React from "react";
-import styled from "styled-components";
+import { useTheme } from "styled-components";
 import { Stack, Heading, Text, Box } from "../../../design-system/primitives";
 import CounterControl from "./CounterControl";
 import SummaryPills from "./SummaryPills";
@@ -18,16 +18,6 @@ export interface StructureCardProps {
   onChangeOpen: (v: number) => void;
 }
 
-const CountersGrid = styled(Box)`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: ${({ theme }) => theme.spacing.md};
-
-  ${({ theme }) => theme.media.down("sm")} {
-    grid-template-columns: 1fr;
-  }
-`;
-
 const StructureCard: React.FC<StructureCardProps> = ({
   tfCount,
   singleCount,
@@ -40,6 +30,8 @@ const StructureCard: React.FC<StructureCardProps> = ({
   onChangeMulti,
   onChangeOpen,
 }) => {
+  const theme = useTheme();
+
   const pills = [
     { label: "Zamknięte", value: totalClosed, bg: PALETTE.type.closedBg, fg: PALETTE.type.closedFg },
     { label: "Otwarte", value: openCount, bg: PALETTE.type.openBg, fg: PALETTE.type.openFg },
@@ -60,7 +52,13 @@ const StructureCard: React.FC<StructureCardProps> = ({
 
         <SummaryPills items={pills} />
 
-        <CountersGrid>
+        <Box
+          $display="grid"
+          style={{
+            gridTemplateColumns: "repeat(4, minmax(140px, 1fr))",
+            gap: theme.spacing.md,
+          }}
+        >
           <CounterControl
             label="Prawda / Fałsz"
             value={tfCount}
@@ -85,7 +83,7 @@ const StructureCard: React.FC<StructureCardProps> = ({
             onChange={(v) => onChangeOpen(Math.max(0, v))}
             helpText="Wpisywana odpowiedź"
           />
-        </CountersGrid>
+        </Box>
 
         <Text $variant="body4" $tone="muted">
           Podgląd: {tfCount} P/F • {singleCount} jednokrotnego • {multiCount} wielokrotnego • {openCount} otwartych

@@ -10,6 +10,7 @@ export const LayoutWrapper = styled.div`
   display: flex;
   width: 100%;
 
+  height: calc(100vh - ${NAVBAR_HEIGHT}px);
   min-height: calc(100vh - ${NAVBAR_HEIGHT}px);
   flex-shrink: 0;
 
@@ -17,72 +18,18 @@ export const LayoutWrapper = styled.div`
   margin: 0;
   padding: 0;
 
-  overflow-x: hidden;
+  overflow: hidden;
   background-color: ${({ theme }) => theme.colors.neutral.silver};
 `;
 
 export const ContentArea = styled.div`
   flex: 1;
+  height: 100%;       /* Dziedziczy wysokość z LayoutWrapper */
   min-height: 100%;
-  overflow: auto;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   position: relative;
-`;
-
-const SidebarShell = styled.div<{ $open: boolean }>`
-  width: 280px;
-  height: 100%;
-  min-height: 100%;
-  flex-shrink: 0;
-
-  ${({ theme }) => theme.media.down("lg")} {
-    position: fixed;
-    top: ${NAVBAR_HEIGHT}px;
-    left: 0;
-    height: calc(100vh - ${NAVBAR_HEIGHT}px);
-    width: min(320px, 82vw);
-    transform: translateX(${({ $open }) => ($open ? "0" : "-105%")});
-    transition: transform 0.2s ease;
-    z-index: 200;
-  }
-`;
-
-const SidebarBackdrop = styled.div<{ $open: boolean }>`
-  display: none;
-
-  ${({ theme }) => theme.media.down("lg")} {
-    display: ${({ $open }) => ($open ? "block" : "none")};
-    position: fixed;
-    top: ${NAVBAR_HEIGHT}px;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.35);
-    z-index: 150;
-  }
-`;
-
-const MobileSidebarToggle = styled.button`
-  display: none;
-
-  ${({ theme }) => theme.media.down("lg")} {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 14px;
-    margin: 12px 12px 0;
-    border-radius: 10px;
-    border: 1px solid ${({ theme }) => theme.colors.neutral.greyBlue};
-    background: ${({ theme }) => theme.colors.neutral.white};
-    box-shadow: ${({ theme }) => theme.shadows["2px"]};
-    color: ${({ theme }) => theme.colors.brand.secondary};
-    font-weight: 600;
-    position: sticky;
-    top: 12px;
-    align-self: flex-start;
-    z-index: 50;
-  }
 `;
 
 
@@ -90,7 +37,6 @@ const MainLayout: React.FC = () => {
   const navigate = useNavigate();
   const [tests, setTests] = useState<TestOut[]>([]);
   const [testIdToDelete, setTestIdToDelete] = useState<number | null>(null);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const refreshSidebarTests = async () => {
     try {
@@ -107,7 +53,6 @@ const MainLayout: React.FC = () => {
 
   const handleOpenDeleteModal = (testId: number) => {
     setTestIdToDelete(testId);
-    setIsSidebarOpen(false);
   };
 
   const handleCloseModal = () => {
@@ -129,25 +74,14 @@ const MainLayout: React.FC = () => {
 
   return (
     <LayoutWrapper>
-      <SidebarShell $open={isSidebarOpen}>
-        <Sidebar
-          tests={tests}
-          onSelect={(testId) => {
-            navigate(`/tests/${testId}`);
-            setIsSidebarOpen(false);
-          }}
-          onCreateNew={() => {
-            navigate(`/tests/new`);
-            setIsSidebarOpen(false);
-          }}
-          onDelete={handleOpenDeleteModal}
-        />
-      </SidebarShell>
-
-      <SidebarBackdrop $open={isSidebarOpen} onClick={() => setIsSidebarOpen(false)} />
+      <Sidebar
+        tests={tests}
+        onSelect={(testId) => navigate(`/tests/${testId}`)}
+        onCreateNew={() => navigate(`/tests/new`)}
+        onDelete={handleOpenDeleteModal}
+      />
 
       <ContentArea>
-        <MobileSidebarToggle onClick={() => setIsSidebarOpen(true)}>Menu</MobileSidebarToggle>
         <Outlet context={{ refreshSidebarTests }} /> 
       </ContentArea>
 

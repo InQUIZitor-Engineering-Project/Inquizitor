@@ -1,12 +1,5 @@
 import type { DefaultTheme } from "styled-components";
 
-const breakpoints = {
-  xl: 1280,
-  lg: 1100,
-  md: 900,
-  sm: 640,
-};
-
 const theme: DefaultTheme = {
   colors: {
     neutral: {
@@ -179,11 +172,6 @@ const theme: DefaultTheme = {
     columns: 12,
     gutter: "24px",
     margin: "144px",
-  },
-  breakpoints,
-  media: {
-    down: (key: keyof typeof breakpoints) => `@media (max-width: ${breakpoints[key]}px)`,
-    up: (key: keyof typeof breakpoints) => `@media (min-width: ${breakpoints[key]}px)`,
   },
 };
 

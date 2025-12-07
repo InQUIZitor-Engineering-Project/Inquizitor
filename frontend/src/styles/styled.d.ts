@@ -113,15 +113,5 @@ declare module "styled-components" {
       gutter: string;
       margin: string;
     };
-    breakpoints: {
-      xl: number;
-      lg: number;
-      md: number;
-      sm: number;
-    };
-    media: {
-      down: (key: "xl" | "lg" | "md" | "sm") => string;
-      up: (key: "xl" | "lg" | "md" | "sm") => string;
-    };
   }
 }

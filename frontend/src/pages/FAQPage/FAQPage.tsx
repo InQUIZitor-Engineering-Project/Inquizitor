@@ -1,6 +1,5 @@
 import React from "react";
 import { useTheme } from "styled-components";
-import styled from "styled-components";
 import { Box, Flex, Heading, Stack, Text } from "../../design-system/primitives";
 import Footer from "../../components/Footer/Footer";
 import faqImg from "../../assets/faq_nobackground2.png";
@@ -9,31 +8,6 @@ import { categoriesOrder, faqItems } from "./faqData.ts";
 import useFaq from "./hooks/useFaq";
 import SearchBar from "./components/SearchBar";
 import FAQCategoryColumn from "./components/FAQCategoryColumn";
-import { PageContainer } from "../../styles/common";
-
-const FAQHero = styled(Box)`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 32px;
-  align-items: center;
-
-  ${({ theme }) => theme.media.down("md")} {
-    grid-template-columns: 1fr;
-    justify-items: center;
-    gap: 24px;
-  }
-`;
-
-const FAQGrid = styled(Box)`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 24px;
-
-  ${({ theme }) => theme.media.down("md")} {
-    grid-template-columns: 1fr;
-    justify-items: center;
-  }
-`;
 
 const FAQPage: React.FC = () => {
   const theme = useTheme();
@@ -48,9 +22,23 @@ const FAQPage: React.FC = () => {
       style={{ minHeight: "calc(100vh - 40px)" }}
     >
       <Flex $flex={1} $width="100%" $justify="center">
-        <PageContainer as={Stack} $gap="xl">
-          <FAQHero $p="lg" $radius="xl" $bg="#fff" $shadow="md">
-            <Stack $gap="md" style={{ width: "100%", maxWidth: 520 }}>
+        <Stack
+          $gap="xl"
+          style={{ width: "100%", maxWidth: 1280, padding: "40px 64px 32px" }}
+        >
+          <Box
+            $p="lg"
+            $radius="xl"
+            $bg="#fff"
+            $shadow="md"
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+              gap: 32,
+              alignItems: "center",
+            }}
+          >
+            <Stack $gap="md">
               <Heading $level="h2" as="h1">
                 Najczęściej zadawane pytania
               </Heading>
@@ -62,17 +50,23 @@ const FAQPage: React.FC = () => {
               <SearchBar value={search} onChange={setSearch} />
             </Stack>
 
-            <Flex $justify="center" style={{ width: "100%", maxWidth: 520 }}>
+            <Flex $justify="center">
               <Box
                 as="img"
                 src={faqImg}
                 alt="Ilustracja FAQ Inquizitor"
-                style={{ maxWidth: 420, width: "100%", objectFit: "contain" }}
+                style={{ maxWidth: 360, width: "100%", objectFit: "contain" }}
               />
             </Flex>
-          </FAQHero>
+          </Box>
 
-          <FAQGrid $p="lg" $radius="xl" $bg="#fff" $shadow="md">
+          <Box
+            $p="lg"
+            $radius="xl"
+            $bg="#fff"
+            $shadow="md"
+            style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 24 }}
+          >
             {categoriesOrder.map((category) => {
               const items = grouped[category];
               if (!items || items.length === 0) return null;
@@ -86,8 +80,8 @@ const FAQPage: React.FC = () => {
                 />
               );
             })}
-          </FAQGrid>
-        </PageContainer>
+          </Box>
+        </Stack>
       </Flex>
 
       <Footer />

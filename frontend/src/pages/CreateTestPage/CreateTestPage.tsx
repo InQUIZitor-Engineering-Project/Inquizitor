@@ -7,7 +7,6 @@ import SourceSection from "./components/SourceSection";
 import PersonalizationSection from "./components/PersonalizationSection";
 import StructureCard from "./components/StructureCard";
 import DifficultyCard from "./components/DifficultyCard";
-import { PageContainer } from "../../styles/common";
 
 const CreateTestPage: React.FC = () => {
   const { state, derived, status, actions, refs } = useGenerateTestForm();
@@ -15,7 +14,7 @@ const CreateTestPage: React.FC = () => {
   return (
     <Flex $direction="column" $height="100%" $bg="#f5f6f8" $overflow="hidden">
       <Box $flex={1} $overflowY="auto" $p={40} $width="100%">
-        <PageContainer as={Stack} $gap="lg" style={{ margin: "0 auto" }}>
+        <Stack style={{ maxWidth: 900, margin: "0 auto", width: "100%" }} $gap="lg">
           <Stack $gap="xs">
             <Heading as="h1" $level="h2">
               Utwórz test dopasowany do swoich potrzeb
@@ -87,7 +86,7 @@ const CreateTestPage: React.FC = () => {
           {status.genError && <AlertBar variant="danger">{status.genError}</AlertBar>}
 
           <Footer />
-        </PageContainer>
+        </Stack>
       </Box>
     </Flex>
   );
