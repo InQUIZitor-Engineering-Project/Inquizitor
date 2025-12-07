@@ -1,9 +1,24 @@
 import React, { type ReactNode } from "react";
 import { useTheme } from "styled-components";
 import { Box, Flex, Heading, Stack, Text } from "../../design-system/primitives";
+import styled from "styled-components";
 import Footer from "../../components/Footer/Footer";
 import onasImg from "../../assets/onas_nobackground2.png";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
+import { PageContainer } from "../../styles/common";
+
+const AboutGrid = styled(Box)`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  align-items: center;
+  gap: 32px;
+
+  ${({ theme }) => theme.media.down("md")} {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    gap: 24px;
+  }
+`;
 
 const AboutUsPage: React.FC = () => {
   const theme = useTheme();
@@ -35,22 +50,8 @@ const AboutUsPage: React.FC = () => {
       style={{ minHeight: "calc(100vh - 40px)" }}
     >
       <Flex $flex={1} $width="100%" $justify="center" $overflow="hidden">
-        <Stack
-          $gap="lg"
-          style={{ width: "100%", maxWidth: 1200, padding: "40px 32px 24px" }}
-        >
-          <Box
-            $p="lg"
-            $radius="xl"
-            $bg="#fff"
-            $shadow="md"
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-              alignItems: "center",
-              gap: 32,
-            }}
-          >
+        <PageContainer as={Stack} $gap="lg">
+          <AboutGrid $p="lg" $radius="xl" $bg="#fff" $shadow="md">
             <Stack $gap="md">
               <Heading $level="h2" as="h2">
                 <Box as="span" style={{ color: theme.colors.brand.primary }}>
@@ -74,7 +75,7 @@ const AboutUsPage: React.FC = () => {
                 style={{ maxWidth: "100%", height: "auto", display: "block" }}
               />
             </Flex>
-          </Box>
+          </AboutGrid>
 
           <Box $p="lg" $radius="xl" $bg="#fff" $shadow="md">
             <Stack $gap="sm">
@@ -118,7 +119,7 @@ const AboutUsPage: React.FC = () => {
           </Box>
 
           <Footer />
-        </Stack>
+        </PageContainer>
       </Flex>
     </Flex>
   );

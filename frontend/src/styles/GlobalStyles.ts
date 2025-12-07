@@ -12,6 +12,7 @@ export const GlobalStyles = createGlobalStyle(({ theme }) => `
     background-color: ${theme.colors.neutral.silver};
     color: ${theme.colors.neutral.dGrey};
     scroll-behavior: smooth;
+    overflow-x: hidden;
   }
 
   img, picture, video, canvas, svg {

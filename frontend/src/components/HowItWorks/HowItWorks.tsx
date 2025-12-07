@@ -4,6 +4,23 @@ import StepCard from "./StepCard";
 import uploadIcon from "../../assets/icons/upload.png";
 import quizIcon from "../../assets/icons/quiz.png";
 import shareIcon from "../../assets/icons/share.png";
+import styled from "styled-components";
+
+const HowItWorksSection = styled(Box)`
+  /* Większy górny margines dla sekcji na desktopie i tabletach */
+  padding-top: 96px;
+
+  ${({ theme }) => theme.media.down("md")} {
+    padding: 56px 16px;
+    padding-top: 72px;
+  }
+`;
+
+const StepsRow = styled(Flex)`
+  ${({ theme }) => theme.media.down("md")} {
+    gap: 16px;
+  }
+`;
 
 interface HowItWorksProps {
   id?: string;
@@ -11,7 +28,7 @@ interface HowItWorksProps {
 
 const HowItWorks: React.FC<HowItWorksProps> = ({ id }) => {
   return (
-    <Box
+    <HowItWorksSection
       id={id}
       $bg="#ffffff"
       $py="xxl"
@@ -27,7 +44,7 @@ const HowItWorks: React.FC<HowItWorksProps> = ({ id }) => {
         </Text>
       </Stack>
 
-      <Flex
+      <StepsRow
         $gap="lg"
         $wrap="wrap"
         style={{ width: "100%", maxWidth: 1200, justifyContent: "center" }}
@@ -47,8 +64,8 @@ const HowItWorks: React.FC<HowItWorksProps> = ({ id }) => {
           title="Udostępnij"
           description="Gotowy quiz możesz z łatwością pobrać i wykorzystać na swojej lekcji"
         />
-      </Flex>
-    </Box>
+      </StepsRow>
+    </HowItWorksSection>
   );
 };
 

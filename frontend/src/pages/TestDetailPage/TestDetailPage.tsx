@@ -1,4 +1,5 @@
 import React from "react";
+import styled from "styled-components";
 import { Box, Flex, Stack, Button } from "../../design-system/primitives";
 import Footer from "../../components/Footer/Footer";
 import useTestDetail from "./hooks/useTestDetail";
@@ -7,6 +8,21 @@ import MetaSummary from "./components/MetaSummary";
 import QuestionsSection from "./components/QuestionsSection";
 import PdfConfigSection from "./components/PdfConfigSection";
 import { AlertBar } from "../../design-system/patterns";
+
+const ContentWrapper = styled(Stack)`
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 40px 64px 32px;
+
+  ${({ theme }) => theme.media.down("md")} {
+    padding: 32px 20px 24px;
+  }
+
+  ${({ theme }) => theme.media.down("sm")} {
+    padding: 24px 16px 20px;
+  }
+`;
 
 const TestDetailPage: React.FC = () => {
   const { state, derived, actions } = useTestDetail();
@@ -19,8 +35,8 @@ const TestDetailPage: React.FC = () => {
 
   return (
     <Flex $direction="column" $height="100%" $bg="#f5f6f8" $overflow="hidden">
-      <Box $flex={1} $overflowY="auto" $p={40} $width="100%">
-        <Stack style={{ maxWidth: 900, margin: "0 auto", width: "100%" }} $gap="lg">
+      <Box $flex={1} $overflowY="auto" $width="100%">
+        <ContentWrapper $gap="lg">
           <TitleBar
             title={data.title}
             isEditing={state.isEditingTitle}
@@ -89,7 +105,7 @@ const TestDetailPage: React.FC = () => {
 
           <Footer />
           {/* Usunięto przycisk "Usuń test" – modal nieużywany */}
-        </Stack>
+        </ContentWrapper>
       </Box>
     </Flex>
   );
