@@ -23,7 +23,7 @@ const TestDetailPage: React.FC = () => {
       <Box $flex={1} $overflowY="auto" $width="100%">
         <PageSection $py="xl">
           <PageContainer>
-            <Stack style={{ width: "100%" }} $gap="lg">
+            <Stack style={{ width: "100%", maxWidth: 960, margin: "0 auto" }} $gap="lg">
               <TitleBar
                 title={data.title}
                 isEditing={state.isEditingTitle}

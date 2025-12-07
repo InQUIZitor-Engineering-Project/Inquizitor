@@ -17,7 +17,7 @@ const CreateTestPage: React.FC = () => {
       <Box $flex={1} $overflowY="auto" $width="100%">
         <PageSection $py="xl">
           <PageContainer>
-            <Stack style={{ width: "100%" }} $gap="lg">
+            <Stack style={{ width: "100%", maxWidth: 960, margin: "0 auto" }} $gap="lg">
               <Stack $gap="xs">
               <Heading as="h1" $level="h2" style={{ fontSize: "clamp(24px, 5vw, 32px)", lineHeight: "1.25" }}>
                 Utwórz test dopasowany do swoich potrzeb
