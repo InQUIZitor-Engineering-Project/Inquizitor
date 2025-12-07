@@ -3,7 +3,6 @@ import styled from "styled-components";
 import { Box, Flex, Divider, Select, Input, Checkbox, Button } from "../../../design-system/primitives";
 import { CollapsibleSection, FormField } from "../../../design-system/patterns";
 import type { PdfExportConfig } from "../../../services/test";
-import { useTheme } from "styled-components";
 
 const ConfigGrid = styled(Box)`
   display: grid;
@@ -47,7 +46,6 @@ const PdfConfigSection: React.FC<PdfConfigSectionProps> = ({
   onChange,
   onReset,
 }) => {
-  const theme = useTheme();
   const isActive =
     config.answer_space_style !== "blank" ||
     config.space_height_cm !== 3 ||
