@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { generateTest } from "../../../services/test";
-import { uploadMaterial, type MaterialUploadResponse } from "../../../services/materials";
+import { uploadMaterial, type MaterialUploadResponse, type MaterialUploadEnqueueResponse } from "../../../services/materials";
 import { useLoader } from "../../../components/Loader/GlobalLoader";
 import useDocumentTitle from "../../../hooks/useDocumentTitle";
 import { useJobPolling } from "../../../hooks/useJobPolling";
@@ -79,6 +79,13 @@ const useGenerateTestForm = (): UseGenerateTestFormResult => {
     startPolling,
     reset: resetJobPolling,
   } = useJobPolling();
+  const {
+    status: materialJobStatus,
+    result: materialJobResult,
+    error: materialJobError,
+    startPolling: startMaterialPolling,
+    reset: resetMaterialPolling,
+  } = useJobPolling();
 
   const [sourceType, setSourceType] = useState<"text" | "material">("text");
   const [sourceContent, setSourceContent] = useState("");
@@ -118,6 +125,12 @@ const useGenerateTestForm = (): UseGenerateTestFormResult => {
   const medPct = pct(mediumCount, totalDifficulty);
   const hardPct = pct(hardCount, totalDifficulty);
 
+  const clearFileInput = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
   const handleMaterialButtonClick = () => {
     fileInputRef.current?.click();
   };
@@ -128,26 +141,17 @@ const useGenerateTestForm = (): UseGenerateTestFormResult => {
 
     setMaterialError(null);
     setMaterialUploading(true);
+    resetMaterialPolling();
     try {
-      const uploaded = await uploadMaterial(file);
-      if (uploaded.processing_status === "done") {
-        setMaterialData(uploaded);
-        setGenError(null);
-        if (uploaded.extracted_text) {
-          setSourceContent(uploaded.extracted_text);
-        }
-      } else {
-        setMaterialData(null);
-        setMaterialError(uploaded.processing_error || "Nie udało się wyodrębnić tekstu z pliku.");
-      }
+      const enqueue: MaterialUploadEnqueueResponse = await uploadMaterial(file);
+      setMaterialData(enqueue.material);
+      setGenError(null);
+      startMaterialPolling(enqueue.job_id);
     } catch (error: any) {
       setMaterialData(null);
       setMaterialError(error.message || "Nie udało się wgrać materiału.");
-    } finally {
       setMaterialUploading(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
+      clearFileInput();
     }
   };
 
@@ -264,6 +268,48 @@ const useGenerateTestForm = (): UseGenerateTestFormResult => {
       resetJobPolling();
     }
   }, [jobStatus, jobResult, jobError, navigate, refreshSidebarTests, resetJobPolling]);
+
+  useEffect(() => {
+    const normalized = (materialJobStatus || "").toLowerCase();
+    if (!normalized) return;
+
+    if (normalized === "done") {
+      const extracted = (materialJobResult as any)?.extracted_text as string | undefined;
+      const processingStatus = (materialJobResult as any)?.processing_status || "done";
+      setMaterialData((prev) =>
+        prev
+          ? {
+              ...prev,
+              processing_status: processingStatus,
+              extracted_text: extracted ?? prev.extracted_text,
+              processing_error: null,
+            }
+          : prev
+      );
+      if (extracted) {
+        setSourceContent(extracted);
+      }
+      setMaterialError(null);
+      setMaterialUploading(false);
+      resetMaterialPolling();
+      clearFileInput();
+    } else if (normalized === "failed") {
+      const errMsg = materialJobError || (materialJobResult as any)?.error || "Nie udało się wyodrębnić tekstu z pliku.";
+      setMaterialError(errMsg);
+      setMaterialData((prev) =>
+        prev
+          ? {
+              ...prev,
+              processing_status: "failed",
+              processing_error: errMsg,
+            }
+          : prev
+      );
+      setMaterialUploading(false);
+      resetMaterialPolling();
+      clearFileInput();
+    }
+  }, [materialJobStatus, materialJobResult, materialJobError]);
 
   return {
     state: {

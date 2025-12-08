@@ -3,22 +3,25 @@ from typing import List
 
 from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFile, status
 
-from app.api.dependencies import get_material_service
-from app.api.schemas.materials import MaterialOut, MaterialUpdate
-from app.application.services import MaterialService
+from app.api.dependencies import get_material_service, get_job_service
+from app.api.schemas.materials import MaterialOut, MaterialUpdate, MaterialUploadEnqueueResponse
+from app.application.services import MaterialService, JobService
 from app.core.security import get_current_user
 from app.db.models import User
+from app.domain.models.enums import JobType
+from app.tasks.materials import process_material_task
 
 router = APIRouter(prefix="/materials", tags=["materials"])
 
 _ALLOWED_EXTENSIONS = [".pdf", ".docx", ".txt", ".md", ".png", ".jpg", ".jpeg"]
 
 
-@router.post("/upload", response_model=MaterialOut)
+@router.post("/upload", response_model=MaterialUploadEnqueueResponse)
 def upload_material(
     uploaded_file: UploadFile = File(...),
     current_user: User = Depends(get_current_user),
     material_service: MaterialService = Depends(get_material_service),
+    job_service: JobService = Depends(get_job_service),
 ):
     ext = os.path.splitext(uploaded_file.filename)[1].lower()
     if ext not in _ALLOWED_EXTENSIONS:
@@ -28,11 +31,24 @@ def upload_material(
         )
 
     content = uploaded_file.file.read()
-    return material_service.upload_material(
+    material = material_service.upload_material(
         owner_id=current_user.id,
         filename=uploaded_file.filename,
         content=content,
         allowed_extensions=_ALLOWED_EXTENSIONS,
+    )
+
+    job = job_service.create_job(
+        owner_id=current_user.id,
+        job_type=JobType.MATERIAL_PROCESSING,
+        payload={"material_id": material.id},
+    )
+    process_material_task.delay(job.id, current_user.id, material.id)
+
+    return MaterialUploadEnqueueResponse(
+        job_id=job.id,
+        status=job.status.value,
+        material=material,
     )
 
 

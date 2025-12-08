@@ -23,7 +23,14 @@ class MaterialUpdate(BaseModel):
     processing_status: Optional[Literal["pending", "done", "failed"]] = None
 
 
+class MaterialUploadEnqueueResponse(BaseModel):
+    job_id: int
+    status: str
+    material: MaterialOut
+
+
 __all__ = [
     "MaterialOut",
     "MaterialUpdate",
+    "MaterialUploadEnqueueResponse",
 ]

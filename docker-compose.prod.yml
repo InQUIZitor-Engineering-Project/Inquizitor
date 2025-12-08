@@ -76,6 +76,7 @@ services:
       - EMAIL_FROM=${EMAIL_FROM:-}
       - FRONTEND_BASE_URL=${FRONTEND_BASE_URL:-}
       - EMAIL_VERIFICATION_EXP_MIN=${EMAIL_VERIFICATION_EXP_MIN:-60}
+      - OMP_THREAD_LIMIT=1
     env_file:
       - .env
     depends_on:

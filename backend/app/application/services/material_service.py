@@ -51,7 +51,6 @@ class MaterialService:
             local = Path(local_path)
             size_bytes = local.stat().st_size if local.exists() else len(content)
             mime_type = self._detect_mime(local)
-            raw_text = self._text_extractor(local, mime_type)
 
         checksum = hashlib.sha256(content).hexdigest()
 
@@ -66,15 +65,6 @@ class MaterialService:
         with self._uow_factory() as uow:
             file_record = uow.files.add(file_domain)
 
-            normalized_text = self._sanitize_text(raw_text)
-
-            status = (
-                ProcessingStatus.DONE
-                if normalized_text
-                else ProcessingStatus.FAILED
-            )
-            processing_error = None if normalized_text else "Could not extract text (unsupported or empty)"
-
             material = MaterialDomain(
                 id=None,
                 owner_id=owner_id,
@@ -82,9 +72,9 @@ class MaterialService:
                 mime_type=mime_type,
                 size_bytes=size_bytes,
                 checksum=checksum,
-                status=status,
-                extracted_text=normalized_text,
-                processing_error=processing_error,
+                status=ProcessingStatus.PENDING,
+                extracted_text=None,
+                processing_error=None,
             )
 
             material_record = uow.materials.add(material)
@@ -163,6 +153,38 @@ class MaterialService:
             text.encode("utf-8", errors="replace").decode("utf-8", errors="replace")
         )
         return cleaned[: self._max_text_length]
+
+    def process_material(self, *, owner_id: int, material_id: int) -> MaterialOut:
+        with self._uow_factory() as uow:
+            material = uow.materials.get(material_id)
+            if not material or material.owner_id != owner_id:
+                raise ValueError("Material not found")
+
+            file_record = material.file
+            if not file_record:
+                raise ValueError("File not found for material")
+
+            with self._storage.download_to_temp(
+                stored_path=str(file_record.stored_path)
+            ) as local_path:
+                local = Path(local_path)
+                mime_type = self._detect_mime(local)
+                material.mime_type = mime_type
+                material.size_bytes = local.stat().st_size if local.exists() else None
+
+                try:
+                    raw_text = self._text_extractor(local, mime_type)
+                    normalized_text = self._sanitize_text(raw_text)
+                    if normalized_text:
+                        material.mark_processed(normalized_text)
+                    else:
+                        material.mark_failed("Could not extract text (unsupported or empty)")
+                except Exception as exc:  # noqa: BLE001
+                    material.mark_failed(str(exc))
+
+            updated = uow.materials.update(material)
+
+        return dto.to_material_out(updated)
 
 
 __all__ = ["MaterialService"]

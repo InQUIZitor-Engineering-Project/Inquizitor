@@ -15,8 +15,8 @@ celery_app = Celery(
 celery_app.conf.update(
     task_default_queue=settings.CELERY_TASK_DEFAULT_QUEUE,
     task_track_started=True,
-    task_time_limit=60 * 10,  # hard limit
-    task_soft_time_limit=60 * 8,  # graceful limit
+    task_time_limit=60 * 6,  # hard limit
+    task_soft_time_limit=60 * 4,  # graceful limit
     result_expires=3600,
 )
 
