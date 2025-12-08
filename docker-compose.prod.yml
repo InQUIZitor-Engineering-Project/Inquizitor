@@ -84,6 +84,15 @@ services:
       redis:
         condition: service_started
 
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel run
+    environment:
+      - TUNNEL_TOKEN=${TUNNEL_TOKEN:?TUNNEL_TOKEN not set}
+    networks:
+      - default
+
 volumes:
   pgdata:
 
