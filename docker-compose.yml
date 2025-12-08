@@ -42,7 +42,7 @@ services:
       - FRONTEND_BASE_URL=${FRONTEND_BASE_URL:-http://localhost:5173}
       - EMAIL_VERIFICATION_EXP_MIN=${EMAIL_VERIFICATION_EXP_MIN:-60}
     env_file:
-      - ./backend/.env
+      - ./.env
     volumes:
       - ./backend:/app:delegated
     depends_on:
@@ -102,7 +102,7 @@ services:
       - FRONTEND_BASE_URL=${FRONTEND_BASE_URL:-http://localhost:5173}
       - EMAIL_VERIFICATION_EXP_MIN=${EMAIL_VERIFICATION_EXP_MIN:-60}
     env_file:
-      - ./backend/.env
+      - ./.env
     volumes:
       - ./backend:/app:delegated
     depends_on:

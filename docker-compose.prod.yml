@@ -57,7 +57,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile.prod
-    command: sh -c "celery -A app.celery_app worker --loglevel=info"
+    command: sh -c "celery -A app.celery_app worker --loglevel=info --concurrency=4 -O fair"
     working_dir: /app
     environment:
       - DATABASE_URL=postgresql+psycopg2://${POSTGRES_USER:?POSTGRES_USER not set}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD not set}@${POSTGRES_HOST:-db}:${POSTGRES_PORT:-5432}/${POSTGRES_DB:?POSTGRES_DB not set}

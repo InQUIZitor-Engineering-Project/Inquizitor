@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 from typing import Callable
+from urllib.parse import urlparse, urlunparse
 import secrets
 import hashlib
 
@@ -18,6 +19,23 @@ from app.core.security import (
 )
 from app.domain.models import User
 from app.domain.models import PendingVerification
+
+
+def normalize_frontend_base_url(url: str | None) -> str:
+    """
+    Ensure FRONTEND_BASE_URL includes scheme and 'www.' prefix.
+    """
+    cleaned = (url or "").strip()
+    if not cleaned:
+        return ""
+    if "://" not in cleaned:
+        cleaned = f"https://{cleaned}"
+    parsed = urlparse(cleaned)
+    netloc = parsed.netloc
+    if netloc and not netloc.startswith("www."):
+        netloc = f"www.{netloc}"
+    parsed = parsed._replace(netloc=netloc)
+    return urlunparse(parsed)
 
 
 class AuthService:
@@ -47,6 +65,9 @@ class AuthService:
             if not settings.FRONTEND_BASE_URL:
                 raise ValueError("FRONTEND_BASE_URL is not configured")
             expires_minutes = settings.EMAIL_VERIFICATION_EXP_MIN
+            frontend_base = normalize_frontend_base_url(settings.FRONTEND_BASE_URL)
+            if not frontend_base:
+                raise ValueError("FRONTEND_BASE_URL is not configured")
 
             raw_token = secrets.token_urlsafe(32)
             token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
@@ -75,7 +96,7 @@ class AuthService:
 
         from app.tasks.email import send_verification_email_task  # local import to avoid cycles
 
-        verify_url = f"{settings.FRONTEND_BASE_URL.rstrip('/')}/verify-email?token={raw_token}"
+        verify_url = f"{frontend_base.rstrip('/')}/verify-email?token={raw_token}"
         send_verification_email_task.delay(
             to_email=pending.email,
             verify_url=verify_url,

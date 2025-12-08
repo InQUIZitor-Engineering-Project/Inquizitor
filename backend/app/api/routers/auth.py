@@ -5,6 +5,7 @@ from app.api.dependencies import get_auth_service
 from app.api.schemas.auth import Token, RegistrationRequested, VerificationResponse
 from app.api.schemas.users import UserCreate
 from app.application.services import AuthService
+from app.application.services.auth_service import normalize_frontend_base_url
 
 router = APIRouter()
 
@@ -58,10 +59,12 @@ def verify_email(
 
             settings = get_settings()
             if settings.FRONTEND_BASE_URL:
-                redirect_url = (
-                    f"{settings.FRONTEND_BASE_URL.rstrip('/')}/verify-email/success"
-                    f"?token={token_obj.access_token}"
-                )
+                base = normalize_frontend_base_url(settings.FRONTEND_BASE_URL)
+                if base:
+                    redirect_url = (
+                        f"{base.rstrip('/')}/verify-email/success"
+                        f"?token={token_obj.access_token}"
+                    )
         return VerificationResponse(
             access_token=token_obj.access_token,
             token_type=token_obj.token_type,

@@ -1,16 +1,21 @@
 from __future__ import annotations
 
 import json
+import logging
 from functools import lru_cache
-from typing import List, Any
+from typing import Any, List, Optional, Union
 
-from google import genai
+from google import genai  # type: ignore[reportMissingImports]
+from google.genai import types  # type: ignore[reportMissingImports]
+from pydantic import BaseModel, Field, ValidationError, conint, model_validator  # type: ignore[reportMissingImports]
 
 from app.api.schemas.tests import GenerateParams
 from app.core.config import get_settings
 from app.domain.models import Question
 from app.domain.models.enums import QuestionDifficulty
 from app.domain.services import QuestionGenerator
+
+logger = logging.getLogger(__name__)
 
 
 def _build_prompt(text: str, params: GenerateParams) -> str:
@@ -34,18 +39,18 @@ def _build_prompt(text: str, params: GenerateParams) -> str:
         "",
         "Zwróć DOKŁADNIE JEDEN obiekt JSON o strukturze:",
         """
-{
-  "title": "Krótki tytuł testu po polsku",
-  "questions": [
-    {
-      "text": "...",               // treść pytania
-      "is_closed": true | false,   // pytanie zamknięte / otwarte
-      "difficulty": 1 | 2 | 3,     // 1=łatwe, 2=średnie, 3=trudne
-      "choices": [ ... ] lub null, // dla zamkniętych
-      "correct_choices": [ ... ] lub null  // dla zamkniętych (stringi lub indeksy)
-    }
-  ]
-}
+        {
+        "title": "Krótki tytuł testu po polsku",
+        "questions": [
+            {
+            "text": "...",               // treść pytania
+            "is_closed": true | false,   // pytanie zamknięte / otwarte
+            "difficulty": 1 | 2 | 3,     // 1=łatwe, 2=średnie, 3=trudne
+            "choices": [ ... ] lub null, // dla zamkniętych
+            "correct_choices": [ ... ] lub null  // dla zamkniętych (stringi lub indeksy)
+            }
+        ]
+        }
         """,
         "Wymagania:",
         f"- Łącznie pytań: {c_total + params.num_open}.",
@@ -57,13 +62,154 @@ def _build_prompt(text: str, params: GenerateParams) -> str:
         "- Zwróć WYŁĄCZNIE poprawny JSON (bez komentarzy/tekstu dookoła).",
         "- Upewnij się, że wszystkie backslash'e w LaTeX są poprawnie zapisane w JSON (np. \"$\\\\frac{1}{2}$\").",
         "- Jeśli czegoś nie możesz wygenerować, i tak zwróć poprawny JSON (pusta lista 'questions').",
+        "- `is_closed` musi być bool, `difficulty` musi być jedną z wartości 1, 2 lub 3.",
+        "- Pytania zamknięte: co najmniej 2 niepuste `choices`; `correct_choices` musi zawierać co najmniej jedną poprawną odpowiedź, odnoszącą się do istniejących `choices` (preferuj stringi; indeksy tylko jeśli wskazują na istniejącą pozycję).",
+        "- Usuń duplikaty i puste stringi w `choices` oraz `correct_choices`.",
+        "- NIE numeruj treści pytań ani odpowiedzi: nie dodawaj prefiksów typu '1.', 'Pytanie 1', '-', '•' ani innych numerów w polach `text` i `choices`.",
+        "- Wszystkie pytania muszą wynikać z tekstu źródłowego; nie wymyślaj danych ani nazw własnych. Jeśli brakuje danych, pomiń takie pytanie.",
+        "- Nie twórz pytań okołotematycznych o organizację, regulaminy, narzędzia, procedury, meta-informacje (czas, sprzęt, zasady, tło historyczne niezawarte w tekście) ani o to, co należy zrobić poza zakresem merytoryki.",
+        "- Preferuj pytania sprawdzające zrozumienie pojęć, relacji, wnioskowania, obliczeń, zastosowań, dowodów, kroków algorytmicznych; unikaj pytań opisowych o otoczkę, ciekawostki, anegdoty.",
+        "- Format wyjścia: wyłącznie JSON zgodny ze schematem; brak Markdown, komentarzy ani code fences.",
+        "- Przed zwróceniem sprawdź, czy JSON spełnia schemat, zachowuje podaną liczność pytań i brak numeracji w treści.",
+        "- Przykład minimalny (zamknięte + otwarte, bez numeracji):",
+        '''
+        {
+        "title": "Przykładowy tytuł",
+        "questions": [
+            {
+            "text": "Jakie jest główne źródło energii gwiazd?",
+            "is_closed": true,
+            "difficulty": 2,
+            "choices": ["Fuzja jądrowa", "Rozpad promieniotwórczy", "Spalanie chemiczne"],
+            "correct_choices": ["Fuzja jądrowa"]
+            },
+            {
+            "text": "Wyjaśnij, na czym polega fotosynteza.",
+            "is_closed": false,
+            "difficulty": 1
+            }
+        ]
+        }
+        ''',
     ]
+
+    
     if additional:
         parts.append(f"- Weź pod uwagę następujące preferencje odnośnie generowanego testu: {additional}")
 
     parts.append(f"Tekst źródłowy:\n{text}\n")
     return "\n".join(parts)
 
+
+def _response_schema() -> dict:
+    """Schema passed to Gemini structured output."""
+    return {
+        "type": "object",
+        "properties": {
+            "title": {"type": "string"},
+            "questions": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "text": {"type": "string"},
+                        "is_closed": {"type": "boolean"},
+                        "difficulty": {"type": "integer"},
+                        "choices": {"type": "array", "items": {"type": "string"}},
+                        "correct_choices": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                        },
+                    },
+                    "required": ["text", "is_closed", "difficulty"],
+                },
+            },
+        },
+        "required": ["questions"],
+    }
+
+
+class LLMQuestionPayload(BaseModel):
+    text: str
+    is_closed: bool
+    difficulty: conint(ge=1, le=3)  # type: ignore[call-arg]
+    choices: Optional[List[str]] = None
+    correct_choices: Optional[List[Union[str, int]]] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def _coerce(cls, values: Any) -> Any:
+        if not isinstance(values, dict):
+            raise ValueError("Element listy pytań musi być obiektem JSON.")
+        data = dict(values)
+        if "difficulty" in data:
+            try:
+                data["difficulty"] = int(data["difficulty"])
+            except Exception:
+                pass
+        if "is_closed" in data:
+            data["is_closed"] = bool(data["is_closed"])
+        return data
+
+    @model_validator(mode="after")
+    def _normalize(self) -> "LLMQuestionPayload":
+        self.text = str(self.text).strip()
+        if not self.text:
+            raise ValueError("Pole 'text' nie może być puste.")
+
+        if not self.is_closed:
+            self.choices = None
+            self.correct_choices = None
+            return self
+
+        choices = [str(c).strip() for c in (self.choices or []) if str(c).strip()]
+        if not choices:
+            raise ValueError("Pytanie zamknięte musi zawierać 'choices'.")
+
+        normalized_correct: List[str] = []
+        for c in self.correct_choices or []:
+            if isinstance(c, int):
+                if 0 <= c < len(choices):
+                    normalized_correct.append(choices[c])
+            else:
+                val = str(c).strip()
+                if val:
+                    normalized_correct.append(val)
+
+        if normalized_correct:
+            normalized_correct = [c for c in normalized_correct if c in choices]
+            seen: set[str] = set()
+            normalized_correct = [
+                c for c in normalized_correct if not (c in seen or seen.add(c))
+            ]
+
+        if not normalized_correct:
+            raise ValueError("Pytanie zamknięte musi mieć co najmniej jedną poprawną odpowiedź.")
+
+        self.choices = choices
+        self.correct_choices = normalized_correct
+        return self
+
+
+class LLMResponse(BaseModel):
+    title: Optional[str] = Field(default=None)
+    questions: List[LLMQuestionPayload]
+
+    @model_validator(mode="before")
+    @classmethod
+    def _ensure_container(cls, values: Any) -> Any:
+        if isinstance(values, list):
+            return {"questions": values}
+        if isinstance(values, dict):
+            if "questions" not in values:
+                raise ValueError("Brak pola 'questions' w odpowiedzi.")
+        return values
+
+    @model_validator(mode="after")
+    def _normalize_title(self) -> "LLMResponse":
+        if self.title is not None:
+            self.title = str(self.title).strip() or None
+        return self
 
 
 class GeminiQuestionGenerator(QuestionGenerator):
@@ -74,17 +220,24 @@ class GeminiQuestionGenerator(QuestionGenerator):
     @lru_cache()
     def _client() -> genai.Client:
         settings = get_settings()
-        return genai.Client(api_key=settings.GEMINI_API_KEY)
+        return genai.Client(
+            api_key=settings.GEMINI_API_KEY
+        )
 
     def generate(
         self, *, source_text: str, params: GenerateParams
     ) -> tuple[str | None, List[Question]]:
         prompt = _build_prompt(source_text, params)
+        generation_config = types.GenerateContentConfig(
+            response_mime_type="application/json",
+            response_schema=_response_schema(),
+        )
 
         try:
             response = self._client().models.generate_content(
                 model=self._model_name,
                 contents=prompt,
+                config=generation_config,
             )
         except Exception as exc:  # noqa: BLE001
             message = str(exc)
@@ -108,90 +261,13 @@ class GeminiQuestionGenerator(QuestionGenerator):
             raw_output = raw_output[4:].lstrip(":").strip()
 
         try:
-            parsed = json.loads(raw_output)
-        except json.JSONDecodeError as exc:
-            snippet = raw_output[:800]
-            raise ValueError(
-                "Nie udało się sparsować odpowiedzi LLM jako JSON. "
-                f"Fragment odpowiedzi:\n{snippet}"
-            ) from exc
+            validated = self._parse_and_validate(raw_output)
+        except ValueError as initial_err:
+            repaired = self._attempt_repair(raw_output, params, generation_config)
+            if repaired is None:
+                raise initial_err
+            validated = repaired
 
-        title: str | None = None
-
-        if isinstance(parsed, dict):
-            title = parsed.get("title") or None
-            questions_payload = parsed.get("questions")
-            if not isinstance(questions_payload, list):
-                raise ValueError(
-                    "Odpowiedź LLM zawiera obiekt, ale pole 'questions' nie jest listą."
-                )
-        elif isinstance(parsed, list):
-            questions_payload = parsed
-        else:
-            raise ValueError(
-                "Nieoczekiwany format odpowiedzi LLM. "
-                "Spodziewano listy pytań lub obiektu z polem 'questions'."
-            )
-
-        questions: List[Question] = []
-
-        for item in questions_payload:
-            if not isinstance(item, dict):
-                raise ValueError("Element listy pytań nie jest obiektem JSON.")
-
-            missing = {"text", "is_closed", "difficulty"} - item.keys()
-            if missing:
-                raise ValueError(f"Brak wymaganych pól w pytaniu: {missing}")
-
-            text = str(item["text"])
-            is_closed = bool(item["is_closed"])
-            difficulty = QuestionDifficulty(int(item["difficulty"]))
-
-            raw_choices = item.get("choices") or []
-            raw_correct = item.get("correct_choices") or []
-
-            choices: List[str] = []
-            if is_closed and raw_choices:
-                if not isinstance(raw_choices, list):
-                    raise ValueError("Pole 'choices' musi być listą.")
-                choices = [str(c).strip() for c in raw_choices if str(c).strip()]
-
-            correct_choices: List[str] = []
-            if is_closed and raw_correct:
-                if isinstance(raw_correct, list) and all(
-                    isinstance(c, int) for c in raw_correct
-                ):
-                    for idx in raw_correct:
-                        if 0 <= idx < len(choices):
-                            correct_choices.append(choices[idx])
-                else:
-                    if not isinstance(raw_correct, list):
-                        raise ValueError(
-                            "Pole 'correct_choices' musi być listą indeksów lub stringów."
-                        )
-                    correct_choices = [str(c).strip() for c in raw_correct if str(c).strip()]
-
-                # Ensure correct_choices is a subset of choices to satisfy domain constraints
-                if choices and correct_choices:
-                    correct_choices = [c for c in correct_choices if c in choices]
-                # Deduplicate while preserving order
-                seen = set()
-                correct_choices = [c for c in correct_choices if not (c in seen or seen.add(c))]
-
-            if not is_closed:
-                choices = []
-                correct_choices = []
-
-            questions.append(
-                Question(
-                    id=None,
-                    text=text,
-                    is_closed=is_closed,
-                    difficulty=difficulty,
-                    choices=choices or None,
-                    correct_choices=correct_choices or None,
-                )
-            )
         need_closed = params.closed.true_false + params.closed.single_choice + params.closed.multi_choice
         need_open = params.num_open
 
@@ -199,7 +275,16 @@ class GeminiQuestionGenerator(QuestionGenerator):
         got_closed = 0
         got_open = 0
 
-        for q in questions:
+        for payload in validated.questions:
+            q = Question(
+                id=None,
+                text=payload.text,
+                is_closed=payload.is_closed,
+                difficulty=QuestionDifficulty(int(payload.difficulty)),
+                choices=(payload.choices or None) if payload.is_closed else None,
+                correct_choices=(payload.correct_choices or None) if payload.is_closed else None,
+            )
+
             if q.is_closed and got_closed < need_closed:
                 selected.append(q)
                 got_closed += 1
@@ -211,7 +296,81 @@ class GeminiQuestionGenerator(QuestionGenerator):
 
         questions = selected
 
-        return title, questions
+        return validated.title, questions
+
+    @staticmethod
+    def _parse_and_validate(raw: str) -> LLMResponse:
+        try:
+            parsed = json.loads(raw)
+        except json.JSONDecodeError as exc:
+            snippet = raw[:800]
+            raise ValueError(
+                "Nie udało się sparsować odpowiedzi LLM jako JSON. "
+                f"Fragment odpowiedzi:\n{snippet}"
+            ) from exc
+
+        try:
+            return LLMResponse.model_validate(parsed)
+        except ValidationError as exc:
+            raise ValueError(
+                "Odpowiedź LLM nie spełnia wymaganego schematu. "
+                f"Szczegóły: {exc}"
+            ) from exc
+
+    def _attempt_repair(
+        self,
+        bad_output: str,
+        params: GenerateParams,
+        generation_config: dict,
+    ) -> LLMResponse | None:
+        prompt = self._build_repair_prompt(bad_output, params)
+        try:
+            response = self._client().models.generate_content(
+                model=self._model_name,
+                contents=prompt,
+                config=generation_config,
+            )
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("LLM repair attempt failed to call model: %s", exc)
+            return None
+
+        repaired = (response.text or "").strip()
+        if repaired.startswith("```"):
+            first_nl = repaired.find("\n")
+            if first_nl != -1:
+                repaired = repaired[first_nl + 1 :].strip()
+            if repaired.endswith("```"):
+                repaired = repaired[:-3].strip()
+        if repaired.lower().startswith("json"):
+            repaired = repaired[4:].lstrip(":").strip()
+
+        try:
+            return self._parse_and_validate(repaired)
+        except ValueError as exc:
+            logger.warning("LLM repair produced invalid JSON: %s", exc)
+            return None
+
+    @staticmethod
+    def _build_repair_prompt(bad_json: str, params: GenerateParams) -> str:
+        return (
+            "Napraw poniższą odpowiedź LLM tak, aby była poprawnym JSON zgodnym ze schematem. "
+            "Zwróć WYŁĄCZNIE JSON, bez komentarzy ani kodowych fence'ów. "
+            "Schema:\n"
+            "{"
+            '"title": "string opcjonalny", '
+            '"questions": [ { '
+            '"text": "string", '
+            '"is_closed": true | false, '
+            '"difficulty": 1 | 2 | 3, '
+            '"choices": [\"...\"] (wymagane dla is_closed=true), '
+            '"correct_choices": [\"...\"] (co najmniej jedna dla is_closed=true) '
+            "} ] "
+            "}\n"
+            f"Wymagane liczby pytań: zamknięte={params.closed.true_false + params.closed.single_choice + params.closed.multi_choice}, "
+            f"otwarte={params.num_open}. "
+            "Wejściowa odpowiedź do naprawy:\n"
+            f"{bad_json}"
+        )
 
 
 
