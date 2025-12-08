@@ -39,6 +39,9 @@ class Settings(BaseSettings):
         default_factory=lambda: [
             "http://localhost:5173",
             "http://127.0.0.1:5173",
+            "https://inquizitor.pl",
+            "https://www.inquizitor.pl",
+            "https://inquizitor.pages.dev",
         ]
     )
     LOG_LEVEL: str = "INFO"
