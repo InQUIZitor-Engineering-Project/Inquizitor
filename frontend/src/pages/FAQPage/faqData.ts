@@ -16,11 +16,19 @@ export const faqItems = [
     tag: "hasło",
   },
   {
+    id: 15,
+    category: "Konto i logowanie",
+    question: "Co jeśli sesja wygaśnie po 60 minutach?",
+    answer:
+      "Po wygaśnięciu tokenu niektóre akcje sieciowe przestaną działać i zostaniesz poproszony(-a) o ponowne logowanie. Po zalogowaniu możesz kontynuować pracę.",
+    tag: "sesja",
+  },
+  {
     id: 3,
     category: "Generowanie testów",
     question: "Na podstawie jakich materiałów mogę wygenerować test?",
     answer:
-      "Możesz wkleić własny tekst lub wgrać plik z materiałem dydaktycznym (PDF, DOCX, TXT, MD). System automatycznie przetworzy treść i wygeneruje pytania.",
+      "Możesz wkleić własny tekst lub wgrać plik z materiałem dydaktycznym. Obsługujemy pliki tekstowe (PDF, DOCX, TXT, MD) oraz graficzne (JPG, PNG) – system sam rozpozna treść ze zdjęć.",
     tag: "materiały",
   },
   {
@@ -30,45 +38,6 @@ export const faqItems = [
     answer:
       "Tak. Podczas generowania testu wybierasz liczbę pytań łatwych, średnich i trudnych. Algorytm dostosuje pytania do tych proporcji.",
     tag: "trudność",
-  },
-  {
-    id: 5,
-    category: "Edycja i eksport",
-    question: "Czy mogę edytować wygenerowane pytania?",
-    answer:
-      "Tak. Każde pytanie możesz modyfikować: zmienić treść, odpowiedzi, poprawne warianty, a także usuwać i dodawać własne pytania.",
-    tag: "edycja",
-  },
-  {
-    id: 6,
-    category: "Edycja i eksport",
-    question: "W jakich formatach mogę pobrać test?",
-    answer:
-      "Test możesz wyeksportować do PDF lub XML, np. do późniejszego wykorzystania w innych systemach.",
-    tag: "eksport",
-  },
-  {
-    id: 7,
-    category: "Bezpieczeństwo",
-    question: "Czy moje testy i materiały są bezpieczne?",
-    answer:
-      "Tak. Dane są powiązane z Twoim kontem i nie są udostępniane innym użytkownikom. Dostęp do testów wymaga uwierzytelnienia.",
-    tag: "bezpieczeństwo",
-  },
-  {
-    id: 8,
-    category: "Bezpieczeństwo",
-    question: "Czy moje hasło jest zabezpieczone?",
-    answer: "Tak. Twoje dane logowania są zapisywane w bezpiecznym miejscu pod kluczem.",
-    tag: "bezpieczeństwo",
-  },
-  {
-    id: 9,
-    category: "Plany rozwoju",
-    question: "Jakie funkcje planujecie dodać w najbliższym czasie?",
-    answer:
-      "Pracujemy m.in. nad stroną profilu z statystykami, dodatkowymi stronami informacyjnymi (FAQ, O nas), automatycznym generowaniem tytułów testów oraz łatwym udostępnianiem.",
-    tag: "rozwój",
   },
   {
     id: 10,
@@ -91,8 +60,16 @@ export const faqItems = [
     category: "Materiały",
     question: "Jakie formaty plików są obsługiwane i czy są limity rozmiaru?",
     answer:
-      "Obsługujemy PDF, DOCX, TXT oraz MD. Im większy plik, tym dłuższe przetwarzanie. Jeśli import trwa zbyt długo, rozważ podział materiału na mniejsze części.",
+      "Obsługujemy dokumenty tekstowe: PDF, DOCX, TXT, MD oraz pliki graficzne: JPG i PNG. Im większy plik, tym dłuższe przetwarzanie. W przypadku bardzo obszernych materiałów warto podzielić je na mniejsze części.",
     tag: "formaty",
+  },
+  {
+    id: 5,
+    category: "Edycja i eksport",
+    question: "Czy mogę edytować wygenerowane pytania?",
+    answer:
+      "Tak. Każde pytanie możesz modyfikować: zmienić treść, odpowiedzi, poprawne warianty, a także usuwać i dodawać własne pytania ręcznie.",
+    tag: "edycja",
   },
   {
     id: 13,
@@ -103,52 +80,75 @@ export const faqItems = [
     tag: "tytuł",
   },
   {
-    id: 14,
-    category: "Nawigacja",
-    question: "Nie widzę nowego testu w sidebarze - co zrobić?",
+    id: 18,
+    category: "Edycja i eksport",
+    question: "Czy mogę usuwać pytania lub całe testy?",
     answer:
-      "Sidebar odświeża się automatycznie po utworzeniu/edycji. Jeśli nadal go nie widać, przejdź na Dashboard lub odśwież stronę przeglądarki.",
-    tag: "sidebar",
+      "Tak. Na stronie szczegółów testu możesz usuwać pojedyncze pytania lub cały test. Pamiętaj, że operacja usunięcia testu jest nieodwracalna.",
+    tag: "usuwanie",
   },
   {
-    id: 15,
-    category: "Konto i logowanie",
-    question: "Co jeśli sesja wygaśnie po 60 minutach?",
+    id: 6,
+    category: "Edycja i eksport",
+    question: "W jakich formatach mogę pobrać gotowy test?",
     answer:
-      "Po wygaśnięciu tokenu niektóre akcje sieciowe przestaną działać i zostaniesz poproszony(-a) o ponowne logowanie. Po zalogowaniu możesz kontynuować pracę.",
-    tag: "sesja",
+      "Test wyeksportujesz do PDF (gotowy do druku) lub XML (do importu w innych systemach).",
+    tag: "eksport",
   },
   {
-    id: 16,
-    category: "Błędy",
-    question: "Wszedłem na nieistniejącą stronę i widzę pustą stronę — co to znaczy?",
+    id: 19,
+    category: "Edycja i eksport",
+    question: "Jakie opcje personalizacji posiada plik PDF?",
     answer:
-      "Dla niezalogowanych przekierowujemy na logowanie, a dla zalogowanych na Dashboard. Jeśli widzisz pusty widok, spróbuj wejść przez menu lub odświeżyć stronę.",
-    tag: "404",
+      "Nasz generator PDF pozwala na dodanie miejsca na imię i nazwisko ucznia, pola na brudnopis, stworzenie dwóch grup testowych (z mieszaniem pytań) oraz dołączenie osobnej strony z kluczem odpowiedzi.",
+    tag: "pdf-opcje",
+  },
+  {
+    id: 7,
+    category: "Bezpieczeństwo",
+    question: "Czy moje testy i materiały są bezpieczne?",
+    answer:
+      "Tak. Dane są powiązane z Twoim kontem i nie są udostępniane innym użytkownikom. Dostęp do testów wymaga uwierzytelnienia.",
+    tag: "bezpieczeństwo",
+  },
+  {
+    id: 8,
+    category: "Bezpieczeństwo",
+    question: "Czy moje hasło jest zabezpieczone?",
+    answer: "Tak. Twoje dane logowania są haszowane i przechowywane w bezpiecznej bazie danych.",
+    tag: "bezpieczeństwo",
   },
   {
     id: 17,
     category: "Bezpieczeństwo",
     question: "Czy da się ukryć hasło w podglądzie żądań (DevTools)?",
     answer:
-      "Nie. Przeglądarka pokazuje faktycznie wysyłane dane. Zapewniamy bezpieczeństwo transmisji (HTTPS) i nie logujemy haseł po stronie serwera.",
+      "Nie, przeglądarka lokalnie widzi wysyłane dane. Jednak transmisja jest szyfrowana (HTTPS), a my nigdy nie logujemy haseł w formie jawnej po stronie serwera.",
     tag: "hasło-devtools",
   },
   {
-    id: 18,
-    category: "Edycja i eksport",
-    question: "Czy mogę usuwać pytania lub całe testy?",
+    id: 14,
+    category: "Nawigacja",
+    question: "Nie widzę nowego testu w sidebarze - co zrobić?",
     answer:
-      "Tak. Na stronie szczegółów testu możesz usuwać pojedyncze pytania lub cały test. Operacja usunięcia jest nieodwracalna.",
-    tag: "usuwanie",
+      "Sidebar odświeża się automatycznie po utworzeniu/edycji. Jeśli nadal go nie widać, przejdź na panel główny lub odśwież stronę przeglądarki.",
+    tag: "sidebar",
   },
   {
-    id: 19,
-    category: "Edycja i eksport",
-    question: "Czy pobiorę test z odpowiedziami?",
+    id: 16,
+    category: "Błędy",
+    question: "Wszedłem na nieistniejącą stronę i widzę pusty ekran - co to znaczy?",
     answer:
-      "PDF generujemy w wersji dla ucznia (bez odpowiedzi). Plik XML zawiera komplet informacji, w tym poprawne odpowiedzi do pytań zamkniętych.",
-    tag: "odpowiedzi",
+      "System stara się przekierować na panel główny lub stronę logowania. Jeśli widzisz pusty widok, spróbuj odświeżyć stronę lub skorzystać z menu nawigacyjnego.",
+    tag: "404",
+  },
+  {
+    id: 9,
+    category: "Plany rozwoju",
+    question: "Jakie funkcje planujecie dodać w najbliższym czasie?",
+    answer:
+      "Pracujemy nad możliwością dodawania obrazków bezpośrednio do treści pytań oraz nad ulepszeniem silnika OCR, by jeszcze lepiej rozpoznawał tekst i wzory ze zdjęć i skanów.",
+    tag: "rozwój",
   },
 ] as const;
 
@@ -157,9 +157,9 @@ export const categoriesOrder = [
   "Bezpieczeństwo",
   "Generowanie testów",
   "Edycja i eksport",
+  "Materiały",
   "Nawigacja",
   "Błędy",
-  "Materiały",
   "Plany rozwoju",
 ] as const;
 
