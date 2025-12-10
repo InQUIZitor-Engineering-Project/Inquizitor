@@ -100,9 +100,6 @@ const useTestDetail = (): UseTestDetailResult => {
     await draftActions.handleAdd(data, refresh);
   };
 
-  const handleDelete = async (qid: number) => {
-    await draftActions.handleDelete(data, qid, refresh);
-  };
 
   const handleOpenDeleteModal = (id: number) => setTestIdToDelete(id);
   const handleCloseModal = () => setTestIdToDelete(null);
