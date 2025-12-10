@@ -1,4 +1,4 @@
-from .llm import GeminiQuestionGenerator
+from .llm import GeminiQuestionGenerator, OpenAIQuestionGenerator
 from .ocr import DefaultOCRService
 from .persistence.sqlmodel import (
     SqlModelFileRepository,
@@ -13,6 +13,7 @@ from .email import ResendEmailSender
 
 __all__ = [
     "GeminiQuestionGenerator",
+    "OpenAIQuestionGenerator",
     "DefaultOCRService",
     "SqlModelFileRepository",
     "SqlModelMaterialRepository",

@@ -8,6 +8,7 @@ from typing import Any, List, Optional, Union
 from google import genai  # type: ignore[reportMissingImports]
 from google.genai import types  # type: ignore[reportMissingImports]
 from pydantic import BaseModel, Field, ValidationError, conint, model_validator  # type: ignore[reportMissingImports]
+from openai import OpenAI, APIError, RateLimitError
 
 from app.api.schemas.tests import GenerateParams
 from app.core.config import get_settings
@@ -372,7 +373,184 @@ class GeminiQuestionGenerator(QuestionGenerator):
             f"{bad_json}"
         )
 
+class OpenAIQuestionGenerator(QuestionGenerator):
 
+    def __init__(self, model_name: str = "openai/gpt-oss-120b:free") -> None:
+        self._model_name = model_name
 
-__all__ = ["GeminiQuestionGenerator"]
+    @staticmethod
+    @lru_cache()
+    def _client() -> OpenAI:
+        settings = get_settings()
+        print(f"DEBUG: BASE_URL={settings.OPENROUTER_BASE_URL}")
+        return OpenAI(
+            base_url=settings.OPENROUTER_BASE_URL,
+            api_key=settings.OPENROUTER_API_KEY,
+            default_headers={
+                "HTTP-Referer": "https://inquizitor.pl",
+                "X-Title": "Inquizitor",
+            },
+        )
+
+    def _get_response_schema(self) -> dict:
+            return {
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "test_generation_response",
+                    "strict": False,
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "title": {
+                                "type": ["string", "null"],
+                                "description": "Tytuł testu"
+                            },
+                            "questions": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "text": {"type": "string"},
+                                        "is_closed": {"type": "boolean"},
+                                        "difficulty": {"type": "integer", "enum": [1, 2, 3]},
+                                        "choices": {
+                                            "type": ["array", "null"],
+                                            "items": {"type": "string"}
+                                        },
+                                        "correct_choices": {
+                                            "type": ["array", "null"],
+                                            "items": {"type": ["string", "integer"]}
+                                        }
+                                    },
+                                    "required": ["text", "is_closed", "difficulty"],
+                                    "additionalProperties": False 
+                                }
+                            }
+                        },
+                        "required": ["questions"],
+                        "additionalProperties": False
+                    }
+                }
+            }
+
+    def generate(
+        self, *, source_text: str, params: GenerateParams
+    ) -> tuple[str | None, List[Question]]:
+
+        prompt = _build_prompt(source_text, params)
+        try:
+            response = self._client().chat.completions.create(
+                model=self._model_name,
+                messages=[
+                    {"role": "system", "content": prompt}
+                ],
+                response_format=self._get_response_schema(),
+                temperature=0.7,
+            )
+        except RateLimitError as exc:
+            raise ValueError(
+                "Limit zapytań do API (OpenRouter) został przekroczony. Spróbuj ponownie za chwilę."
+            ) from exc
+        except APIError as exc:
+            raise RuntimeError(f"OpenRouter API request failed: {exc}") from exc
+        except Exception as exc:
+            raise RuntimeError(f"Unknown error during generation: {exc}") from exc
+
+        raw_output = response.choices[0].message.content or ""
+
+        raw_output = self._clean_markdown(raw_output)
+
+        try:
+            validated = self._parse_and_validate(raw_output)
+        except ValueError as initial_err:
+            repaired = self._attempt_repair(raw_output, params)
+            if repaired is None:
+                raise initial_err
+            validated = repaired
+
+        need_closed = params.closed.true_false + params.closed.single_choice + params.closed.multi_choice
+        need_open = params.num_open
+
+        selected: List[Question] = []
+        got_closed = 0
+        got_open = 0
+
+        for payload in validated.questions:
+            q = Question(
+                id=None,
+                text=payload.text,
+                is_closed=payload.is_closed,
+                difficulty=QuestionDifficulty(int(payload.difficulty)),
+                choices=(payload.choices or None) if payload.is_closed else None,
+                correct_choices=(payload.correct_choices or None) if payload.is_closed else None,
+            )
+
+            if q.is_closed and got_closed < need_closed:
+                selected.append(q)
+                got_closed += 1
+            elif (not q.is_closed) and got_open < need_open:
+                selected.append(q)
+                got_open += 1
+            
+            if got_closed >= need_closed and got_open >= need_open:
+                break
+
+        return validated.title, selected
+
+    @staticmethod
+    def _clean_markdown(text: str) -> str:
+        text = text.strip()
+        if text.startswith("```"):
+            first_nl = text.find("\n")
+            if first_nl != -1:
+                text = text[first_nl + 1 :].strip()
+            if text.endswith("```"):
+                text = text[:-3].strip()
+        if text.lower().startswith("json"):
+            text = text[4:].lstrip(":").strip()
+        return text
+
+    @staticmethod
+    def _parse_and_validate(raw: str) -> LLMResponse:
+        try:
+            parsed = json.loads(raw)
+        except json.JSONDecodeError as exc:
+            snippet = raw[:800]
+            raise ValueError(
+                "Nie udało się sparsować odpowiedzi LLM jako JSON. "
+                f"Fragment odpowiedzi:\n{snippet}"
+            ) from exc
+
+        try:
+            return LLMResponse.model_validate(parsed)
+        except ValidationError as exc:
+            raise ValueError(
+                "Odpowiedź LLM nie spełnia wymaganego schematu. "
+                f"Szczegóły: {exc}"
+            ) from exc
+
+    def _attempt_repair(
+        self,
+        bad_output: str,
+        params: GenerateParams,
+    ) -> LLMResponse | None:
+        repair_prompt = GeminiQuestionGenerator._build_repair_prompt(bad_output, params)
+        
+        try:
+            response = self._client().chat.completions.create(
+                model=self._model_name,
+                messages=[
+                    {"role": "user", "content": repair_prompt}
+                ],
+                response_format={"type": "json_object"},
+                temperature=0.2,
+            )
+            repaired_text = response.choices[0].message.content or ""
+            repaired_text = self._clean_markdown(repaired_text)
+            return self._parse_and_validate(repaired_text)
+        except Exception as exc:
+            logger.warning("LLM repair attempt failed: %s", exc)
+            return None
+
+__all__ = ["GeminiQuestionGenerator", "OpenAIQuestionGenerator"]
 
