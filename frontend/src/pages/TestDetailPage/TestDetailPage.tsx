@@ -8,6 +8,7 @@ import QuestionsSection from "./components/QuestionsSection";
 import PdfConfigSection from "./components/PdfConfigSection";
 import { AlertBar } from "../../design-system/patterns";
 import { PageContainer, PageSection } from "../../design-system/patterns";
+import ConfirmationModalQuestion from "../../components/ConfirmationModal/ConfirmationModalQuestion";
 
 const TestDetailPage: React.FC = () => {
   const { state, derived, actions } = useTestDetail();
@@ -91,10 +92,15 @@ const TestDetailPage: React.FC = () => {
               </Box>
 
               <Footer />
-              {/* Usunięto przycisk "Usuń test" – modal nieużywany */}
             </Stack>
           </PageContainer>
         </PageSection>
+        {state.questionIdToDelete !== null && (
+        <ConfirmationModalQuestion
+          onCancel={actions.closeQuestionDeleteModal}
+          onConfirm={actions.confirmQuestionDelete}
+        />
+      )}
       </Box>
     </Flex>
   );

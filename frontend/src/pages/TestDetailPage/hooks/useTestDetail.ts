@@ -21,6 +21,7 @@ type UseTestDetailResult = {
     pdfConfig: PdfExportConfig;
     pdfConfigOpen: boolean;
     testIdToDelete: number | null;
+    questionIdToDelete: number | null;
     editorError: string | null;
     savingEdit: boolean;
     savingAdd: boolean;
@@ -49,6 +50,9 @@ type UseTestDetailResult = {
     handleSaveEdit: () => Promise<void>;
     handleAdd: () => Promise<void>;
     handleDelete: (qid: number) => Promise<void>;
+    openQuestionDeleteModal: (qid: number) => void;
+    closeQuestionDeleteModal: () => void;
+    confirmQuestionDelete: () => Promise<void>;
     beginTitleEdit: (title: string) => void;
     saveTitle: () => Promise<void>;
     cancelTitle: () => void;
@@ -77,6 +81,7 @@ const useTestDetail = (): UseTestDetailResult => {
   const { state: pdfState, actions: pdfActions } = usePdfConfig();
 
   const [testIdToDelete, setTestIdToDelete] = useState<number | null>(null);
+  const [questionIdToDelete, setQuestionIdToDelete] = useState<number | null>(null);
 
   const { testId } = useParams<{ testId: string }>();
   const testIdNum = Number(testId);
@@ -95,9 +100,6 @@ const useTestDetail = (): UseTestDetailResult => {
     await draftActions.handleAdd(data, refresh);
   };
 
-  const handleDelete = async (qid: number) => {
-    await draftActions.handleDelete(data, qid, refresh);
-  };
 
   const handleOpenDeleteModal = (id: number) => setTestIdToDelete(id);
   const handleCloseModal = () => setTestIdToDelete(null);
@@ -111,6 +113,24 @@ const useTestDetail = (): UseTestDetailResult => {
     }
   };
 
+  const handleOpenQuestionDeleteModal = (qid: number) => {
+    setQuestionIdToDelete(qid);
+  };
+
+  const handleCloseQuestionDeleteModal = () => {
+    setQuestionIdToDelete(null);
+  };
+
+  const handleConfirmQuestionDelete = async () => {
+    if (questionIdToDelete === null || !data) return;
+    try {      
+      await draftActions.handleDeleteConfirmed(data, questionIdToDelete, refresh);
+    } catch (e: any) {
+      alert(e.message || "Nie udało się usunąć pytania");
+    } finally {
+      handleCloseQuestionDeleteModal();
+    }
+  };
   const beginTitleEdit = (title: string) => titleActions.begin(title);
   const saveTitle = async () => {
     await titleActions.save(data, refreshSidebarTests, setDataSorted);
@@ -159,6 +179,7 @@ const useTestDetail = (): UseTestDetailResult => {
       pdfConfig: pdfState.pdfConfig,
       pdfConfigOpen: pdfState.pdfConfigOpen,
       testIdToDelete,
+      questionIdToDelete,
       editorError: draftState.editorError,
       savingEdit: draftState.savingEdit,
       savingAdd: draftState.savingAdd,
@@ -186,7 +207,10 @@ const useTestDetail = (): UseTestDetailResult => {
       removeChoiceRow: draftActions.removeChoiceRow,
       handleSaveEdit,
       handleAdd,
-      handleDelete,
+      handleDelete: async (qid) => { handleOpenQuestionDeleteModal(qid); },
+      openQuestionDeleteModal: handleOpenQuestionDeleteModal,
+      closeQuestionDeleteModal: handleCloseQuestionDeleteModal,
+      confirmQuestionDelete: handleConfirmQuestionDelete,
       beginTitleEdit,
       saveTitle,
       cancelTitle,
