@@ -1,3 +1,5 @@
+import { apiRequest } from "./api";
+
 export interface UserCreate {
   first_name: string;
   last_name: string;
@@ -25,8 +27,6 @@ export interface RegistrationRequested {
 export interface VerificationResponse extends Token {
   redirect_url?: string | null;
 }
-
-const API_BASE = import.meta.env.VITE_API_URL || "";
 
 function toPolishEmailError(msg: string): string {
   const m = msg.toLowerCase();
@@ -77,9 +77,8 @@ function translateError(detail: any): string {
 }
 
 export async function registerUser(data: UserCreate): Promise<RegistrationRequested> {
-  const res = await fetch(`${API_BASE}/auth/register`, {
+  const res = await apiRequest("/auth/register", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
   if (!res.ok) {
@@ -96,10 +95,13 @@ export async function registerUser(data: UserCreate): Promise<RegistrationReques
 }
 
 export async function verifyEmail(token: string, redirect: boolean = false): Promise<VerificationResponse> {
-  const url = new URL(`${API_BASE}/auth/verify-email`);
-  url.searchParams.set("token", token);
-  if (redirect) url.searchParams.set("redirect", "true");
-  const res = await fetch(url.toString(), { method: "GET" });
+  const params = new URLSearchParams();
+  params.set("token", token);
+  if (redirect) params.set("redirect", "true");
+
+  const res = await apiRequest(`/auth/verify-email?${params.toString()}`, { 
+    method: "GET" 
+  });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error(err.detail || "Nie udało się zweryfikować adresu e-mail.");
@@ -115,7 +117,7 @@ export async function loginUser(
   form.append("username", email);
   form.append("password", password);
 
-  const res = await fetch(`${API_BASE}/auth/login`, {
+  const res = await apiRequest("/auth/login", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: form.toString(),
