@@ -64,25 +64,7 @@ export interface QuestionCreatePayload {
 
 export type QuestionUpdatePayload = Partial<QuestionCreatePayload>;
 
-const API_BASE = import.meta.env.VITE_API_URL || "";
-
-// --- helpers ---
-
-function getToken() {
-  return localStorage.getItem("access_token");
-}
-
-function getAuthHeaders(json: boolean = true): HeadersInit {
-  const token = getToken();
-  const headers: Record<string, string> = {};
-  if (json) {
-    headers["Content-Type"] = "application/json";
-  }
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
-  return headers;
-}
+import { apiRequest } from "./api";
 
 async function handleJson<T>(res: Response, defaultMessage: string): Promise<T> {
   if (!res.ok) {
@@ -101,9 +83,7 @@ async function handleJson<T>(res: Response, defaultMessage: string): Promise<T> 
 // --- istniejące ---
 
 export async function getMyTests(): Promise<TestOut[]> {
-  const res = await fetch(`${API_BASE}/users/me/tests`, {
-    headers: getAuthHeaders(),
-  });
+  const res = await apiRequest(`/users/me/tests`);
   return handleJson<TestOut[]>(res, "Nie udało się pobrać listy testów");
 }
 
@@ -127,28 +107,20 @@ export interface GenerateParams {
 export async function generateTest(
   params: GenerateParams
 ): Promise<JobEnqueueResponse> {
-  const res = await fetch(`${API_BASE}/tests/generate`, {
+  const res = await apiRequest(`/tests/generate`, {
     method: "POST",
-    headers: getAuthHeaders(),
     body: JSON.stringify(params),
   });
   return handleJson<JobEnqueueResponse>(res, "Błąd generowania testu");
 }
 
 export async function getTestDetail(testId: number): Promise<TestDetail> {
-  const res = await fetch(`${API_BASE}/tests/${testId}`, {
-    headers: getAuthHeaders(),
-  });
+  const res = await apiRequest(`/tests/${testId}`);
   return handleJson<TestDetail>(res, "Nie udało się pobrać testu");
 }
 export async function updateTestTitle(testId: number, title: string) {
-  const token = localStorage.getItem("access_token");
-  const res = await fetch(`${import.meta.env.VITE_API_URL}/tests/${testId}/title`, {
+  const res = await apiRequest(`/tests/${testId}/title`, {
     method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
     body: JSON.stringify({ title }),
   });
   if (!res.ok) {
@@ -164,9 +136,8 @@ export async function addQuestion(
   testId: number,
   payload: QuestionCreatePayload
 ): Promise<QuestionOut> {
-  const res = await fetch(`${API_BASE}/tests/${testId}/questions`, {
+  const res = await apiRequest(`/tests/${testId}/questions`, {
     method: "POST",
-    headers: getAuthHeaders(),
     body: JSON.stringify(payload),
   });
   return handleJson<QuestionOut>(res, "Nie udało się dodać pytania");
@@ -177,11 +148,10 @@ export async function updateQuestion(
   questionId: number,
   payload: QuestionUpdatePayload
 ): Promise<QuestionOut> {
-  const res = await fetch(
-    `${API_BASE}/tests/${testId}/edit/${questionId}`,
+  const res = await apiRequest(
+    `/tests/${testId}/edit/${questionId}`,
     {
       method: "PATCH",
-      headers: getAuthHeaders(),
       body: JSON.stringify(payload),
     }
   );
@@ -195,11 +165,10 @@ export async function deleteQuestion(
   testId: number,
   questionId: number
 ): Promise<void> {
-  const res = await fetch(
-    `${API_BASE}/tests/${testId}/questions/${questionId}`,
+  const res = await apiRequest(
+    `/tests/${testId}/questions/${questionId}`,
     {
       method: "DELETE",
-      headers: getAuthHeaders(false),
     }
   );
   if (!res.ok) {
@@ -217,11 +186,10 @@ export async function deleteQuestion(
 export async function deleteTest(
   testId: number,
 ): Promise<void> {
-  const res = await fetch(
-    `${API_BASE}/tests/${testId}`,
+  const res = await apiRequest(
+    `/tests/${testId}`,
     {
       method: "DELETE",
-      headers: getAuthHeaders(false),
     }
   );
   if (!res.ok) {
@@ -240,9 +208,8 @@ export async function exportCustomPdf(
   testId: number,
   config: PdfExportConfig
 ): Promise<JobEnqueueResponse> {
-  const res = await fetch(`${API_BASE}/tests/${testId}/export/pdf/custom`, {
+  const res = await apiRequest(`/tests/${testId}/export/pdf/custom`, {
     method: "POST",
-    headers: getAuthHeaders(),
     body: JSON.stringify(config),
   });
 
@@ -253,17 +220,14 @@ export async function exportPdf(
   testId: number,
   showAnswers: boolean = false
 ): Promise<JobEnqueueResponse> {
-  const res = await fetch(`${API_BASE}/tests/${testId}/export/pdf?show_answers=${showAnswers}`, {
+  const res = await apiRequest(`/tests/${testId}/export/pdf?show_answers=${showAnswers}`, {
     method: "GET",
-    headers: getAuthHeaders(false),
   });
   return handleJson<JobEnqueueResponse>(res, "Nie udało się zainicjować eksportu PDF");
 }
 
 // Jobs API
 export async function getJob(jobId: number): Promise<JobOut> {
-  const res = await fetch(`${API_BASE}/jobs/${jobId}`, {
-    headers: getAuthHeaders(false),
-  });
+  const res = await apiRequest(`/jobs/${jobId}`);
   return handleJson<JobOut>(res, "Nie udało się pobrać statusu zadania");
 }

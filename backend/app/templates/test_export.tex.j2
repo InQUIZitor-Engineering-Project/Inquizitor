@@ -154,12 +154,14 @@
       \begin{minipage}[t]{\linewidth}
         
         % --- OZNACZENIE TYPU PYTANIA ---
-        [% if q.type == 'multi' %]
-             \hfill {\scriptsize\sffamily\textcolor{brand}{\textbf{[WIELOKROTNY WYBÓR]}}} \par
-             \nointerlineskip
-        [% elif q.type == 'tf' %]
-             \hfill {\scriptsize\sffamily\textcolor{darkgray}{[PRAWDA / FAŁSZ]}} \par
-             \nointerlineskip
+        [% if cfg.mark_multi_choice %]
+          [% if q.is_closed and q.is_multi %]
+               \hfill {\scriptsize\sffamily\textcolor{brand}{\textbf{[WIELOKROTNY WYBÓR]}}} \par
+               \nointerlineskip
+          [% elif q.is_closed %]
+               \hfill {\scriptsize\sffamily\textcolor{darkgray}{[JEDNOKROTNY WYBÓR]}} \par
+               \nointerlineskip
+          [% endif %]
         [% endif %]
 
         % Treść pytania

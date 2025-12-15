@@ -1,13 +1,22 @@
 
 const API_BASE = import.meta.env.VITE_API_URL || "";
 
-function getHeaders(customHeaders: Record<string, string> = {}) {
+function getAccessToken(): string | null {
+  return localStorage.getItem("access_token");
+}
+
+function buildHeaders(
+  customHeaders: Record<string, string> = {},
+  {
+    includeJsonContentType = true,
+  }: { includeJsonContentType?: boolean } = {},
+): Record<string, string> {
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
+    ...(includeJsonContentType ? { "Content-Type": "application/json" } : {}),
     ...customHeaders,
   };
 
-  const token = localStorage.getItem("token");
+  const token = getAccessToken();
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
   }
@@ -15,28 +24,33 @@ function getHeaders(customHeaders: Record<string, string> = {}) {
   return headers;
 }
 
+async function handleUnauthorized(endpoint: string, response: Response): Promise<never> {
+  if (!endpoint.includes("/auth/login")) {
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("user");
+    if (window.location.pathname !== "/login") {
+      window.location.href = "/login";
+    }
+  }
+  const errorBody = await response.json().catch(() => ({}));
+  throw new Error(errorBody.detail || "Błąd autoryzacji (401).");
+}
+
 export async function apiRequest(endpoint: string, options: RequestInit = {}) {
   const url = `${API_BASE}${endpoint}`;
-  
-  const config = {
+  const isFormData = options.body instanceof FormData;
+
+  const config: RequestInit = {
     ...options,
-    headers: getHeaders(options.headers as Record<string, string>),
+    headers: buildHeaders(options.headers as Record<string, string>, {
+      includeJsonContentType: !isFormData,
+    }),
   };
 
   const response = await fetch(url, config);
 
   if (response.status === 401) {
-    if (!endpoint.includes("/auth/login")) {
-        
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-
-        if (window.location.pathname !== "/login") {
-          window.location.href = "/login";
-        }
-    }
-    const errorBody = await response.json().catch(() => ({}));
-    throw new Error(errorBody.detail || "Błąd autoryzacji (401).");
+    return handleUnauthorized(endpoint, response);
   }
 
   return response;
