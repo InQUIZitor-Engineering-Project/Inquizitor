@@ -110,6 +110,8 @@ const useGenerateTestForm = (): UseGenerateTestFormResult => {
 
   useDocumentTitle("Stwórz nowy | Inquizitor");
 
+  const MAX_FILE_SIZE_MB = 15; 
+  const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
   const totalClosed = tfCount + singleCount + multiCount;
   const totalAll = totalClosed + openCount;
   const totalDifficulty = easyCount + mediumCount + hardCount;
@@ -138,6 +140,13 @@ const useGenerateTestForm = (): UseGenerateTestFormResult => {
   const handleMaterialChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+        setMaterialError(
+            `Ten plik jest za duży (max ${MAX_FILE_SIZE_MB}MB). Spróbuj podzielić go na części i spróbować ponownie.`
+        );
+        clearFileInput();
+        return; 
+    }
 
     setMaterialError(null);
     setMaterialUploading(true);
