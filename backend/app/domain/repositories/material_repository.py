@@ -26,6 +26,10 @@ class MaterialRepository(ABC):
     @abstractmethod
     def remove(self, material_id: int) -> None:
         raise NotImplementedError
+    
+    @abstractmethod
+    def get_by_file_id(self, file_id: int) -> Material | None:
+        raise NotImplementedError
 
 
 __all__ = ["MaterialRepository"]

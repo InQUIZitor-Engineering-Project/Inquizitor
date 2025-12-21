@@ -231,27 +231,35 @@ class TestService:
                     base_title = source_file.filename
                 else:
                     base_title = "From raw text"
-            else:
-                if request.file_id is None:
-                    raise ValueError("file_id is required when text is not provided")
-                source_file = uow.files.get(request.file_id)
-                if not source_file or source_file.owner_id != owner_id:
-                    raise ValueError("File not found")
-                with self._storage.download_to_temp(
-                    stored_path=str(source_file.stored_path)
-                ) as local_path:
-                    local_path = Path(local_path)
-                    # Prefer composite extractor (text layer + PDF OCR fallback). If still empty, fallback to raw OCR.
-                    source_text = composite_text_extractor(local_path, None).strip()
-                    if not source_text:
-                        source_text = (
-                            self._ocr_service.extract_text(file_path=str(local_path))
-                            or ""
-                        ).strip()
-                if not source_text:
-                    raise ValueError("Could not extract text from the provided file.")
-                base_title = source_file.filename
+            elif request.file_id is not None:
+                existing_material = uow.materials.get_by_file_id(request.file_id) 
 
+                if existing_material and existing_material.extracted_text and existing_material.owner_id == owner_id:
+                    logger.info(f"Using cached text from material {existing_material.id} for file {request.file_id}")
+                    source_text = existing_material.extracted_text
+                    base_title = existing_material.file.filename if existing_material.file else "Unknown file"
+                    
+                else: 
+                    source_file = uow.files.get(request.file_id)
+                    if not source_file or source_file.owner_id != owner_id:
+                        raise ValueError("File not found")
+                    with self._storage.download_to_temp(
+                        stored_path=str(source_file.stored_path)
+                    ) as local_path:
+                        local_path = Path(local_path)
+                        # Prefer composite extractor (text layer + PDF OCR fallback). If still empty, fallback to raw OCR.
+                        source_text = composite_text_extractor(local_path, None).strip()
+                        if not source_text:
+                            source_text = (
+                                self._ocr_service.extract_text(file_path=str(local_path))
+                                or ""
+                            ).strip()
+                    if not source_text:
+                        raise ValueError("Could not extract text from the provided file.")
+                    base_title = source_file.filename
+            else:
+                raise ValueError("Either text or file_id must be provided")
+            
             try:
                 llm_title, questions = self._question_generator.generate(
                     source_text=source_text,

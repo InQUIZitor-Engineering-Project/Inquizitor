@@ -124,9 +124,8 @@ const useGenerateTestForm = (): UseGenerateTestFormResult => {
     t > 0 ? Math.max(0, Math.min(100, Math.round((n / t) * 100))) : 0;
 
   const easyPct = pct(easyCount, totalDifficulty);
-  const medPct = pct(mediumCount, totalDifficulty);
-  const hardPct = pct(hardCount, totalDifficulty);
-
+  const medPct = pct(easyCount + mediumCount, totalDifficulty) - easyPct;
+  const hardPct = totalDifficulty > 0 ? 100 - easyPct - medPct : 0;
   const clearFileInput = () => {
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
