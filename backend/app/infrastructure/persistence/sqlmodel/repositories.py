@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Iterable, List
 from datetime import datetime
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlmodel import select
 
 from app.db import models as db_models
@@ -136,6 +136,15 @@ class SqlModelMaterialRepository(MaterialRepository):
     def get(self, material_id: int) -> Material | None:
         db_material = self._session.get(db_models.Material, material_id)
         return mappers.material_to_domain(db_material) if db_material else None
+    
+    def get_by_file_id(self, file_id: int) -> Material | None:
+        stmt = (
+            select(db_models.Material)
+            .where(db_models.Material.file_id == file_id)
+            .options(joinedload(db_models.Material.file))
+        )
+        row = self._session.exec(stmt).first()
+        return mappers.material_to_domain(row) if row else None
 
     def list_for_user(self, user_id: int) -> Iterable[Material]:
         stmt = select(db_models.Material).where(db_models.Material.owner_id == user_id)
