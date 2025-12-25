@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import styled from "styled-components";
 import { Stack, Text, Button, Input, Flex } from "../../../design-system/primitives";
 
@@ -59,6 +59,37 @@ const CounterInput = styled(Input)`
 `;
 
 const CounterControl: React.FC<CounterControlProps> = ({ label, value, onChange, disabled, helpText }) => {
+
+  const [inputValue, setInputValue] = useState(value.toString());
+
+  useEffect(() => {
+    if (Number(inputValue) !== value && inputValue !== "") {
+      setInputValue(value.toString());
+    } else if (value === 0 && inputValue === "") {
+      
+    } else if (Number(inputValue) !== value) {
+       setInputValue(value.toString());
+    }
+  }, [value, inputValue]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    setInputValue(raw);
+
+    if (raw === "") {
+      onChange(0);
+      return;
+    }
+
+    const parsed = parseInt(raw, 10);
+    if (!isNaN(parsed)) {
+      onChange(Math.max(0, parsed));
+    }
+  };
+
+  const handleBlur = () => {
+    setInputValue(value.toString());
+  };
   return (
     <Stack $gap="xs">
       {label && (
@@ -78,9 +109,10 @@ const CounterControl: React.FC<CounterControlProps> = ({ label, value, onChange,
         </CounterButton>
         <CounterInput
           type="number"
-          value={value}
+          value={inputValue} 
+          onChange={handleInputChange}
+          onBlur={handleBlur}
           disabled={disabled}
-          onChange={(e) => onChange(Math.max(0, Number(e.target.value) || 0))}
         />
         <CounterButton
           $variant="ghost"

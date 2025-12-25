@@ -1,5 +1,5 @@
 import React from "react";
-import styled, { useTheme } from "styled-components";
+import styled from "styled-components";
 import { Stack, Heading, Text, Box } from "../../../design-system/primitives";
 import CounterControl from "./CounterControl";
 import SummaryPills from "./SummaryPills";
@@ -17,6 +17,25 @@ export interface StructureCardProps {
   onChangeMulti: (v: number) => void;
   onChangeOpen: (v: number) => void;
 }
+const CountersGrid = styled(Box)`
+  display: grid;
+  grid-template-columns: repeat(4, minmax(140px, 1fr));
+  /* Tutaj używamy funkcji props => props.theme zamiast zmiennej theme */
+  gap: ${({ theme }) => theme.spacing.md};
+
+  ${({ theme }) => theme.media.down("md")} {
+    grid-template-columns: repeat(2, minmax(160px, 1fr));
+  }
+
+  ${({ theme }) => theme.media.down("sm")} {
+    grid-template-columns: 1fr;
+    justify-items: center;
+
+    > * {
+      width: 100%;
+    }
+  }
+`;
 
 const StructureCard: React.FC<StructureCardProps> = ({
   tfCount,
@@ -30,32 +49,12 @@ const StructureCard: React.FC<StructureCardProps> = ({
   onChangeMulti,
   onChangeOpen,
 }) => {
-  const theme = useTheme();
 
   const pills = [
     { label: "Zamknięte", value: totalClosed, bg: PALETTE.type.closedBg, fg: PALETTE.type.closedFg },
     { label: "Otwarte", value: openCount, bg: PALETTE.type.openBg, fg: PALETTE.type.openFg },
     { label: "Razem", value: totalAll, bg: PALETTE.total.bg, fg: PALETTE.total.fg },
   ];
-
-  const CountersGrid = styled(Box)`
-    display: grid;
-    grid-template-columns: repeat(4, minmax(140px, 1fr));
-    gap: ${theme.spacing.md};
-
-    ${({ theme }) => theme.media.down("md")} {
-      grid-template-columns: repeat(2, minmax(160px, 1fr));
-    }
-
-    ${({ theme }) => theme.media.down("sm")} {
-      grid-template-columns: 1fr;
-      justify-items: center;
-
-      > * {
-        width: 100%;
-      }
-    }
-  `;
 
   return (
     <Box $p="lg" $radius="xl" $bg="#fff" $shadow="md">
