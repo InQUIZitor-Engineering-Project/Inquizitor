@@ -1,7 +1,7 @@
 import React from "react";
 import styled from "styled-components";
 import { MathText } from "../../../components/MathText/MathText";
-import { Badge, Button, Flex, Text } from "../../../design-system/primitives";
+import { Badge, Button, Flex, Text, Checkbox } from "../../../design-system/primitives";
 import { QuestionCard } from "../../../design-system/patterns";
 import type { QuestionOut } from "../../../services/test";
 
@@ -18,6 +18,8 @@ export interface QuestionViewProps {
   onEdit: () => void;
   onDelete: () => void;
   choiceRenderer: () => React.ReactNode;
+  isSelected?: boolean;
+  onSelect?: (qid: number) => void;
 }
 
 const MetaRow = styled(Flex)`
@@ -28,14 +30,31 @@ const MetaRow = styled(Flex)`
   }
 `;
 
-const QuestionView: React.FC<QuestionViewProps> = ({ question, index, onEdit, onDelete, choiceRenderer }) => {
+const QuestionView: React.FC<QuestionViewProps> = ({
+  question,
+  index,
+  onEdit,
+  onDelete,
+  choiceRenderer,
+  isSelected,
+  onSelect,
+}) => {
   return (
     <QuestionCard
       index={index}
       title={
-        <Text $variant="body2" $weight="medium">
-          <MathText text={question.text} />
-        </Text>
+        <Flex $gap="sm" $align="center">
+          {onSelect && (
+            <Checkbox
+              checked={isSelected}
+              onChange={() => onSelect(question.id)}
+              onClick={(e) => e.stopPropagation()}
+            />
+          )}
+          <Text $variant="body2" $weight="medium">
+            <MathText text={question.text} />
+          </Text>
+        </Flex>
       }
       meta={
         <MetaRow $gap="xs" $wrap="nowrap" $justify="flex-end">
@@ -66,6 +85,7 @@ const QuestionView: React.FC<QuestionViewProps> = ({ question, index, onEdit, on
           </Button>
         </Flex>
       }
+      style={isSelected ? { border: "2px solid #4CAF50", backgroundColor: "#f0fdf4" } : undefined}
     >
       {choiceRenderer()}
     </QuestionCard>

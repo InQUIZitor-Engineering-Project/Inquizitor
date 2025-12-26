@@ -24,3 +24,5 @@ export { Toolbar } from "./Toolbar";
 export { Segmented } from "./Segmented";
 export { Badge } from "./Badge";
 export type { BadgeProps } from "./Badge";
+export { CloseButton } from "./CloseButton";
+export type { CloseButtonProps } from "./CloseButton";

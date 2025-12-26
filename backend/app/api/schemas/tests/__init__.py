@@ -168,6 +168,21 @@ class TestDetailOut(BaseModel):
 class TestTitleUpdate(BaseModel):
     title: str = Field(..., min_length=1, max_length=200)
 
+class BulkUpdateQuestionsRequest(BaseModel):
+    question_ids: List[int]
+    difficulty: Optional[int] = None
+    is_closed: Optional[bool] = None
+
+class BulkDeleteQuestionsRequest(BaseModel):
+    question_ids: List[int]
+
+class BulkRegenerateQuestionsRequest(BaseModel):
+    question_ids: List[int]
+    instruction: Optional[str] = None
+
+class BulkConvertQuestionsRequest(BaseModel):
+    question_ids: List[int]
+    target_type: Literal["open", "closed"]
 
 class PdfExportConfig(BaseModel):
     """
@@ -205,5 +220,9 @@ __all__ = [
     "QuestionCreate",
     "QuestionUpdate",
     "TestTitleUpdate",
+    "BulkUpdateQuestionsRequest",
+    "BulkDeleteQuestionsRequest",
+    "BulkRegenerateQuestionsRequest",
+    "BulkConvertQuestionsRequest",
     "PdfExportConfig",
 ]

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import styled from "styled-components";
 import Sidebar from "../components/Sidebar/Sidebar";
-import ConfirmationModal from "../components/ConfirmationModal/ConfirmationModal";
+import { Modal } from "../design-system/patterns";
 import { getMyTests, deleteTest } from "../services/test";
 import type { TestOut } from "../services/test";
 import { NAVBAR_HEIGHT } from "../components/Navbar/Navbar.styles";
@@ -142,10 +142,16 @@ const MainLayout: React.FC = () => {
       <SidebarOverlay $open={sidebarOpen} onClick={() => setSidebarOpen(false)} />
 
       {testIdToDelete !== null && (
-        <ConfirmationModal
-          onCancel={handleCloseModal}
+        <Modal
+          isOpen={true}
+          title="Usuń test"
+          onClose={handleCloseModal}
           onConfirm={handleConfirmDelete}
-        />
+          variant="danger"
+          confirmLabel="Usuń"
+        >
+          Tej operacji nie można cofnąć. Wszystkie pytania w tym teście również zostaną usunięte.
+        </Modal>
       )}
     </LayoutWrapper>
   );

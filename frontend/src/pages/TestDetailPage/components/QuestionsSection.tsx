@@ -11,6 +11,7 @@ export interface QuestionsSectionProps {
   editingId: number | null;
   isAdding: boolean;
   draft: Partial<QuestionOut>;
+  selectedIds: number[];
   actions: {
     startEdit: (q: QuestionOut) => void;
     startAdd: () => void;
@@ -25,6 +26,9 @@ export interface QuestionsSectionProps {
     toggleDraftCorrect: (value: string, checked: boolean) => void;
     removeChoiceRow: (index: number) => void;
     addDraftChoiceRow: () => void;
+    toggleSelect: (qid: number) => void;
+    selectAll: () => void;
+    clearSelection: () => void;
   };
   stateFlags: {
     savingEdit: boolean;
@@ -40,6 +44,7 @@ const QuestionsSection: React.FC<QuestionsSectionProps> = ({
   editingId,
   isAdding,
   draft,
+  selectedIds,
   actions,
   stateFlags,
 }) => {
@@ -81,6 +86,19 @@ const QuestionsSection: React.FC<QuestionsSectionProps> = ({
 
   return (
     <Stack $gap="lg">
+      <Flex $justify="flex-end" $align="center">
+        <Flex $gap="sm">
+          <Button $variant="ghost" $size="sm" onClick={actions.selectAll}>
+            Zaznacz wszystko
+          </Button>
+          {selectedIds.length > 0 && (
+            <Button $variant="ghost" $size="sm" $tone="danger" onClick={actions.clearSelection}>
+              Odznacz wszystko ({selectedIds.length})
+            </Button>
+          )}
+        </Flex>
+      </Flex>
+
       {questions.map((q, idx) => {
         const isEditing = editingId === q.id;
         if (isEditing) {
@@ -121,6 +139,8 @@ const QuestionsSection: React.FC<QuestionsSectionProps> = ({
             onEdit={() => actions.startEdit(q)}
             onDelete={() => actions.handleDelete(q.id)}
             choiceRenderer={() => (q.is_closed ? renderChoiceList(q) : renderOpenAnswerPlaceholder())}
+            isSelected={selectedIds.includes(q.id)}
+            onSelect={actions.toggleSelect}
           />
         );
       })}
