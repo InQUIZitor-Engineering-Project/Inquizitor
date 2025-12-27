@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useState, useEffect } from "react";
 import { loginUser } from "../services/auth";
 import type { Token, UserRead } from "../services/auth";
 import { useLoader } from "../components/Loader/GlobalLoader";
