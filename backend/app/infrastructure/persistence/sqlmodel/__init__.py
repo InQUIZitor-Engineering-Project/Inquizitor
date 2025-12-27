@@ -15,6 +15,8 @@ from .mappers import (
     job_to_row,
     pending_verification_to_domain,
     pending_verification_to_row,
+    password_reset_token_to_domain,
+    password_reset_token_to_row,
 )
 from .repositories import (
     SqlModelFileRepository,
@@ -23,6 +25,7 @@ from .repositories import (
     SqlModelUserRepository,
     SqlModelJobRepository,
     SqlModelPendingVerificationRepository,
+    SqlModelPasswordResetTokenRepository,
 )
 
 __all__ = [
@@ -40,11 +43,14 @@ __all__ = [
     "job_to_row",
     "pending_verification_to_domain",
     "pending_verification_to_row",
+    "password_reset_token_to_domain",
+    "password_reset_token_to_row",
     "SqlModelFileRepository",
     "SqlModelMaterialRepository",
     "SqlModelTestRepository",
     "SqlModelUserRepository",
     "SqlModelJobRepository",
     "SqlModelPendingVerificationRepository",
+    "SqlModelPasswordResetTokenRepository",
 ]
 

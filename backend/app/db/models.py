@@ -29,7 +29,15 @@ class PendingEmailVerification(SQLModel, table=True):
     expires_at: datetime = Field(index=True)
     created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
 
-class Test(SQLModel, table=True):
+class PasswordResetToken(SQLModel, table=True):
+    __tablename__ = "password_reset_tokens"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    email: str = Field(index=True, max_length=100)
+    token_hash: str = Field(index=True, max_length=128)
+    expires_at: datetime = Field(index=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
+
+class Test(SQLModel, table=True) :
     id: Optional[int] = Field(default=None, primary_key=True)
     owner_id: int = Field(foreign_key="user.id", index=True)
     title: Optional[str] = Field(default="Nowy test")

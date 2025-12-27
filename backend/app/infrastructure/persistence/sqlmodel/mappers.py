@@ -5,7 +5,16 @@ from pathlib import Path
 from typing import Iterable, Optional
 
 from app.db import models as db_models
-from app.domain.models import File, Material, Question, Test, User, Job, PendingVerification
+from app.domain.models import (
+    File,
+    Material,
+    Question,
+    Test,
+    User,
+    Job,
+    PendingVerification,
+    PasswordResetToken,
+)
 from app.domain.models.enums import ProcessingStatus, QuestionDifficulty, JobStatus, JobType
 
 
@@ -191,6 +200,26 @@ def pending_verification_to_domain(row: db_models.PendingEmailVerification) -> P
         hashed_password=row.hashed_password,
         first_name=row.first_name,
         last_name=row.last_name,
+        token_hash=row.token_hash,
+        expires_at=row.expires_at,
+        created_at=row.created_at,
+    )
+
+
+def password_reset_token_to_row(t: PasswordResetToken) -> db_models.PasswordResetToken:
+    return db_models.PasswordResetToken(
+        id=t.id,
+        email=t.email,
+        token_hash=t.token_hash,
+        expires_at=t.expires_at,
+        created_at=t.created_at or datetime.utcnow(),
+    )
+
+
+def password_reset_token_to_domain(row: db_models.PasswordResetToken) -> PasswordResetToken:
+    return PasswordResetToken(
+        id=row.id,
+        email=row.email,
         token_hash=row.token_hash,
         expires_at=row.expires_at,
         created_at=row.created_at,
