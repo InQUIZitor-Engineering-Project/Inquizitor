@@ -238,7 +238,7 @@ class TestService:
                 if request.file_id is not None:
                     source_file = uow.files.get(request.file_id)
                     if not source_file or source_file.owner_id != owner_id:
-                        raise ValueError("File not found")
+                        raise ValueError("Plik nie został znaleziony")
                     base_title = source_file.filename
                 else:
                     base_title = "From raw text"
@@ -253,7 +253,7 @@ class TestService:
                 else: 
                     source_file = uow.files.get(request.file_id)
                     if not source_file or source_file.owner_id != owner_id:
-                        raise ValueError("File not found")
+                        raise ValueError("Plik nie został znaleziony")
                     with self._storage.download_to_temp(
                         stored_path=str(source_file.stored_path)
                     ) as local_path:
@@ -315,7 +315,7 @@ class TestService:
         with self._uow_factory() as uow:
             test = uow.tests.get_with_questions(test_id)
             if not test or test.owner_id != owner_id:
-                raise ValueError("Test not found")
+                raise ValueError("Test nie został znaleziony")
 
             test.questions = self._sort_questions(test.questions)
             return dto.to_test_detail(test)
@@ -329,7 +329,7 @@ class TestService:
         with self._uow_factory() as uow:
             test = uow.tests.get(test_id)
             if not test or test.owner_id != owner_id:
-                raise ValueError("Test not found")
+                raise ValueError("Test nie został znaleziony")
             uow.tests.remove(test_id)
 
     def export_test_pdf(self, *, owner_id: int, test_id: int, show_answers: bool = False) -> Tuple[bytes, str]:
@@ -458,7 +458,7 @@ class TestService:
         with self._uow_factory() as uow:
             test = uow.tests.get(test_id)
             if not test or test.owner_id != owner_id:
-                raise ValueError("Test not found")
+                raise ValueError("Test nie został znaleziony")
 
             session = getattr(uow, "session", None)
             if session is None:
@@ -466,7 +466,7 @@ class TestService:
 
             question_row = session.get(QuestionRow, question_id)
             if not question_row or question_row.test_id != test_id:
-                raise ValueError("Question not found")
+                raise ValueError("Pytanie nie zostało znalezione")
 
             # ogarniamy payload niezależnie czy to Pydantic czy dict
             if isinstance(payload, QuestionUpdate):
@@ -510,7 +510,7 @@ class TestService:
         with self._uow_factory() as uow:
             test = uow.tests.get(test_id)
             if not test or test.owner_id != owner_id:
-                raise ValueError("Test not found")
+                raise ValueError("Test nie został znaleziony")
 
             session = getattr(uow, "session", None)
             if session is None:
@@ -548,7 +548,7 @@ class TestService:
         with self._uow_factory() as uow:
             test = uow.tests.get(test_id)
             if not test or test.owner_id != owner_id:
-                raise ValueError("Test not found")
+                raise ValueError("Test nie został znaleziony")
 
             session = getattr(uow, "session", None)
             if session is None:
@@ -576,7 +576,7 @@ class TestService:
         with self._uow_factory() as uow:
             test = uow.tests.get(test_id)
             if not test or test.owner_id != owner_id:
-                raise ValueError("Test not found")
+                raise ValueError("Test nie został znaleziony")
 
             session = getattr(uow, "session", None)
             if session is None:
@@ -637,7 +637,7 @@ class TestService:
         with self._uow_factory() as uow:
             test = uow.tests.get(test_id)
             if not test or test.owner_id != owner_id:
-                raise ValueError("Test not found")
+                raise ValueError("Test nie został znaleziony")
 
             session = getattr(uow, "session", None)
             if session is None:
@@ -785,7 +785,7 @@ class TestService:
         with self._uow_factory() as uow:
             test = uow.tests.get(test_id)
             if not test or test.owner_id != owner_id:
-                raise ValueError("Test not found")
+                raise ValueError("Test nie został znaleziony")
 
             session = getattr(uow, "session", None)
             if session is None:
@@ -839,7 +839,7 @@ class TestService:
         with self._uow_factory() as uow:
             test = uow.tests.get(test_id)
             if not test or test.owner_id != owner_id:
-                raise ValueError("Test not found")
+                raise ValueError("Test nie został znaleziony")
 
             session = getattr(uow, "session", None)
             if session is None:
@@ -847,7 +847,7 @@ class TestService:
 
             question_row = session.get(QuestionRow, question_id)
             if not question_row or question_row.test_id != test_id:
-                raise ValueError("Question not found")
+                raise ValueError("Pytanie nie zostało znalezione")
 
             session.delete(question_row)
 
@@ -898,7 +898,7 @@ class TestService:
 
             test_row = session.get(TestRow, test_id)
             if not test_row or test_row.owner_id != owner_id:
-                raise ValueError("Test not found")
+                raise ValueError("Test nie został znaleziony")
 
             test_row.title = title
             session.add(test_row)

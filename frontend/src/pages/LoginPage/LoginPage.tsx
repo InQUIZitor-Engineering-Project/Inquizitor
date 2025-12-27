@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams, useLocation } from "react-router-do
 import styled, { useTheme } from "styled-components";
 import { Stack, Heading, Text, Input, Button, Checkbox } from "../../design-system/primitives";
 import AlertBar from "../../design-system/patterns/AlertBar";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../hooks/useAuth";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import loginIllustration from "../../assets/login.png";
 import AuthLayout from "../Auth/components/AuthLayout";
@@ -110,6 +110,12 @@ const LoginPage: React.FC = () => {
                   required
                 />
               </Stack>
+
+              <div style={{ textAlign: "left" }}>
+                <Link to="/forgot-password" style={{ color: theme.colors.brand.primary, fontSize: '14px', textDecoration: 'none' }}>
+                  Zapomniałeś hasła?
+                </Link>
+              </div>
 
               {infoMessage && <AlertBar variant="success">{infoMessage}</AlertBar>}
 

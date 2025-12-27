@@ -6,6 +6,7 @@ from .test import Test
 from .user import User
 from .job import Job
 from .pending_verification import PendingVerification
+from .password_reset_token import PasswordResetToken
 
 __all__ = [
     "ProcessingStatus",
@@ -19,5 +20,6 @@ __all__ = [
     "User",
     "Job",
     "PendingVerification",
+    "PasswordResetToken",
 ]
 

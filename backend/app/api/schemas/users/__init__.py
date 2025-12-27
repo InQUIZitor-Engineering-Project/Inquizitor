@@ -1,7 +1,8 @@
 # app/schemas/user.py
+import re
 from datetime import datetime
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, field_validator
 
 
 class UserBase(BaseModel):
@@ -12,6 +13,19 @@ class UserCreate(UserBase):
     password: str
     first_name: str
     last_name: str
+
+    @field_validator("password")
+    @classmethod
+    def password_complexity(cls, v):
+        if len(v) < 8:
+            raise ValueError("Hasło musi mieć co najmniej 8 znaków")
+        if not re.search(r"[A-Za-z]", v):
+            raise ValueError("Hasło musi zawierać co najmniej jedną literę")
+        if not re.search(r"\d", v):
+            raise ValueError("Hasło musi zawierać co najmniej jedną cyfrę")
+        if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", v):
+            raise ValueError("Hasło musi zawierać co najmniej jeden symbol specjalny")
+        return v
 
 
 class UserRead(UserBase):

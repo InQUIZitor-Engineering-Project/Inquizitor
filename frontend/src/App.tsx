@@ -1,6 +1,7 @@
 import React, { type JSX } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider, useAuth } from "./context/AuthContext";
+import { AuthProvider } from "./context/AuthContext";
+import { useAuth } from "./hooks/useAuth";
 
 import Navbar from "./components/Navbar/Navbar";
 
@@ -15,6 +16,8 @@ import FAQPage from './pages/FAQPage/FAQPage';
 import CreateTestPage from "./pages/CreateTestPage/CreateTestPage";
 import MainLayout from "./layouts/MainLayout";
 import VerifyEmailPage from "./pages/VerifyEmailPage/VerifyEmailPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage/ResetPasswordPage";
 
 import ScrollToTop from "./components/ScrollToTop/ScrollToTop";
 
@@ -91,6 +94,22 @@ const App: React.FC = () => {
             }
           />
           <Route path="/verify-email" element={<VerifyEmailPage />} />
+          <Route 
+            path="/forgot-password" 
+            element={
+              <PublicOnlyRoute>
+                <ForgotPasswordPage />
+              </PublicOnlyRoute>
+            } 
+          />
+          <Route 
+            path="/reset-password" 
+            element={
+              <PublicOnlyRoute>
+                <ResetPasswordPage />
+              </PublicOnlyRoute>
+            } 
+          />
           <Route
             path="/profile"
             element={

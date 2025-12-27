@@ -14,7 +14,7 @@ import {
   DesktopBar,
 } from "./Navbar.styles";
 import { Logo, LogosWrapper } from "../../styles/common";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../hooks/useAuth";
 import { HashLink } from "react-router-hash-link";
 import { useLoader } from "../../components/Loader/GlobalLoader";
 import logoBook from "../../assets/logo_book.png";

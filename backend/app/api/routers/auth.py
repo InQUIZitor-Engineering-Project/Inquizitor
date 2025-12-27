@@ -2,7 +2,13 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 
 from app.api.dependencies import get_auth_service
-from app.api.schemas.auth import Token, RegistrationRequested, VerificationResponse
+from app.api.schemas.auth import (
+    Token,
+    RegistrationRequested,
+    VerificationResponse,
+    PasswordResetRequest,
+    PasswordResetConfirm,
+)
 from app.api.schemas.users import UserCreate
 from app.application.services import AuthService
 from app.application.services.auth_service import normalize_frontend_base_url
@@ -70,6 +76,33 @@ def verify_email(
             token_type=token_obj.token_type,
             redirect_url=redirect_url,
         )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+
+
+@router.post("/password-reset/request", status_code=status.HTTP_202_ACCEPTED)
+def request_password_reset(
+    payload: PasswordResetRequest,
+    auth_service: AuthService = Depends(get_auth_service),
+):
+    auth_service.request_password_reset(payload.email)
+    return {"message": "Jeśli e-mail istnieje, link do resetowania hasła został wysłany."}
+
+
+@router.post("/password-reset/reset")
+def reset_password(
+    payload: PasswordResetConfirm,
+    auth_service: AuthService = Depends(get_auth_service),
+):
+    try:
+        auth_service.reset_password(
+            token=payload.token,
+            new_password=payload.new_password,
+        )
+        return {"message": "Hasło zostało pomyślnie zresetowane."}
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
