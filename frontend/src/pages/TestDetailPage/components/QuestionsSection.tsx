@@ -88,11 +88,11 @@ const QuestionsSection: React.FC<QuestionsSectionProps> = ({
     <Stack $gap="lg">
       <Flex $justify="flex-end" $align="center">
         <Flex $gap="sm">
-          <Button $variant="ghost" $size="sm" onClick={actions.selectAll}>
+          <Button $variant="outline" $size="sm" onClick={actions.selectAll}>
             Zaznacz wszystko
           </Button>
           {selectedIds.length > 0 && (
-            <Button $variant="ghost" $size="sm" onClick={actions.clearSelection}>
+            <Button $variant="danger" $size="sm" onClick={actions.clearSelection}>
               Odznacz wszystko ({selectedIds.length})
             </Button>
           )}
