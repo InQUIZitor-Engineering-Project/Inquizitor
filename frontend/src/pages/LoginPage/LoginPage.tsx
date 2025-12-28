@@ -119,7 +119,11 @@ const LoginPage: React.FC = () => {
 
               {infoMessage && <AlertBar variant="success">{infoMessage}</AlertBar>}
 
-              {errorMessage && <AlertBar variant="danger">{errorMessage}</AlertBar>}
+              {errorMessage && (
+                <AlertBar variant={errorMessage.includes("nie zostało jeszcze aktywowane") ? "warning" : "danger"}>
+                  {errorMessage}
+                </AlertBar>
+              )}
 
               <Stack $gap="sm">
                 <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
