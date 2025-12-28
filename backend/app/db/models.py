@@ -98,6 +98,8 @@ class JobType(str, Enum):
     test_generation = "test_generation"
     pdf_export = "pdf_export"
     material_processing = "material_processing"
+    questions_regeneration = "questions_regeneration"
+    questions_conversion = "questions_conversion"
 
 class Material(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)

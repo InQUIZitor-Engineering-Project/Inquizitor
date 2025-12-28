@@ -7,7 +7,7 @@ import useDocumentTitle from "../../hooks/useDocumentTitle";
 import loginIllustration from "../../assets/login.png";
 import AuthLayout from "../Auth/components/AuthLayout";
 import AuthLogos from "../Auth/components/AuthLogos";
-import TermsModal from "./components/TermsModal";
+import { Modal } from "../../design-system/patterns";
 
 const MobileHide = styled.div`
   @media (max-width: 768px) {
@@ -174,8 +174,6 @@ const RegisterPage: React.FC = () => {
                 <label style={{ display: "flex", alignItems: "center", gap: 8 }} htmlFor="showPassword">
                   <Checkbox
                     id="showPassword"
-                    $size={18}
-                    style={{ flexShrink: 0 }}
                     checked={showPassword}
                     onChange={(e) => setShowPassword(e.target.checked)}
                   />
@@ -187,8 +185,6 @@ const RegisterPage: React.FC = () => {
                 <label style={{ display: "flex", alignItems: "flex-start", gap: 8 }} htmlFor="termsAccepted">
                   <Checkbox
                     id="termsAccepted"
-                    $size={18}
-                    style={{ flexShrink: 0 }}
                     checked={termsAccepted}
                     onChange={(e) => setTermsAccepted(e.target.checked)}
                   />
@@ -227,9 +223,73 @@ const RegisterPage: React.FC = () => {
         }
       />
 
-      {isModalOpen && (
-        <TermsModal onClose={() => setIsModalOpen(false)} />
-      )}
+      <Modal
+        isOpen={isModalOpen}
+        title="Warunki korzystania z generatora testów"
+        onClose={() => setIsModalOpen(false)}
+        maxWidth={720}
+        confirmLabel="Rozumiem"
+        onConfirm={() => setIsModalOpen(false)}
+      >
+        <Stack $gap="lg">
+          <Stack $gap="sm">
+            <Heading $level="h4" as="h4">
+              1. Prawa Własności Intelektualnej
+            </Heading>
+            <Text $variant="body3">
+              Użytkownik oświadcza, że jest właścicielem praw autorskich do przesłanych materiałów edukacyjnych (tekstów,
+              plików, grafik) lub posiada stosowną licencję/zgodę na ich wykorzystanie. Korzystając z Aplikacji,
+              Użytkownik udziela jej operatorowi ograniczonej, niewyłącznej, nieodpłatnej licencji na wykorzystanie
+              przesłanych treści wyłącznie w celu i na czas niezbędny do wygenerowania testu.
+            </Text>
+          </Stack>
+
+          <Stack $gap="sm">
+            <Heading $level="h4" as="h4">
+              2. Przetwarzanie Danych przez Model AI (Google Gemini)
+            </Heading>
+            <Text $variant="body3">
+              Użytkownik przyjmuje do wiadomości i akceptuje fakt, że w celu świadczenia usługi (wygenerowania pytań
+              testowych), treść przesłanych materiałów jest przekazywana do zewnętrznego dostawcy technologii – firmy
+              Google LLC, za pośrednictwem interfejsu programistycznego Gemini API.
+            </Text>
+            <ul style={{ paddingLeft: 18, margin: 0 }}>
+              <li>
+                <Text $variant="body3">
+                  Przekazanie danych jest niezbędne do technicznego wykonania usługi.
+                </Text>
+              </li>
+              <li>
+                <Text $variant="body3">
+                  Dane są przetwarzane zgodnie z polityką prywatności i bezpieczeństwa Google Cloud AI.
+                </Text>
+              </li>
+            </ul>
+          </Stack>
+
+          <Stack $gap="sm">
+            <Heading $level="h4" as="h4">
+              3. Odpowiedzialność Użytkownika
+            </Heading>
+            <Text $variant="body3">
+              Użytkownik ponosi wyłączną odpowiedzialność za treść przesyłanych materiałów. Zabrania się przesyłania
+              treści naruszających prawa osób trzecich, poufnych danych osobowych (RODO), treści obraźliwych lub
+              niezgodnych z prawem.
+            </Text>
+          </Stack>
+
+          <Stack $gap="sm">
+            <Heading $level="h4" as="h4">
+              4. Ograniczenie Odpowiedzialności
+            </Heading>
+            <Text $variant="body3">
+              Testy generowane są automatycznie przez algorytmy sztucznej inteligencji (LLM). Mimo wysokiej skuteczności
+              modeli językowych, system może generować odpowiedzi nieprecyzyjne lub błędne merytorycznie. Użytkownik
+              zobowiązany jest do samodzielnej weryfikacji testu przed jego użyciem.
+            </Text>
+          </Stack>
+        </Stack>
+      </Modal>
     </>
   );
 };

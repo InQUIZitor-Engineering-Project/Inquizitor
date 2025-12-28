@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 
-from app.api.schemas.tests import TestGenerateRequest, PdfExportConfig
+from app.api.schemas.tests import TestGenerateRequest, PdfExportConfig, BulkRegenerateQuestionsRequest, BulkConvertQuestionsRequest
 from app.celery_app import celery_app
 from app.domain.models.enums import JobStatus
 
@@ -124,6 +124,70 @@ def export_custom_test_pdf_task(self, job_id: int, owner_id: int, test_id: int, 
         return stored_path
     except Exception as exc:  # noqa: BLE001
         logger.exception("Custom PDF export job %s failed: %s", job_id, exc)
+        job_service.update_job_status(
+            job_id=job_id,
+            status=JobStatus.FAILED,
+            error=str(exc),
+        )
+        raise
+
+
+@celery_app.task(name="app.tasks.bulk_regenerate_questions", bind=True)
+def bulk_regenerate_questions_task(self, job_id: int, owner_id: int, test_id: int, payload_dict: dict):
+    test_service, job_service, _ = _get_services()
+
+    try:
+        job_service.update_job_status(job_id=job_id, status=JobStatus.RUNNING)
+    except Exception as exc:  # noqa: BLE001
+        logger.exception("Failed to mark job %s as running: %s", job_id, exc)
+
+    try:
+        payload = BulkRegenerateQuestionsRequest(**payload_dict)
+        num_regenerated = test_service.bulk_regenerate_questions(
+            owner_id=owner_id,
+            test_id=test_id,
+            payload=payload,
+        )
+        job_service.update_job_status(
+            job_id=job_id,
+            status=JobStatus.DONE,
+            result={"num_regenerated": num_regenerated, "test_id": test_id},
+        )
+        return num_regenerated
+    except Exception as exc:  # noqa: BLE001
+        logger.exception("Bulk regeneration job %s failed: %s", job_id, exc)
+        job_service.update_job_status(
+            job_id=job_id,
+            status=JobStatus.FAILED,
+            error=str(exc),
+        )
+        raise
+
+
+@celery_app.task(name="app.tasks.bulk_convert_questions", bind=True)
+def bulk_convert_questions_task(self, job_id: int, owner_id: int, test_id: int, payload_dict: dict):
+    test_service, job_service, _ = _get_services()
+
+    try:
+        job_service.update_job_status(job_id=job_id, status=JobStatus.RUNNING)
+    except Exception as exc:  # noqa: BLE001
+        logger.exception("Failed to mark job %s as running: %s", job_id, exc)
+
+    try:
+        payload = BulkConvertQuestionsRequest(**payload_dict)
+        num_converted = test_service.bulk_convert_questions(
+            owner_id=owner_id,
+            test_id=test_id,
+            payload=payload,
+        )
+        job_service.update_job_status(
+            job_id=job_id,
+            status=JobStatus.DONE,
+            result={"num_converted": num_converted, "test_id": test_id},
+        )
+        return num_converted
+    except Exception as exc:  # noqa: BLE001
+        logger.exception("Bulk conversion job %s failed: %s", job_id, exc)
         job_service.update_job_status(
             job_id=job_id,
             status=JobStatus.FAILED,

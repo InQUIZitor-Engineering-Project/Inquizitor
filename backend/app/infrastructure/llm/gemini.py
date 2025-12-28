@@ -14,91 +14,13 @@ from app.core.config import get_settings
 from app.domain.models import Question
 from app.domain.models.enums import QuestionDifficulty
 from app.domain.services import QuestionGenerator
+from .prompts import PromptBuilder
 
 logger = logging.getLogger(__name__)
 
 
 def _build_prompt(text: str, params: GenerateParams) -> str:
-    c_tf = params.closed.true_false
-    c_sc = params.closed.single_choice
-    c_mc = params.closed.multi_choice
-    c_total = c_tf + c_sc + c_mc
-
-    additional = (params.additional_instructions or "").strip()
-
-    parts = [
-        "Pracujesz jako ekspert dydaktyczny języka polskiego.",
-        "Twoim zadaniem jest przygotowanie pytań testowych na podstawie przekazanego materiału.",
-        "Każde pytanie i wszystkie odpowiedzi muszą być w języku polskim.",
-        f"Na podstawie poniższego tekstu utwórz łącznie {c_total} pytań zamkniętych oraz {params.num_open} pytań otwartych.",
-        f"Z pytań zamkniętych przygotuj dokładnie: {c_tf} × prawda/fałsz, {c_sc} × jednokrotnego wyboru oraz {c_mc} × wielokrotnego wyboru.",
-        "",
-        "Dodatkowo wygeneruj krótki, treściwy tytuł testu po polsku, który dobrze opisuje główny temat materiału.",
-        "",
-        f"Rozłóż poziomy trudności następująco: {params.easy} łatwych, {params.medium} średnich, {params.hard} trudnych.",
-        "",
-        "Zwróć DOKŁADNIE JEDEN obiekt JSON o strukturze:",
-        """
-        {
-        "title": "Krótki tytuł testu po polsku",
-        "questions": [
-            {
-            "text": "...",               // treść pytania
-            "is_closed": true | false,   // pytanie zamknięte / otwarte
-            "difficulty": 1 | 2 | 3,     // 1=łatwe, 2=średnie, 3=trudne
-            "choices": [ ... ] lub null, // dla zamkniętych
-            "correct_choices": [ ... ] lub null  // dla zamkniętych (stringi lub indeksy)
-            }
-        ]
-        }
-        """,
-        "Wymagania:",
-        f"- Łącznie pytań: {c_total + params.num_open}.",
-        f"- Dokładnie {c_total} zamkniętych ({c_tf} TF, {c_sc} single, {c_mc} multi) i {params.num_open} otwartych.",
-        "- Jeśli w treści pytania lub odpowiedzi pojawia się zapis matematyczny (wzór, równanie, wyrażenie), zapisuj go w składni LaTeX.",
-        '- Dla matematyki w tekście używaj WYŁĄCZNIE formatu "$...$", np.: `"text": "Ile wynosi $x^2 + y^2$?"`.',
-        '- Dla osobnych wzorów możesz użyć `$$...$$`, np.: `"text": "Podaj wynik: $$\\\\int_0^1 x^2\\\\,dx$$"`.',
-        "- Nie używaj innych notacji (takich jak `\\( ... \\)`, `\\[ ... \\]`, HTML, Markdown).",
-        "- Zwróć WYŁĄCZNIE poprawny JSON (bez komentarzy/tekstu dookoła).",
-        "- Upewnij się, że wszystkie backslash'e w LaTeX są poprawnie zapisane w JSON (np. \"$\\\\frac{1}{2}$\").",
-        "- Jeśli czegoś nie możesz wygenerować, i tak zwróć poprawny JSON (pusta lista 'questions').",
-        "- `is_closed` musi być bool, `difficulty` musi być jedną z wartości 1, 2 lub 3.",
-        "- Pytania zamknięte: co najmniej 2 niepuste `choices`; `correct_choices` musi zawierać co najmniej jedną poprawną odpowiedź, odnoszącą się do istniejących `choices` (preferuj stringi; indeksy tylko jeśli wskazują na istniejącą pozycję).",
-        "- Usuń duplikaty i puste stringi w `choices` oraz `correct_choices`.",
-        "- NIE numeruj treści pytań ani odpowiedzi: nie dodawaj prefiksów typu '1.', 'Pytanie 1', '-', '•' ani innych numerów w polach `text` i `choices`.",
-        "- Wszystkie pytania muszą wynikać z tekstu źródłowego; nie wymyślaj danych ani nazw własnych. Jeśli brakuje danych, pomiń takie pytanie.",
-        "- Nie twórz pytań okołotematycznych o organizację, regulaminy, narzędzia, procedury, meta-informacje (czas, sprzęt, zasady, tło historyczne niezawarte w tekście) ani o to, co należy zrobić poza zakresem merytoryki.",
-        "- Preferuj pytania sprawdzające zrozumienie pojęć, relacji, wnioskowania, obliczeń, zastosowań, dowodów, kroków algorytmicznych; unikaj pytań opisowych o otoczkę, ciekawostki, anegdoty.",
-        "- Format wyjścia: wyłącznie JSON zgodny ze schematem; brak Markdown, komentarzy ani code fences.",
-        "- Przed zwróceniem sprawdź, czy JSON spełnia schemat, zachowuje podaną liczność pytań i brak numeracji w treści.",
-        "- Przykład minimalny (zamknięte + otwarte, bez numeracji):",
-        '''
-        {
-        "title": "Przykładowy tytuł",
-        "questions": [
-            {
-            "text": "Jakie jest główne źródło energii gwiazd?",
-            "is_closed": true,
-            "difficulty": 2,
-            "choices": ["Fuzja jądrowa", "Rozpad promieniotwórczy", "Spalanie chemiczne"],
-            "correct_choices": ["Fuzja jądrowa"]
-            },
-            {
-            "text": "Wyjaśnij, na czym polega fotosynteza.",
-            "is_closed": false,
-            "difficulty": 1
-            }
-        ]
-        }
-        ''',
-    ]
-
-    
-    if additional:
-        parts.append(f"- Weź pod uwagę następujące preferencje odnośnie generowanego testu: {additional}")
-
-    parts.append(f"Tekst źródłowy:\n{text}\n")
-    return "\n".join(parts)
+    return PromptBuilder.build_full_test_prompt(text, params)
 
 
 def _response_schema() -> dict:

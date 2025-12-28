@@ -24,6 +24,8 @@ class JobType(Enum):
     TEST_GENERATION = "test_generation"
     PDF_EXPORT = "pdf_export"
     MATERIAL_PROCESSING = "material_processing"
+    QUESTIONS_REGENERATION = "questions_regeneration"
+    QUESTIONS_CONVERSION = "questions_conversion"
 
 
 class MaterialType(Enum):
