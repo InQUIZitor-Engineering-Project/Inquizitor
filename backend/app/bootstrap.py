@@ -156,9 +156,15 @@ class AppContainer:
     def _create_email_sender(self) -> ResendEmailSender:
         if not self._settings.RESEND_API_KEY or not self._settings.EMAIL_FROM:
             raise ValueError("RESEND_API_KEY and EMAIL_FROM must be configured for email sending")
+        
+        # Use specific branding logo from assets domain
+        logo_url = "https://assets.inquizitor.pl/branding/logo_full.png"
+
         return ResendEmailSender(
             api_key=self._settings.RESEND_API_KEY,
             sender=self._settings.EMAIL_FROM,
+            frontend_url=self._settings.FRONTEND_BASE_URL or "http://localhost:5173",
+            logo_url=logo_url,
         )
 
     @staticmethod
