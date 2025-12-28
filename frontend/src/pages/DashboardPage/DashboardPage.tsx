@@ -2,12 +2,11 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Flex, Stack } from "../../design-system/primitives";
 import Footer from "../../components/Footer/Footer";
-import ConfirmationModal from "../../components/ConfirmationModal/ConfirmationModal";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import useDashboard from "./hooks/useDashboard";
 import EmptyState from "./components/EmptyState";
 import dashboardWelcome from "../../assets/dashboard_welcome.png";
-import { PageContainer, PageSection } from "../../design-system/patterns";
+import { PageContainer, PageSection, Modal } from "../../design-system/patterns";
 
 const EMPTY_ILLUSTRATION = dashboardWelcome;
 const HUB_ILLUSTRATION = dashboardWelcome;
@@ -59,7 +58,16 @@ const DashboardPage: React.FC = () => {
       <Footer />
 
       {testIdToDelete !== null && (
-        <ConfirmationModal onCancel={closeDeleteModal} onConfirm={confirmDelete} />
+        <Modal
+          isOpen={true}
+          title="Usuń test"
+          onClose={closeDeleteModal}
+          onConfirm={confirmDelete}
+          variant="danger"
+          confirmLabel="Usuń"
+        >
+          Tej operacji nie można cofnąć. Wszystkie pytania w tym teście również zostaną usunięte.
+        </Modal>
       )}
     </Flex>
   );

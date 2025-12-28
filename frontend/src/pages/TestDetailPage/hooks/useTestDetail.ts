@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useOutletContext, useParams } from "react-router-dom";
 import { useLoader } from "../../../components/Loader/GlobalLoader";
 import useDocumentTitle from "../../../hooks/useDocumentTitle";
@@ -6,7 +6,9 @@ import useTestData, { sortQuestions } from "./useTestData";
 import useQuestionDraft from "./useQuestionDraft";
 import useTitleEdit from "./useTitleEdit";
 import usePdfConfig from "./usePdfConfig";
+import useJobPolling from "../../../hooks/useJobPolling";
 import type { PdfExportConfig, TestDetail } from "../../../services/test";
+import { bulkDeleteQuestions, bulkUpdateQuestions, bulkRegenerateQuestions, bulkConvertQuestions } from "../../../services/test";
 
 type LayoutCtx = { refreshSidebarTests: () => Promise<void> };
 
@@ -22,11 +24,19 @@ type UseTestDetailResult = {
     pdfConfigOpen: boolean;
     testIdToDelete: number | null;
     questionIdToDelete: number | null;
+    isRegenerateModalOpen: boolean;
+    regenerationInstruction: string;
+    isDifficultyModalOpen: boolean;
+    isTypeModalOpen: boolean;
+    isBulkDeleteModalOpen: boolean;
+    isMobileMenuOpen: boolean;
+    tempDifficulty: number | null;
     editorError: string | null;
     savingEdit: boolean;
     savingAdd: boolean;
     loading: boolean;
     error: string | null;
+    selectedIds: number[];
   };
   derived: {
     closedCount: number;
@@ -53,6 +63,25 @@ type UseTestDetailResult = {
     openQuestionDeleteModal: (qid: number) => void;
     closeQuestionDeleteModal: () => void;
     confirmQuestionDelete: () => Promise<void>;
+    toggleSelect: (qid: number) => void;
+    selectAll: () => void;
+    clearSelection: () => void;
+    handleBulkDelete: () => Promise<void>;
+    handleBulkUpdate: (fields: { difficulty?: number; is_closed?: boolean }) => Promise<void>;
+    handleBulkRegenerate: () => Promise<void>;
+    openRegenerateModal: () => void;
+    closeRegenerateModal: () => void;
+    setRegenerationInstruction: (s: string) => void;
+    openDifficultyModal: () => void;
+    closeDifficultyModal: () => void;
+    openTypeModal: () => void;
+    closeTypeModal: () => void;
+    openBulkDeleteModal: () => void;
+    closeBulkDeleteModal: () => void;
+    openMobileMenu: () => void;
+    closeMobileMenu: () => void;
+    handleBulkTypeChange: (targetType: "open" | "closed") => Promise<void>;
+    setTempDifficulty: (d: number) => void;
     beginTitleEdit: (title: string) => void;
     saveTitle: () => Promise<void>;
     cancelTitle: () => void;
@@ -70,7 +99,7 @@ type UseTestDetailResult = {
 
 const useTestDetail = (): UseTestDetailResult => {
   const { refreshSidebarTests } = useOutletContext<LayoutCtx>();
-  const { withLoader } = useLoader();
+  const { withLoader, startLoading, stopLoading } = useLoader();
   const { data, loading, error, refresh, deleteCurrent, setData } = useTestData();
   const {
     state: draftState,
@@ -80,8 +109,32 @@ const useTestDetail = (): UseTestDetailResult => {
   const { state: titleState, actions: titleActions } = useTitleEdit();
   const { state: pdfState, actions: pdfActions } = usePdfConfig();
 
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const clearSelection = () => setSelectedIds([]);
+
+  const pollingOptions = useMemo(() => ({
+    onDone: async () => {
+      await refresh();
+      stopLoading();
+      clearSelection();
+    },
+    onFail: (job: any) => {
+      stopLoading();
+      alert(job.error || "Regeneracja pytań nie powiodła się");
+    },
+  }), [refresh, stopLoading]);
+
+  const jobPolling = useJobPolling(pollingOptions);
+
   const [testIdToDelete, setTestIdToDelete] = useState<number | null>(null);
   const [questionIdToDelete, setQuestionIdToDelete] = useState<number | null>(null);
+  const [isRegenerateModalOpen, setIsRegenerateModalOpen] = useState(false);
+  const [regenerationInstruction, setRegenerationInstruction] = useState("");
+  const [isDifficultyModalOpen, setIsDifficultyModalOpen] = useState(false);
+  const [isTypeModalOpen, setIsTypeModalOpen] = useState(false);
+  const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [tempDifficulty, setTempDifficulty] = useState<number | null>(null);
 
   const { testId } = useParams<{ testId: string }>();
   const testIdNum = Number(testId);
@@ -131,6 +184,107 @@ const useTestDetail = (): UseTestDetailResult => {
       handleCloseQuestionDeleteModal();
     }
   };
+
+  const toggleSelect = (qid: number) => {
+    setSelectedIds((prev) =>
+      prev.includes(qid) ? prev.filter((id) => id !== qid) : [...prev, qid]
+    );
+  };
+
+  const selectAll = () => {
+    if (!data) return;
+    setSelectedIds(data.questions.map((q) => q.id));
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0 || !data) return;
+
+    setIsBulkDeleteModalOpen(false);
+    await withLoader(async () => {
+      try {
+        await bulkDeleteQuestions(data.test_id, { question_ids: selectedIds });
+        await refresh();
+        clearSelection();
+      } catch (e: any) {
+        alert(e.message || "Błąd podczas masowego usuwania");
+      }
+    });
+  };
+
+  const openBulkDeleteModal = () => setIsBulkDeleteModalOpen(true);
+  const closeBulkDeleteModal = () => setIsBulkDeleteModalOpen(false);
+
+  const openMobileMenu = () => setIsMobileMenuOpen(true);
+  const closeMobileMenu = () => setIsMobileMenuOpen(false);
+
+  const handleBulkUpdate = async (fields: { difficulty?: number; is_closed?: boolean }) => {
+    if (selectedIds.length === 0 || !data) return;
+
+    await withLoader(async () => {
+      try {
+        await bulkUpdateQuestions(data.test_id, {
+          question_ids: selectedIds,
+          ...fields,
+        });
+        await refresh();
+        clearSelection();
+        closeDifficultyModal();
+      } catch (e: any) {
+        alert(e.message || "Błąd podczas masowej aktualizacji");
+      }
+    });
+  };
+
+  const handleBulkRegenerate = async () => {
+    if (selectedIds.length === 0 || !data) return;
+
+    const instruction = regenerationInstruction.trim();
+    setIsRegenerateModalOpen(false);
+    setRegenerationInstruction(""); // Czyścimy po zamknięciu
+    startLoading();
+
+    try {
+      const res = await bulkRegenerateQuestions(data.test_id, {
+        question_ids: selectedIds,
+        instruction: instruction || undefined,
+      });
+      jobPolling.startPolling(res.job_id);
+    } catch (e: any) {
+      stopLoading();
+      alert(e.message || "Błąd podczas inicjowania regeneracji pytań");
+    }
+  };
+
+  const openRegenerateModal = () => setIsRegenerateModalOpen(true);
+  const closeRegenerateModal = () => setIsRegenerateModalOpen(false);
+
+  const openDifficultyModal = () => setIsDifficultyModalOpen(true);
+  const closeDifficultyModal = () => {
+    setIsDifficultyModalOpen(false);
+    setTempDifficulty(null);
+  };
+
+  const openTypeModal = () => setIsTypeModalOpen(true);
+  const closeTypeModal = () => setIsTypeModalOpen(false);
+
+  const handleBulkTypeChange = async (targetType: "open" | "closed") => {
+    if (selectedIds.length === 0 || !data) return;
+
+    closeTypeModal();
+    startLoading();
+
+    try {
+      const res = await bulkConvertQuestions(data.test_id, {
+        question_ids: selectedIds,
+        target_type: targetType,
+      });
+      jobPolling.startPolling(res.job_id);
+    } catch (e: any) {
+      stopLoading();
+      alert(e.message || "Błąd podczas konwersji pytań");
+    }
+  };
+
   const beginTitleEdit = (title: string) => titleActions.begin(title);
   const saveTitle = async () => {
     await titleActions.save(data, refreshSidebarTests, setDataSorted);
@@ -180,11 +334,19 @@ const useTestDetail = (): UseTestDetailResult => {
       pdfConfigOpen: pdfState.pdfConfigOpen,
       testIdToDelete,
       questionIdToDelete,
+      isRegenerateModalOpen,
+      regenerationInstruction,
+      isDifficultyModalOpen,
+      isTypeModalOpen,
+      isBulkDeleteModalOpen,
+      isMobileMenuOpen,
+      tempDifficulty,
       editorError: draftState.editorError,
       savingEdit: draftState.savingEdit,
       savingAdd: draftState.savingAdd,
       loading,
       error,
+      selectedIds,
     },
     derived: {
       closedCount,
@@ -211,6 +373,25 @@ const useTestDetail = (): UseTestDetailResult => {
       openQuestionDeleteModal: handleOpenQuestionDeleteModal,
       closeQuestionDeleteModal: handleCloseQuestionDeleteModal,
       confirmQuestionDelete: handleConfirmQuestionDelete,
+      toggleSelect,
+      selectAll,
+      clearSelection,
+      handleBulkDelete,
+      handleBulkUpdate,
+      handleBulkRegenerate,
+      openRegenerateModal,
+      closeRegenerateModal,
+      setRegenerationInstruction,
+      openDifficultyModal,
+      closeDifficultyModal,
+      openTypeModal,
+      closeTypeModal,
+      openBulkDeleteModal,
+      closeBulkDeleteModal,
+      openMobileMenu,
+      closeMobileMenu,
+      handleBulkTypeChange,
+      setTempDifficulty,
       beginTitleEdit,
       saveTitle,
       cancelTitle,

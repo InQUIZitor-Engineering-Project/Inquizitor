@@ -7,6 +7,10 @@ from app.api.schemas.tests import (
     QuestionOut,
     QuestionCreate,
     QuestionUpdate,
+    BulkUpdateQuestionsRequest,
+    BulkDeleteQuestionsRequest,
+    BulkRegenerateQuestionsRequest,
+    BulkConvertQuestionsRequest,
     TestTitleUpdate,
     TestOut,
     PdfExportConfig,
@@ -17,7 +21,13 @@ from app.application.services import JobService
 from app.core.security import get_current_user
 from app.db.models import User
 from app.domain.models.enums import JobType
-from app.tasks.tests import generate_test_task, export_test_pdf_task, export_custom_test_pdf_task
+from app.tasks.tests import (
+    generate_test_task,
+    export_test_pdf_task,
+    export_custom_test_pdf_task,
+    bulk_regenerate_questions_task,
+    bulk_convert_questions_task,
+)
 
 router = APIRouter()
 
@@ -118,6 +128,89 @@ def delete_question(
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.patch("/{test_id}/questions/bulk")
+def bulk_update_questions(
+    test_id: int,
+    payload: BulkUpdateQuestionsRequest,
+    current_user: User = Depends(get_current_user),
+    test_service: TestService = Depends(get_test_service),
+):
+    try:
+        test_service.bulk_update_questions(
+            owner_id=current_user.id,
+            test_id=test_id,
+            payload=payload,
+        )
+        return {"msg": "Questions updated successfully"}
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.delete("/{test_id}/questions/bulk", status_code=status.HTTP_204_NO_CONTENT)
+def bulk_delete_questions(
+    test_id: int,
+    payload: BulkDeleteQuestionsRequest,
+    current_user: User = Depends(get_current_user),
+    test_service: TestService = Depends(get_test_service),
+):
+    try:
+        test_service.bulk_delete_questions(
+            owner_id=current_user.id,
+            test_id=test_id,
+            payload=payload,
+        )
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.post("/{test_id}/questions/bulk/regenerate", response_model=JobEnqueueResponse)
+def bulk_regenerate_questions(
+    test_id: int,
+    payload: BulkRegenerateQuestionsRequest,
+    current_user: User = Depends(get_current_user),
+    test_service: TestService = Depends(get_test_service),
+    job_service: JobService = Depends(get_job_service),
+):
+    try:
+        # Sprawdzamy czy test należy do usera
+        test_service.get_test_detail(owner_id=current_user.id, test_id=test_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    job = job_service.create_job(
+        owner_id=current_user.id,
+        job_type=JobType.QUESTIONS_REGENERATION,
+        payload={"test_id": test_id, "question_ids": payload.question_ids, "instruction": payload.instruction},
+    )
+    bulk_regenerate_questions_task.delay(job.id, current_user.id, test_id, payload.model_dump())
+    return JobEnqueueResponse(job_id=job.id, status=job.status.value)
+
+
+@router.post("/{test_id}/questions/bulk/convert", response_model=JobEnqueueResponse)
+def bulk_convert_questions(
+    test_id: int,
+    payload: BulkConvertQuestionsRequest,
+    current_user: User = Depends(get_current_user),
+    test_service: TestService = Depends(get_test_service),
+    job_service: JobService = Depends(get_job_service),
+):
+    try:
+        # Sprawdzamy czy test należy do usera
+        test_service.get_test_detail(owner_id=current_user.id, test_id=test_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    job = job_service.create_job(
+        owner_id=current_user.id,
+        job_type=JobType.QUESTIONS_CONVERSION,
+        payload={"test_id": test_id, "question_ids": payload.question_ids, "target_type": payload.target_type},
+    )
+    bulk_convert_questions_task.delay(job.id, current_user.id, test_id, payload.model_dump())
+    return JobEnqueueResponse(job_id=job.id, status=job.status.value)
+
 
 @router.get("/{test_id}/export/pdf", response_model=JobEnqueueResponse)
 def export_pdf(

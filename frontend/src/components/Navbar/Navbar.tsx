@@ -14,11 +14,11 @@ import {
   DesktopBar,
 } from "./Navbar.styles";
 import { Logo, LogosWrapper } from "../../styles/common";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../hooks/useAuth";
 import { HashLink } from "react-router-hash-link";
 import { useLoader } from "../../components/Loader/GlobalLoader";
 import logoBook from "../../assets/logo_book.png";
-import logoText from "../../assets/logo_tekst.png";
+import logoText from "../../assets/logo_text.png";
 import hamburgerIcon from "../../assets/hamburger.png";
 import { PageContainer } from "../../design-system/patterns";
 import { Flex } from "../../design-system/primitives";

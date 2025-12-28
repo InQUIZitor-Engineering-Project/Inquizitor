@@ -64,6 +64,26 @@ export interface QuestionCreatePayload {
 
 export type QuestionUpdatePayload = Partial<QuestionCreatePayload>;
 
+export interface BulkUpdatePayload {
+  question_ids: number[];
+  difficulty?: number;
+  is_closed?: boolean;
+}
+
+export interface BulkDeletePayload {
+  question_ids: number[];
+}
+
+export interface BulkRegeneratePayload {
+  question_ids: number[];
+  instruction?: string;
+}
+
+export interface BulkConvertPayload {
+  question_ids: number[];
+  target_type: "open" | "closed";
+}
+
 import { apiRequest } from "./api";
 
 async function handleJson<T>(res: Response, defaultMessage: string): Promise<T> {
@@ -181,6 +201,56 @@ export async function deleteQuestion(
     }
     throw new Error(msg);
   }
+}
+
+export async function bulkUpdateQuestions(
+  testId: number,
+  payload: BulkUpdatePayload
+): Promise<void> {
+  const res = await apiRequest(`/tests/${testId}/questions/bulk`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.detail || "Nie udało się zaktualizować pytań");
+  }
+}
+
+export async function bulkDeleteQuestions(
+  testId: number,
+  payload: BulkDeletePayload
+): Promise<void> {
+  const res = await apiRequest(`/tests/${testId}/questions/bulk`, {
+    method: "DELETE",
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.detail || "Nie udało się usunąć pytań");
+  }
+}
+
+export async function bulkRegenerateQuestions(
+  testId: number,
+  payload: BulkRegeneratePayload
+): Promise<JobEnqueueResponse> {
+  const res = await apiRequest(`/tests/${testId}/questions/bulk/regenerate`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+  return handleJson<JobEnqueueResponse>(res, "Nie udało się zainicjować regeneracji pytań");
+}
+
+export async function bulkConvertQuestions(
+  testId: number,
+  payload: BulkConvertPayload
+): Promise<JobEnqueueResponse> {
+  const res = await apiRequest(`/tests/${testId}/questions/bulk/convert`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+  return handleJson<JobEnqueueResponse>(res, "Nie udało się zainicjować konwersji pytań");
 }
 
 export async function deleteTest(

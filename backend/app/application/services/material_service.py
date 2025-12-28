@@ -91,7 +91,7 @@ class MaterialService:
         with self._uow_factory() as uow:
             material = uow.materials.get(material_id)
             if not material or material.owner_id != owner_id:
-                raise ValueError("Material not found")
+                raise ValueError("Materiał nie został znaleziony")
         return dto.to_material_out(material)
 
     def update_material(
@@ -104,7 +104,7 @@ class MaterialService:
         with self._uow_factory() as uow:
             material = uow.materials.get(material_id)
             if not material or material.owner_id != owner_id:
-                raise ValueError("Material not found")
+                raise ValueError("Materiał nie został znaleziony")
 
             if payload.extracted_text is not None:
                 material.extracted_text = self._sanitize_text(payload.extracted_text)
@@ -122,7 +122,7 @@ class MaterialService:
         with self._uow_factory() as uow:
             material = uow.materials.get(material_id)
             if not material or material.owner_id != owner_id:
-                raise ValueError("Material not found")
+                raise ValueError("Materiał nie został znaleziony")
 
             file_id = material.file.id
             stored_path = str(material.file.stored_path)
@@ -158,11 +158,11 @@ class MaterialService:
         with self._uow_factory() as uow:
             material = uow.materials.get(material_id)
             if not material or material.owner_id != owner_id:
-                raise ValueError("Material not found")
+                raise ValueError("Materiał nie został znaleziony")
 
             file_record = material.file
             if not file_record:
-                raise ValueError("File not found for material")
+                raise ValueError("Plik nie został znaleziony dla tego materiału")
 
             with self._storage.download_to_temp(
                 stored_path=str(file_record.stored_path)

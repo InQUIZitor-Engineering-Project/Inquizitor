@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { Stack, Heading, Text, Button } from "../../design-system/primitives";
 import { verifyEmail } from "../../services/auth";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../hooks/useAuth";
 
 const VerifyEmailPage: React.FC = () => {
   const [searchParams] = useSearchParams();

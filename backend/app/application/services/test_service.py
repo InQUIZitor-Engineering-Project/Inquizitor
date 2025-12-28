@@ -1,43 +1,50 @@
 """Service handling test generation and management use-cases."""
 
 from __future__ import annotations
-import logging
 
-logger = logging.getLogger(__name__)
 import json
+import logging
 import random
-from pathlib import Path
-from typing import Callable, Dict, List, Tuple
 import re
 import unicodedata
+from pathlib import Path
+from typing import Callable, Dict, List, Tuple
+
 from fastapi import HTTPException
 
 from app.api.schemas.tests import (
+    BulkConvertQuestionsRequest,
+    BulkDeleteQuestionsRequest,
+    BulkRegenerateQuestionsRequest,
+    BulkUpdateQuestionsRequest,
+    PdfExportConfig,
+    QuestionCreate,
+    QuestionOut,
+    QuestionUpdate,
     TestDetailOut,
     TestGenerateRequest,
     TestGenerateResponse,
     TestOut,
-    QuestionOut,
-    QuestionCreate,
-    QuestionUpdate,
-    PdfExportConfig,
 )
 from app.application import dto
-from app.application.interfaces import OCRService, QuestionGenerator, UnitOfWork, FileStorage
+from app.application.interfaces import FileStorage, OCRService, QuestionGenerator, UnitOfWork
+from app.db.models import Question as QuestionRow
+from app.db.models import Test as TestRow
 from app.domain.events import TestGenerated
 from app.domain.models import Test as TestDomain
 from app.domain.models.enums import QuestionDifficulty
-from app.db.models import Question as QuestionRow
-from app.db.models import Test as TestRow
-
 from app.infrastructure.exporting import (
     compile_tex_to_pdf,
-    render_test_to_tex,
     render_custom_test_to_tex,
+    render_test_to_tex,
     test_to_xml_bytes,
 )
-from app.infrastructure.llm.gemini import GeminiQuestionGenerator
 from app.infrastructure.extractors.extract_composite import composite_text_extractor
+from app.infrastructure.llm.gemini import GeminiQuestionGenerator
+from app.infrastructure.llm.prompts import PromptBuilder
+
+logger = logging.getLogger(__name__)
+
 
 class TestService:
     def __init__(
@@ -106,37 +113,20 @@ class TestService:
         return buckets[1] + buckets[2] + buckets[3] + buckets["other"]
 
     # --- LLM wariant pytań (bliźniaczy zestaw) ---
-    def _build_variant_prompt(self, questions: List[Dict]) -> str:
+    def _build_variant_prompt(self, questions: List[Dict], instruction: str | None = None) -> str:
         """
         Buduje prompt do wygenerowania wariantów pytań w jednej odpowiedzi JSON (lista).
         """
-        template = {
-            "text": "Nowe pytanie po polsku",
-            "is_closed": True,
-            "difficulty": 1,
-            "choices": ["A", "B"],
-            "correct_choices": ["A"],
-        }
-        return (
-            "Przygotuj dla każdego pytania nowy, bardzo podobny wariant po polsku.\n"
-            "- Zachowaj poziom trudności (difficulty) i typ (is_closed).\n"
-            "- Dla pytań zamkniętych zachowaj liczbę odpowiedzi i liczbę poprawnych; poprawne mogą się zmienić.\n"
-            "- Dla pytań otwartych tylko zmień treść.\n"
-            "- Nie powtarzaj oryginalnego tekstu; zmień dane/liczby/kontekst, ale zachowaj sens i trudność.\n"
-            "- Zwróć WYŁĄCZNIE JSON: listę obiektów w tej samej kolejności co wejście.\n"
-            f"Przykład pojedynczego obiektu: {json.dumps(template, ensure_ascii=False)}\n"
-            "Wejściowe pytania (JSON lista):\n"
-            f"{json.dumps(questions, ensure_ascii=False)}"
-        )
+        return PromptBuilder.build_regeneration_prompt(questions, instruction)
 
-    def _generate_llm_variant(self, questions: List[Dict]) -> List[Dict]:
+    def _generate_llm_variant(self, questions: List[Dict], instruction: str | None = None) -> List[Dict]:
         """
         Próbuje wygenerować wariant B pytań z użyciem LLM. W razie błędu zwraca oryginał.
         """
         if not questions:
             return questions
 
-        prompt = self._build_variant_prompt(questions)
+        prompt = self._build_variant_prompt(questions, instruction)
 
         try:
             client = GeminiQuestionGenerator._client()
@@ -185,14 +175,35 @@ class TestService:
                 if not isinstance(choices, list) or not choices:
                     variants.append(orig)
                     continue
-                if not isinstance(correct_choices, list) or len(correct_choices) == 0:
+                
+                # Czyścimy i normalizujemy choices
+                choices = [str(c).strip() for c in choices if str(c).strip()]
+                
+                if not choices:
                     variants.append(orig)
                     continue
+
+                if not isinstance(correct_choices, list):
+                    correct_choices = [correct_choices] if correct_choices is not None else []
+                
+                # Czyścimy i upewniamy się, że są w choices
+                correct_choices = [str(c).strip() for c in correct_choices if str(c).strip()]
+                correct_choices = [c for c in correct_choices if c in choices]
+
+                if not correct_choices:
+                    # Fallback do pierwszej opcji jeśli LLM nie zwrócił nic poprawnego z listy
+                    correct_choices = [choices[0]]
+
                 # Przytnij/uzupełnij do tej samej liczby co oryginał, aby zachować układ
                 target_len = len(orig.get("choices") or choices)
                 choices = choices[:target_len]
                 while len(choices) < target_len:
                     choices.append("")
+                
+                # Ponowna walidacja correct_choices po potencjalnym przycięciu choices
+                correct_choices = [c for c in correct_choices if c in choices]
+                if not correct_choices:
+                    correct_choices = [choices[0]]
 
             variants.append(
                 {
@@ -227,7 +238,7 @@ class TestService:
                 if request.file_id is not None:
                     source_file = uow.files.get(request.file_id)
                     if not source_file or source_file.owner_id != owner_id:
-                        raise ValueError("File not found")
+                        raise ValueError("Plik nie został znaleziony")
                     base_title = source_file.filename
                 else:
                     base_title = "From raw text"
@@ -242,7 +253,7 @@ class TestService:
                 else: 
                     source_file = uow.files.get(request.file_id)
                     if not source_file or source_file.owner_id != owner_id:
-                        raise ValueError("File not found")
+                        raise ValueError("Plik nie został znaleziony")
                     with self._storage.download_to_temp(
                         stored_path=str(source_file.stored_path)
                     ) as local_path:
@@ -304,7 +315,7 @@ class TestService:
         with self._uow_factory() as uow:
             test = uow.tests.get_with_questions(test_id)
             if not test or test.owner_id != owner_id:
-                raise ValueError("Test not found")
+                raise ValueError("Test nie został znaleziony")
 
             test.questions = self._sort_questions(test.questions)
             return dto.to_test_detail(test)
@@ -318,7 +329,7 @@ class TestService:
         with self._uow_factory() as uow:
             test = uow.tests.get(test_id)
             if not test or test.owner_id != owner_id:
-                raise ValueError("Test not found")
+                raise ValueError("Test nie został znaleziony")
             uow.tests.remove(test_id)
 
     def export_test_pdf(self, *, owner_id: int, test_id: int, show_answers: bool = False) -> Tuple[bytes, str]:
@@ -447,7 +458,7 @@ class TestService:
         with self._uow_factory() as uow:
             test = uow.tests.get(test_id)
             if not test or test.owner_id != owner_id:
-                raise ValueError("Test not found")
+                raise ValueError("Test nie został znaleziony")
 
             session = getattr(uow, "session", None)
             if session is None:
@@ -455,7 +466,7 @@ class TestService:
 
             question_row = session.get(QuestionRow, question_id)
             if not question_row or question_row.test_id != test_id:
-                raise ValueError("Question not found")
+                raise ValueError("Pytanie nie zostało znalezione")
 
             # ogarniamy payload niezależnie czy to Pydantic czy dict
             if isinstance(payload, QuestionUpdate):
@@ -489,6 +500,276 @@ class TestService:
                 correct_choices=question_row.correct_choices,
             )
 
+    def bulk_update_questions(
+        self,
+        *,
+        owner_id: int,
+        test_id: int,
+        payload: BulkUpdateQuestionsRequest,
+    ) -> None:
+        with self._uow_factory() as uow:
+            test = uow.tests.get(test_id)
+            if not test or test.owner_id != owner_id:
+                raise ValueError("Test nie został znaleziony")
+
+            session = getattr(uow, "session", None)
+            if session is None:
+                raise RuntimeError("UnitOfWork session is not initialized")
+
+            # Pobieramy pytania należące do tego testu
+            from sqlmodel import select
+            statement = select(QuestionRow).where(
+                QuestionRow.test_id == test_id,
+                QuestionRow.id.in_(payload.question_ids)
+            )
+            questions = session.exec(statement).all()
+
+            for q in questions:
+                if payload.difficulty is not None:
+                    q.difficulty = payload.difficulty
+                
+                if payload.is_closed is not None:
+                    q.is_closed = payload.is_closed
+                    if payload.is_closed is False:
+                        q.choices = None
+                        q.correct_choices = None
+                
+                session.add(q)
+            
+            session.flush()
+
+    def bulk_delete_questions(
+        self,
+        *,
+        owner_id: int,
+        test_id: int,
+        payload: BulkDeleteQuestionsRequest,
+    ) -> None:
+        with self._uow_factory() as uow:
+            test = uow.tests.get(test_id)
+            if not test or test.owner_id != owner_id:
+                raise ValueError("Test nie został znaleziony")
+
+            session = getattr(uow, "session", None)
+            if session is None:
+                raise RuntimeError("UnitOfWork session is not initialized")
+
+            from sqlalchemy import delete
+            statement = delete(QuestionRow).where(
+                QuestionRow.test_id == test_id,
+                QuestionRow.id.in_(payload.question_ids)
+            )
+            session.exec(statement)
+            session.flush()
+
+    def bulk_regenerate_questions(
+        self,
+        *,
+        owner_id: int,
+        test_id: int,
+        payload: BulkRegenerateQuestionsRequest,
+    ) -> int:
+        """
+        Regeneruje zaznaczone pytania przy użyciu LLM.
+        Zwraca liczbę zregenerowanych pytań.
+        """
+        with self._uow_factory() as uow:
+            test = uow.tests.get(test_id)
+            if not test or test.owner_id != owner_id:
+                raise ValueError("Test nie został znaleziony")
+
+            session = getattr(uow, "session", None)
+            if session is None:
+                raise RuntimeError("UnitOfWork session is not initialized")
+
+            from sqlmodel import select
+            statement = select(QuestionRow).where(
+                QuestionRow.test_id == test_id,
+                QuestionRow.id.in_(payload.question_ids)
+            )
+            questions_rows = session.exec(statement).all()
+            
+            if not questions_rows:
+                return 0
+
+            # Przygotowujemy payload dla LLM
+            questions_payload = [
+                {
+                    "id": q.id,
+                    "text": q.text,
+                    "is_closed": q.is_closed,
+                    "difficulty": q.difficulty,
+                    "choices": q.choices,
+                    "correct_choices": q.correct_choices,
+                }
+                for q in questions_rows
+            ]
+
+            # Wykorzystujemy istniejącą logikę generowania wariantów
+            new_variants = self._generate_llm_variant(questions_payload, payload.instruction)
+
+            # Aktualizujemy rekordy w bazie
+            updated_count = 0
+            for row in questions_rows:
+                # Szukamy odpowiadającego wariantu po ID (nasza metoda _generate_llm_variant zachowuje ID)
+                variant = next((v for v in new_variants if v.get("id") == row.id), None)
+                if variant:
+                    row.text = variant["text"]
+                    row.choices = variant["choices"]
+                    row.correct_choices = variant["correct_choices"]
+                    session.add(row)
+                    updated_count += 1
+            
+            session.flush()
+            return updated_count
+
+    def bulk_convert_questions(
+        self,
+        *,
+        owner_id: int,
+        test_id: int,
+        payload: BulkConvertQuestionsRequest,
+    ) -> int:
+        """
+        Konwertuje zaznaczone pytania (Otwarte <-> Zamknięte).
+        Dla Otwarte -> Zamknięte używa LLM.
+        """
+        with self._uow_factory() as uow:
+            test = uow.tests.get(test_id)
+            if not test or test.owner_id != owner_id:
+                raise ValueError("Test nie został znaleziony")
+
+            session = getattr(uow, "session", None)
+            if session is None:
+                raise RuntimeError("UnitOfWork session is not initialized")
+
+            from sqlmodel import select
+            statement = select(QuestionRow).where(
+                QuestionRow.test_id == test_id,
+                QuestionRow.id.in_(payload.question_ids)
+            )
+            questions_rows = session.exec(statement).all()
+            
+            if not questions_rows:
+                return 0
+
+            updated_count = 0
+            
+            # 1. Konwersja na Otwarte (wymaga LLM do wygładzenia treści)
+            if payload.target_type == "open":
+                to_convert_to_open = [q for q in questions_rows if q.is_closed]
+                if not to_convert_to_open:
+                    return 0
+
+                questions_payload = [
+                    {
+                        "id": q.id,
+                        "text": q.text,
+                        "choices": q.choices,
+                        "correct_choices": q.correct_choices,
+                        "difficulty": q.difficulty,
+                    }
+                    for q in to_convert_to_open
+                ]
+
+                prompt = PromptBuilder.build_closed_to_open_prompt(questions_payload)
+
+                try:
+                    client = GeminiQuestionGenerator._client()
+                    response = client.models.generate_content(
+                        model="gemini-2.5-flash",
+                        contents=prompt,
+                    )
+                    raw = (response.text or "").strip()
+                    if "```json" in raw:
+                        raw = raw.split("```json")[1].split("```")[0].strip()
+                    elif "```" in raw:
+                        raw = raw.split("```")[1].split("```")[0].strip()
+                    
+                    parsed = json.loads(raw)
+                    
+                    for row in to_convert_to_open:
+                        variant = next((v for v in parsed if v.get("id") == row.id), None)
+                        if variant:
+                            row.is_closed = False
+                            # AI wygładza treść, usuwając kontekst opcji wyboru
+                            row.text = str(variant.get("text", row.text)).strip()
+                            row.choices = None
+                            row.correct_choices = None
+                            session.add(row)
+                            updated_count += 1
+                    
+                    session.flush()
+                    return updated_count
+                except Exception as exc:
+                    logger.error("Failed to convert questions to open via LLM: %s", exc)
+                    raise RuntimeError(f"Błąd konwersji na otwarte przez AI: {str(exc)}")
+
+            # 2. Konwersja na Zamknięte (wymaga LLM)
+            # Filtrujemy tylko te, które faktycznie są otwarte
+            to_convert_to_closed = [q for q in questions_rows if not q.is_closed]
+            if not to_convert_to_closed:
+                return 0
+
+            questions_payload = [
+                {
+                    "id": q.id,
+                    "text": q.text,
+                    "difficulty": q.difficulty,
+                }
+                for q in to_convert_to_closed
+            ]
+
+            prompt = PromptBuilder.build_conversion_prompt(questions_payload)
+
+            try:
+                client = GeminiQuestionGenerator._client()
+                response = client.models.generate_content(
+                    model="gemini-2.5-flash",
+                    contents=prompt,
+                )
+                raw = (response.text or "").strip()
+                # Prosty cleanup markdowna
+                if "```json" in raw:
+                    raw = raw.split("```json")[1].split("```")[0].strip()
+                elif "```" in raw:
+                    raw = raw.split("```")[1].split("```")[0].strip()
+                
+                parsed = json.loads(raw)
+                
+                for row in to_convert_to_closed:
+                    variant = next((v for v in parsed if v.get("id") == row.id), None)
+                    if variant:
+                        row.is_closed = True
+                        
+                        # Aktualizujemy tekst pytania na ten od AI
+                        row.text = str(variant.get("text", row.text)).strip()
+                        
+                        # Pobieramy i czyścimy opcje
+                        raw_choices = variant.get("choices", ["A", "B", "C", "D"])
+                        row.choices = [str(c).strip() for c in raw_choices if str(c).strip()]
+                        
+                        # Pobieramy i czyścimy poprawne odpowiedzi, upewniając się że są w choices
+                        raw_correct = variant.get("correct_choices", [])
+                        if not isinstance(raw_correct, list):
+                            raw_correct = [raw_correct]
+                        
+                        clean_correct = [str(c).strip() for c in raw_correct if str(c).strip()]
+                        valid_correct = [c for c in clean_correct if c in row.choices]
+                        
+                        # Jeśli LLM nawaliło i nie podało poprawnej z listy, bierzemy pierwszą jako fallback
+                        if not valid_correct and row.choices:
+                            valid_correct = [row.choices[0]]
+                            
+                        row.correct_choices = valid_correct
+                        session.add(row)
+                        updated_count += 1
+                
+                session.flush()
+                return updated_count
+            except Exception as exc:
+                logger.error("Failed to convert questions to closed via LLM: %s", exc)
+                raise RuntimeError(f"Błąd konwersji przez AI: {str(exc)}")
 
     def add_question(
         self,
@@ -504,7 +785,7 @@ class TestService:
         with self._uow_factory() as uow:
             test = uow.tests.get(test_id)
             if not test or test.owner_id != owner_id:
-                raise ValueError("Test not found")
+                raise ValueError("Test nie został znaleziony")
 
             session = getattr(uow, "session", None)
             if session is None:
@@ -558,7 +839,7 @@ class TestService:
         with self._uow_factory() as uow:
             test = uow.tests.get(test_id)
             if not test or test.owner_id != owner_id:
-                raise ValueError("Test not found")
+                raise ValueError("Test nie został znaleziony")
 
             session = getattr(uow, "session", None)
             if session is None:
@@ -566,7 +847,7 @@ class TestService:
 
             question_row = session.get(QuestionRow, question_id)
             if not question_row or question_row.test_id != test_id:
-                raise ValueError("Question not found")
+                raise ValueError("Pytanie nie zostało znalezione")
 
             session.delete(question_row)
 
@@ -617,7 +898,7 @@ class TestService:
 
             test_row = session.get(TestRow, test_id)
             if not test_row or test_row.owner_id != owner_id:
-                raise ValueError("Test not found")
+                raise ValueError("Test nie został znaleziony")
 
             test_row.title = title
             session.add(test_row)

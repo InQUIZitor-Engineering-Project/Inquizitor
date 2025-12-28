@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}Potwierdź swój adres e-mail{% endblock %}
+
+{% block content %}
+    <h1>Witaj w Inquizitor!</h1>
+    <p>Cieszymy się, że do nas dołączyłeś. Aby móc w pełni korzystać ze wszystkich funkcji naszego serwisu, prosimy o potwierdzenie adresu e-mail.</p>
+    <p>Kliknij w poniższy przycisk, aby zweryfikować swoje konto:</p>
+    
+    <table role="presentation" border="0" cellspacing="0" cellpadding="0" align="center" style="margin: 24px auto;">
+        <tr>
+            <td align="center" class="button-td">
+                <a href="{{ verify_url }}" class="button-a">Potwierdź e-mail</a>
+            </td>
+        </tr>
+    </table>
+    
+    <p style="margin-top: 32px; font-size: 14px; color: #717171;">
+        Link wygaśnie za {{ expires_minutes }} minut. Jeśli przycisk nie działa, skopiuj i wklej poniższy adres do przeglądarki:
+        <br>
+        <a href="{{ verify_url }}">{{ verify_url }}</a>
+    </p>
+    
+    <div class="divider"></div>
+    
+    <p style="font-size: 14px; color: #717171;">
+        Jeśli to nie Ty zakładałeś konto w naszym serwisie, możesz bezpiecznie zignorować tę wiadomość.
+    </p>
+{% endblock %}

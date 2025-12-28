@@ -22,7 +22,8 @@ interface TextProps {
 }
 
 const getVariant = (theme: DefaultTheme, variant: TextVariant, weight: TextWeight) => {
-  const base = theme.typography.body[weight][variant];
+  const weightGroup = theme.typography.body[weight] || theme.typography.body.regular;
+  const base = weightGroup[variant] || weightGroup.body2;
   return css`
     font-family: ${base.fontFamily};
     font-size: ${base.fontSize};

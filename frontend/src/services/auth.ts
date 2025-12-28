@@ -129,3 +129,29 @@ export async function loginUser(
   }
   return res.json();
 }
+
+export async function requestPasswordReset(email: string): Promise<{ message: string }> {
+  const res = await apiRequest("/auth/password-reset/request", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Nie udało się zlecić resetowania hasła.");
+  }
+  return res.json();
+}
+
+export async function confirmPasswordReset(token: string, new_password: string): Promise<{ message: string }> {
+  const res = await apiRequest("/auth/password-reset/reset", {
+    method: "POST",
+    body: JSON.stringify({ token, new_password }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Nie udało się zresetować hasła.");
+  }
+  return res.json();
+}

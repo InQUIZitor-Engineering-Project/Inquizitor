@@ -50,13 +50,15 @@ const variantStyles = (theme: DefaultTheme, variant: ButtonVariant) => {
   `;
 
   const ghost = css`
-    background: #f5f5f5;
-    color: ${theme.colors.neutral.black};
-    border: 1px solid rgba(0, 0, 0, 0.06);
+    background: ${theme.colors.neutral.silver};
+    color: ${theme.colors.neutral.dGrey};
+    border: 1px solid ${theme.colors.neutral.whiteStroke};
     box-shadow: none;
     &:hover {
-      background: #e0e0e0;
-      box-shadow: none;
+      background: #eef2f5;
+      border-color: ${theme.colors.neutral.greyBlue};
+      color: ${theme.colors.neutral.black};
+      box-shadow: ${theme.elevation.sm};
     }
   `;
 

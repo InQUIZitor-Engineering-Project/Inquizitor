@@ -110,7 +110,7 @@ class UserService:
             # Pobieramy użytkownika jako encję bazy danych (SQLModel/SQLAlchemy)
             user = session.get(UserRow, user_id)
             if not user:
-                raise ValueError("User not found")
+                raise ValueError("Użytkownik nie został znaleziony")
 
             # Weryfikacja starego hasła
             if not verify_password(old_password, user.hashed_password):
