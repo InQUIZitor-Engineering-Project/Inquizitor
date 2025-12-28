@@ -15,3 +15,7 @@ class PasswordResetToken:
 
 
 __all__ = ["PasswordResetToken"]
+<<<<<<< .merge_file_UUx1sN
+=======
+
+>>>>>>> .merge_file_UmxkT3

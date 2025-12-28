@@ -3,7 +3,7 @@ import styled from "styled-components";
 import { Card, Flex, Stack, Heading, Divider, ActionBar } from "../primitives";
 
 export interface QuestionCardProps {
-  index?: number;
+  index?: number | React.ReactNode;
   title: React.ReactNode;
   meta?: React.ReactNode;
   actions?: React.ReactNode;
@@ -22,7 +22,7 @@ const TitleRow = styled(Flex)`
   align-items: center;
 `;
 
-const IndexChip = styled.span`
+export const IndexChip = styled.span`
   min-width: 26px;
   height: 26px;
   border-radius: 999px;
@@ -42,7 +42,7 @@ const QuestionCard: React.FC<QuestionCardProps> = ({ index, title, meta, actions
       <Stack $gap="md">
         <HeaderRow>
           <TitleRow>
-            {typeof index === "number" && <IndexChip>{index + 1}</IndexChip>}
+            {typeof index === "number" ? <IndexChip>{index + 1}</IndexChip> : index}
             <Heading as="h3" $level="h3">
               {title}
             </Heading>
