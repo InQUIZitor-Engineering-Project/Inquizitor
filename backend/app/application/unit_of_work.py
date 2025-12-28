@@ -12,6 +12,7 @@ from app.domain.repositories import (
     UserRepository,
     JobRepository,
     PendingVerificationRepository,
+    PasswordResetTokenRepository,
 )
 from app.infrastructure.persistence.sqlmodel import (
     SqlModelFileRepository,
@@ -20,6 +21,7 @@ from app.infrastructure.persistence.sqlmodel import (
     SqlModelUserRepository,
     SqlModelJobRepository,
     SqlModelPendingVerificationRepository,
+    SqlModelPasswordResetTokenRepository,
 )
 
 
@@ -33,6 +35,7 @@ class SqlAlchemyUnitOfWork(AbstractContextManager):
         self.materials: Optional[MaterialRepository] = None
         self.jobs: Optional[JobRepository] = None
         self.pending_verifications: Optional[PendingVerificationRepository] = None
+        self.password_reset_tokens: Optional[PasswordResetTokenRepository] = None
 
     def __enter__(self) -> "SqlAlchemyUnitOfWork":
         self.session = self._session_factory()
@@ -43,6 +46,7 @@ class SqlAlchemyUnitOfWork(AbstractContextManager):
         self.materials = SqlModelMaterialRepository(self.session)
         self.jobs = SqlModelJobRepository(self.session)
         self.pending_verifications = SqlModelPendingVerificationRepository(self.session)
+        self.password_reset_tokens = SqlModelPasswordResetTokenRepository(self.session)
         return self
 
     def __exit__(self, exc_type, exc, tb) -> None:

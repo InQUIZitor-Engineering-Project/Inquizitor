@@ -40,5 +40,23 @@ class ResendEmailSender(EmailSender):
         }
         self._request(payload)
 
+    def send_password_reset_email(self, *, to_email: str, reset_url: str, expires_minutes: int) -> None:
+        subject = "Zresetuj swoje hasło"
+        html = (
+            "<p>Cześć!</p>"
+            "<p>Otrzymaliśmy prośbę o zresetowanie hasła do Twojego konta.</p>"
+            "<p>Aby ustawić nowe hasło, kliknij w link poniżej:</p>"
+            f"<p><a href=\"{reset_url}\">{reset_url}</a></p>"
+            f"<p>Link wygaśnie za {expires_minutes} minut.</p>"
+            "<p>Jeśli to nie Ty prosiłeś o reset hasła, zignoruj tę wiadomość.</p>"
+        )
+        payload = {
+            "from": self._sender,
+            "to": [to_email],
+            "subject": subject,
+            "html": html,
+        }
+        self._request(payload)
+
 
 __all__ = ["ResendEmailSender"]

@@ -22,6 +22,10 @@ class UserRepository(ABC):
     def remove(self, user_id: int) -> None:
         raise NotImplementedError
 
+    @abstractmethod
+    def update(self, user: User) -> User:
+        raise NotImplementedError
+
 
 __all__ = ["UserRepository"]
 

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../hooks/useAuth";
 import { getMyTests } from "../../services/test";
 import { Box, Flex, Stack, Heading, Text, Button } from "../../design-system/primitives";
 import { useLoader } from "../Loader/GlobalLoader";

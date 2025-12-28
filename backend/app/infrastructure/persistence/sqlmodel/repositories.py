@@ -7,7 +7,16 @@ from sqlalchemy.orm import Session, joinedload
 from sqlmodel import select
 
 from app.db import models as db_models
-from app.domain.models import File, Material, Question, Test, User, Job, PendingVerification
+from app.domain.models import (
+    File,
+    Material,
+    Question,
+    Test,
+    User,
+    Job,
+    PendingVerification,
+    PasswordResetToken,
+)
 from app.domain.repositories import (
     FileRepository,
     JobRepository,
@@ -15,6 +24,7 @@ from app.domain.repositories import (
     TestRepository,
     UserRepository,
     PendingVerificationRepository,
+    PasswordResetTokenRepository,
 )
 
 from . import mappers
@@ -45,6 +55,21 @@ class SqlModelUserRepository(UserRepository):
         if db_user:
             self._session.delete(db_user)
             self._session.commit()
+
+    def update(self, user: User) -> User:
+        db_user = self._session.get(db_models.User, user.id)
+        if not db_user:
+            raise ValueError(f"User {user.id} not found")
+        
+        db_user.email = user.email
+        db_user.hashed_password = user.hashed_password
+        db_user.first_name = user.first_name
+        db_user.last_name = user.last_name
+        
+        self._session.add(db_user)
+        self._session.commit()
+        self._session.refresh(db_user)
+        return mappers.user_to_domain(db_user)
 
 
 class SqlModelTestRepository(TestRepository):
@@ -260,6 +285,43 @@ class SqlModelPendingVerificationRepository(PendingVerificationRepository):
             self._session.commit()
 
 
+class SqlModelPasswordResetTokenRepository(PasswordResetTokenRepository):
+    def __init__(self, session: Session):
+        self._session = session
+
+    def upsert(self, token: PasswordResetToken) -> PasswordResetToken:
+        stmt = select(db_models.PasswordResetToken).where(db_models.PasswordResetToken.email == token.email)
+        existing = self._session.exec(stmt).first()
+        if existing:
+            existing.token_hash = token.token_hash
+            existing.expires_at = token.expires_at
+            existing.created_at = token.created_at
+            db_obj = existing
+        else:
+            db_obj = mappers.password_reset_token_to_row(token)
+            self._session.add(db_obj)
+        self._session.commit()
+        self._session.refresh(db_obj)
+        return mappers.password_reset_token_to_domain(db_obj)
+
+    def get_by_email(self, email: str) -> PasswordResetToken | None:
+        stmt = select(db_models.PasswordResetToken).where(db_models.PasswordResetToken.email == email)
+        row = self._session.exec(stmt).first()
+        return mappers.password_reset_token_to_domain(row) if row else None
+
+    def get_by_token_hash(self, token_hash: str) -> PasswordResetToken | None:
+        stmt = select(db_models.PasswordResetToken).where(db_models.PasswordResetToken.token_hash == token_hash)
+        row = self._session.exec(stmt).first()
+        return mappers.password_reset_token_to_domain(row) if row else None
+
+    def delete_by_email(self, email: str) -> None:
+        stmt = select(db_models.PasswordResetToken).where(db_models.PasswordResetToken.email == email)
+        row = self._session.exec(stmt).first()
+        if row:
+            self._session.delete(row)
+            self._session.commit()
+
+
 __all__ = [
     "SqlModelUserRepository",
     "SqlModelTestRepository",
@@ -267,5 +329,6 @@ __all__ = [
     "SqlModelMaterialRepository",
     "SqlModelJobRepository",
     "SqlModelPendingVerificationRepository",
+    "SqlModelPasswordResetTokenRepository",
 ]
 
