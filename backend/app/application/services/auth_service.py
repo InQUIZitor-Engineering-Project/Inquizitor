@@ -111,7 +111,14 @@ class AuthService:
 
         with self._uow_factory() as uow:
             user = uow.users.get_by_email(email)
-            if not user or not self._password_verifier(password, user.hashed_password):
+            if not user:
+                # Check if account is awaiting verification
+                pending = uow.pending_verifications.get_by_email(email)
+                if pending:
+                    raise ValueError("Konto nie zostało jeszcze aktywowane. Sprawdź swoją skrzynkę e-mail.")
+                raise ValueError("Niepoprawny e-mail lub hasło")
+
+            if not self._password_verifier(password, user.hashed_password):
                 raise ValueError("Niepoprawny e-mail lub hasło")
             return user
 

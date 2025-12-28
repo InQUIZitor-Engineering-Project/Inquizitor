@@ -32,7 +32,7 @@ const ForgotPasswordPage: React.FC = () => {
 
   useDocumentTitle("Zapomniałeś hasła? | Inquizitor");
 
-  const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  const isEmailValid = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}$/.test(email.trim());
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();

@@ -2,7 +2,7 @@ import React from "react";
 import styled from "styled-components";
 import { MathText } from "../../../components/MathText/MathText";
 import { Badge, Button, Flex, Text, Checkbox } from "../../../design-system/primitives";
-import { QuestionCard } from "../../../design-system/patterns";
+import { QuestionCard, IndexChip } from "../../../design-system/patterns";
 import type { QuestionOut } from "../../../services/test";
 
 const getDifficultyLabel = (d: number) => {
@@ -41,8 +41,7 @@ const QuestionView: React.FC<QuestionViewProps> = ({
 }) => {
   return (
     <QuestionCard
-      index={index}
-      title={
+      index={
         <Flex $gap="sm" $align="center">
           {onSelect && (
             <Checkbox
@@ -51,10 +50,13 @@ const QuestionView: React.FC<QuestionViewProps> = ({
               onClick={(e) => e.stopPropagation()}
             />
           )}
-          <Text $variant="body2" $weight="medium">
-            <MathText text={question.text} />
-          </Text>
+          <IndexChip>{index + 1}</IndexChip>
         </Flex>
+      }
+      title={
+        <Text $variant="body2" $weight="medium">
+          <MathText text={question.text} />
+        </Text>
       }
       meta={
         <MetaRow $gap="xs" $wrap="nowrap" $justify="flex-end">
