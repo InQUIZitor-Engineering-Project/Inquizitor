@@ -45,7 +45,7 @@ class Settings(BaseSettings):
         ]
     )
     LOG_LEVEL: str = "INFO"
-    AUTO_CREATE_TABLES: bool = True
+    AUTO_CREATE_TABLES: bool = False
     SQL_ECHO: bool = True
 
 
