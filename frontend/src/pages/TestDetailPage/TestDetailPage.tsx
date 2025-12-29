@@ -182,6 +182,8 @@ const TestDetailPage: React.FC = () => {
         isOpen={state.isTypeModalOpen}
         title="🔄 Zmień typ pytań"
         onClose={actions.closeTypeModal}
+        onConfirm={() => state.tempType && actions.handleBulkTypeChange(state.tempType)}
+        confirmLabel="Zastosuj"
         variant="brand"
       >
         <Stack $gap="sm">
@@ -189,7 +191,8 @@ const TestDetailPage: React.FC = () => {
             Na jaki typ chcesz zmienić zaznaczone pytania?
           </Text>
           <SelectableItem
-            onClick={() => actions.handleBulkTypeChange("open")}
+            $active={state.tempType === "open"}
+            onClick={() => actions.setTempType("open")}
             $align="center"
             $gap="sm"
           >
@@ -199,7 +202,8 @@ const TestDetailPage: React.FC = () => {
             </Stack>
           </SelectableItem>
           <SelectableItem
-            onClick={() => actions.handleBulkTypeChange("closed")}
+            $active={state.tempType === "closed"}
+            onClick={() => actions.setTempType("closed")}
             $align="center"
             $gap="sm"
           >

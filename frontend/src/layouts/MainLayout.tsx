@@ -143,7 +143,7 @@ const MainLayout: React.FC = () => {
         onDelete={handleOpenDeleteModal}
       />
 
-      <ContentArea>
+      <ContentArea id="main-content-area">
         <ScrollableContent>
           <PageContentWrapper>
             <Outlet context={{ refreshSidebarTests }} /> 
