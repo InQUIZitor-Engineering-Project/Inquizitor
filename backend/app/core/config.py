@@ -18,6 +18,8 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     GEMINI_API_KEY: str
+    OPENROUTER_BASE_URL: str
+    OPENROUTER_API_KEY: str
     CELERY_BROKER_URL: str = "redis://redis:6379/0"
     CELERY_RESULT_BACKEND: str = "redis://redis:6379/1"
     CELERY_TASK_DEFAULT_QUEUE: str = "default"

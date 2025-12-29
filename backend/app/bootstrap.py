@@ -17,6 +17,7 @@ from app.db.session import get_session_factory, init_db
 from app.infrastructure import (
     DefaultOCRService,
     GeminiQuestionGenerator,
+    OpenAIQuestionGenerator,
     LocalFileStorage,
     R2FileStorage,
     ResendEmailSender,
@@ -41,7 +42,7 @@ class AppContainer:
 
     def __init__(self, settings: Settings):
         self._settings = settings
-        self._question_generator = GeminiQuestionGenerator()
+        self._question_generator = OpenAIQuestionGenerator()
         self._ocr_service = DefaultOCRService()
         self._file_storage = self._create_storage(base_dir=Path("uploads"))
         self._materials_storage = self._create_storage(base_dir=Path("uploads/materials"))
@@ -58,7 +59,7 @@ class AppContainer:
 
         return get_session
 
-    def provide_question_generator(self) -> GeminiQuestionGenerator:
+    def provide_question_generator(self) -> OpenAIQuestionGenerator:
         return self._question_generator
 
     def provide_ocr_service(self) -> DefaultOCRService:
