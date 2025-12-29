@@ -1,6 +1,5 @@
 import React from "react";
 import { Box, Flex, Stack, Button, Text, Textarea } from "../../design-system/primitives";
-import Footer from "../../components/Footer/Footer";
 import useTestDetail from "./hooks/useTestDetail";
 import TitleBar from "./components/TitleBar";
 import MetaSummary from "./components/MetaSummary";
@@ -21,8 +20,8 @@ const TestDetailPage: React.FC = () => {
   const { data } = state;
   
   return (
-    <Flex $direction="column" $height="100%" $bg="#f5f6f8" $overflow="hidden" style={{ position: "relative" }}>
-      <Box $flex={1} $overflowY="auto" $width="100%">
+    <Flex $direction="column" $height="100%" $bg="#f5f6f8" style={{ position: "relative" }}>
+      <Box $flex={1} $width="100%">
         <PageSection $py="xl">
           <PageContainer>
             <Stack style={{ width: "100%", maxWidth: 960, margin: "0 auto" }} $gap="lg">
@@ -96,7 +95,6 @@ const TestDetailPage: React.FC = () => {
                 </Flex>
               </Box>
 
-              <Footer />
             </Stack>
           </PageContainer>
         </PageSection>

@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react";
-import { useOutletContext, useParams } from "react-router-dom";
+import { useState, useMemo, useEffect } from "react";
+import { useOutletContext, useParams, useSearchParams } from "react-router-dom";
 import { useLoader } from "../../../components/Loader/GlobalLoader";
 import useDocumentTitle from "../../../hooks/useDocumentTitle";
 import useTestData, { sortQuestions } from "./useTestData";
@@ -137,8 +137,17 @@ const useTestDetail = (): UseTestDetailResult => {
   const [tempDifficulty, setTempDifficulty] = useState<number | null>(null);
 
   const { testId } = useParams<{ testId: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
   const testIdNum = Number(testId);
   useDocumentTitle("Test | Inquizitor");
+
+  useEffect(() => {
+    if (searchParams.get("isAdding") === "true" && data && !draftState.isAdding) {
+      draftActions.startAdd();
+      searchParams.delete("isAdding");
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams, data, draftState.isAdding, draftActions, setSearchParams]);
 
   const setDataSorted = (next: TestDetail | null) => {
     setData(next ? { ...next, questions: sortQuestions(next.questions) } : next);

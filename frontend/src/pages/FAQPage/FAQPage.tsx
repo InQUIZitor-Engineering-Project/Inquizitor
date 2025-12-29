@@ -1,7 +1,6 @@
 import React from "react";
 import { useTheme } from "styled-components";
 import { Box, Flex, Heading, Stack, Text } from "../../design-system/primitives";
-import Footer from "../../components/Footer/Footer";
 import faqImg from "../../assets/faq_nobackground2.png";
 import useDocumentTitle from "../../hooks/useDocumentTitle.ts";
 import { categoriesOrder, faqItems } from "./faqData.ts";
@@ -35,7 +34,7 @@ const FAQPage: React.FC = () => {
     <Flex
       $direction="column"
       $bg={theme.colors.neutral.silver}
-      style={{ minHeight: "calc(100vh - 40px)" }}
+      style={{ minHeight: "100%" }}
     >
       <Flex $flex={1} $width="100%" $justify="center">
         <PageSection $py="lg">
@@ -94,8 +93,6 @@ const FAQPage: React.FC = () => {
           </PageContainer>
         </PageSection>
       </Flex>
-
-      <Footer />
     </Flex>
   );
 };

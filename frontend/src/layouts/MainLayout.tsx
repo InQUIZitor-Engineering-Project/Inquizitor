@@ -2,22 +2,20 @@ import React, { useEffect, useState } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import styled from "styled-components";
 import Sidebar from "../components/Sidebar/Sidebar";
+import Footer from "../components/Footer/Footer";
 import { Modal } from "../design-system/patterns";
 import { getMyTests, deleteTest } from "../services/test";
 import type { TestOut } from "../services/test";
 import { NAVBAR_HEIGHT } from "../components/Navbar/Navbar.styles";
+
 export const LayoutWrapper = styled.div`
   display: flex;
   width: 100%;
-
   height: calc(100vh - ${NAVBAR_HEIGHT}px);
   min-height: calc(100vh - ${NAVBAR_HEIGHT}px);
   flex-shrink: 0;
-
-  /* porządki */
   margin: 0;
   padding: 0;
-
   overflow: hidden;
   background-color: ${({ theme }) => theme.colors.neutral.silver};
   position: relative;
@@ -25,12 +23,23 @@ export const LayoutWrapper = styled.div`
 
 export const ContentArea = styled.div`
   flex: 1;
-  height: 100%;       /* Dziedziczy wysokość z LayoutWrapper */
-  min-height: 100%;
-  overflow: hidden;
+  height: 100%;
   display: flex;
   flex-direction: column;
   position: relative;
+  overflow: hidden;
+`;
+
+export const ScrollableContent = styled.div`
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+`;
+
+export const PageContentWrapper = styled.div`
+  flex: 1;
+  width: 100%;
 `;
 
 const SidebarOverlay = styled.div<{ $open: boolean }>`
@@ -47,7 +56,6 @@ const SidebarOverlay = styled.div<{ $open: boolean }>`
     display: ${({ $open }) => ($open ? "block" : "none")};
   }
 `;
-
 
 const MainLayout: React.FC = () => {
   const navigate = useNavigate();
@@ -136,7 +144,12 @@ const MainLayout: React.FC = () => {
       />
 
       <ContentArea>
-        <Outlet context={{ refreshSidebarTests }} /> 
+        <ScrollableContent>
+          <PageContentWrapper>
+            <Outlet context={{ refreshSidebarTests }} /> 
+          </PageContentWrapper>
+          <Footer />
+        </ScrollableContent>
       </ContentArea>
 
       <SidebarOverlay $open={sidebarOpen} onClick={() => setSidebarOpen(false)} />
@@ -149,6 +162,7 @@ const MainLayout: React.FC = () => {
           onConfirm={handleConfirmDelete}
           variant="danger"
           confirmLabel="Usuń"
+          confirmLoading={false}
         >
           Tej operacji nie można cofnąć. Wszystkie pytania w tym teście również zostaną usunięte.
         </Modal>
