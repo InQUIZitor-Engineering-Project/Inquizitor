@@ -13,7 +13,7 @@ class MaterialUploaded(DomainEvent):
     checksum: str
 
     @staticmethod
-    def create(*, material_id: int, owner_id: int, checksum: str) -> "MaterialUploaded":
+    def create(*, material_id: int, owner_id: int, checksum: str) -> MaterialUploaded:
         return MaterialUploaded(
             occurred_at=datetime.utcnow(),
             material_id=material_id,

@@ -124,10 +124,16 @@ const usePdfConfig = () => {
       stopLoading();
       resetJobPolling();
     }
-  }, [jobStatus, jobResult, jobError, resetJobPolling]);
+  }, [jobStatus, jobResult, jobError, resetJobPolling, stopLoading]);
 
   return {
-    state: { pdfConfig, pdfConfigOpen, pdfJobStatus: jobStatus || null, pdfJobId: jobId, pdfInProgress: pdfInProgress || isPolling },
+    state: {
+      pdfConfig,
+      pdfConfigOpen,
+      pdfJobStatus: jobStatus || null,
+      pdfJobId: jobId,
+      pdfInProgress: pdfInProgress || isPolling,
+    },
     actions: { setPdfConfigOpen, updatePdfConfig, resetPdfConfig, downloadCustomPdf },
   };
 };

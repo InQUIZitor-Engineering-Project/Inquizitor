@@ -1,5 +1,3 @@
-from typing import Optional
-
 from pydantic import BaseModel
 
 
@@ -13,11 +11,11 @@ class RegistrationRequested(BaseModel):
 
 
 class VerificationResponse(Token):
-    redirect_url: Optional[str] = None
+    redirect_url: str | None = None
 
 
 class TokenData(BaseModel):
-    email: Optional[str] = None
+    email: str | None = None
 
 
 class PasswordResetRequest(BaseModel):
@@ -30,11 +28,11 @@ class PasswordResetConfirm(BaseModel):
 
 
 __all__ = [
-    "Token",
-    "RegistrationRequested",
-    "VerificationResponse",
-    "TokenData",
-    "PasswordResetRequest",
     "PasswordResetConfirm",
+    "PasswordResetRequest",
+    "RegistrationRequested",
+    "Token",
+    "TokenData",
+    "VerificationResponse",
 ]
 

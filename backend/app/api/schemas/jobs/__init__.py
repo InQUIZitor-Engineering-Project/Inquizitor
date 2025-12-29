@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any
 
 from pydantic import BaseModel
 
@@ -11,9 +11,9 @@ class JobOut(BaseModel):
     owner_id: int
     job_type: str
     status: str
-    payload: Dict[str, Any]
-    result: Optional[Dict[str, Any]] = None
-    error: Optional[str] = None
+    payload: dict[str, Any]
+    result: dict[str, Any] | None = None
+    error: str | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -23,4 +23,4 @@ class JobEnqueueResponse(BaseModel):
     status: str
 
 
-__all__ = ["JobOut", "JobEnqueueResponse"]
+__all__ = ["JobEnqueueResponse", "JobOut"]

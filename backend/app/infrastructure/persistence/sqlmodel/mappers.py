@@ -1,21 +1,26 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
 from datetime import datetime
 from pathlib import Path
-from typing import Iterable, Optional
 
 from app.db import models as db_models
 from app.domain.models import (
     File,
+    Job,
     Material,
+    PasswordResetToken,
+    PendingVerification,
     Question,
     Test,
     User,
-    Job,
-    PendingVerification,
-    PasswordResetToken,
 )
-from app.domain.models.enums import ProcessingStatus, QuestionDifficulty, JobStatus, JobType
+from app.domain.models.enums import (
+    JobStatus,
+    JobType,
+    ProcessingStatus,
+    QuestionDifficulty,
+)
 
 
 def user_to_domain(row: db_models.User) -> User:
@@ -81,8 +86,12 @@ def question_to_row(question: Question, test_id: int) -> db_models.Question:
     )
 
 
-def test_to_domain(row: db_models.Test, questions: Optional[Iterable[db_models.Question]] = None) -> Test:
-    question_models = list(questions) if questions is not None else list(row.questions or [])
+def test_to_domain(
+    row: db_models.Test, questions: Iterable[db_models.Question] | None = None
+) -> Test:
+    question_models = (
+        list(questions) if questions is not None else list(row.questions or [])
+    )
     return Test(
         id=row.id,
         owner_id=row.owner_id,
@@ -121,7 +130,9 @@ def file_to_row(file: File) -> db_models.File:
     )
 
 
-def material_to_domain(row: db_models.Material, file_row: Optional[db_models.File] = None) -> Material:
+def material_to_domain(
+    row: db_models.Material, file_row: db_models.File | None = None
+) -> Material:
     file_model = file_row or row.file
     if file_model is None:
         raise ValueError("Material row must include related file")
@@ -164,7 +175,9 @@ def material_to_row(material: Material) -> db_models.Material:
 
 def job_to_domain(row: db_models.Job) -> Job:
     status_value = (
-        row.status.value if isinstance(row.status, db_models.JobStatus) else str(row.status)
+        row.status.value
+        if isinstance(row.status, db_models.JobStatus)
+        else str(row.status)
     )
     type_value = (
         row.job_type.value
@@ -198,7 +211,9 @@ def job_to_row(job: Job) -> db_models.Job:
     )
 
 
-def pending_verification_to_row(p: PendingVerification) -> db_models.PendingEmailVerification:
+def pending_verification_to_row(
+    p: PendingVerification,
+) -> db_models.PendingEmailVerification:
     return db_models.PendingEmailVerification(
         id=p.id,
         email=p.email,
@@ -211,7 +226,9 @@ def pending_verification_to_row(p: PendingVerification) -> db_models.PendingEmai
     )
 
 
-def pending_verification_to_domain(row: db_models.PendingEmailVerification) -> PendingVerification:
+def pending_verification_to_domain(
+    row: db_models.PendingEmailVerification,
+) -> PendingVerification:
     return PendingVerification(
         id=row.id,
         email=row.email,
@@ -234,7 +251,9 @@ def password_reset_token_to_row(t: PasswordResetToken) -> db_models.PasswordRese
     )
 
 
-def password_reset_token_to_domain(row: db_models.PasswordResetToken) -> PasswordResetToken:
+def password_reset_token_to_domain(
+    row: db_models.PasswordResetToken,
+) -> PasswordResetToken:
     return PasswordResetToken(
         id=row.id,
         email=row.email,
@@ -245,15 +264,15 @@ def password_reset_token_to_domain(row: db_models.PasswordResetToken) -> Passwor
 
 
 __all__ = [
-    "user_to_domain",
-    "user_to_row",
-    "question_to_domain",
-    "question_to_row",
-    "test_to_domain",
-    "test_to_row",
     "file_to_domain",
     "file_to_row",
     "material_to_domain",
     "material_to_row",
+    "question_to_domain",
+    "question_to_row",
+    "test_to_domain",
+    "test_to_row",
+    "user_to_domain",
+    "user_to_row",
 ]
 

@@ -34,10 +34,10 @@ class MaterialType(Enum):
 
 
 __all__ = [
-    "QuestionDifficulty",
-    "ProcessingStatus",
-    "MaterialType",
     "JobStatus",
     "JobType",
+    "MaterialType",
+    "ProcessingStatus",
+    "QuestionDifficulty",
 ]
 

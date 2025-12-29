@@ -1,8 +1,8 @@
 # migrations/versions/5d1f9f3559c6_initial_tables.py
 
-from alembic import op
 import sqlalchemy as sa
-from sqlalchemy import String   # <<< DODAJEMY
+from alembic import op
+from sqlalchemy import String  # <<< DODAJEMY
 
 # (… metadane migracji …)
 revision = '5d1f9f3559c6'

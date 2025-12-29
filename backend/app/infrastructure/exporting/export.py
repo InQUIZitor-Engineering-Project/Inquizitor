@@ -5,7 +5,7 @@ import subprocess
 import tempfile
 import xml.etree.ElementTree as ET
 from pathlib import Path
-from typing import List, Optional
+from typing import Any, cast
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
@@ -44,7 +44,7 @@ def latex_with_math(text: str) -> str:
         if s.startswith("$$", i):
             end = s.find("$$", i + 2)
             if end == -1:
-                # no closing $$ – treat the rest as plain text
+                # no closing $$ - treat the rest as plain text
                 out.append(latex_escape(s[i:]))
                 break
             inner = s[i + 2 : end]
@@ -67,7 +67,7 @@ def latex_with_math(text: str) -> str:
     return "".join(out)
 
 
-def _to_list(value) -> Optional[List[str]]:
+def _to_list(value: Any) -> list[str] | None:
     if value is None:
         return None
     if isinstance(value, list):
@@ -115,11 +115,11 @@ env.filters["latex_math"] = latex_with_math
 
 def render_test_to_tex(
     title: str,
-    questions: List[dict],
+    questions: list[dict[str, Any]],
     show_answers: bool = False,
     *,
     brand_hex: str = "4CAF4F",
-    logo_path: Optional[str] = None,
+    logo_path: str | None = None,
 ) -> str:
     items = []
     for question in questions:
@@ -144,7 +144,7 @@ def render_test_to_tex(
     )
 
 
-def render_custom_test_to_tex(context: dict) -> str:
+def render_custom_test_to_tex(context: dict[str, Any]) -> str:
     """
     Render a customized test PDF using the advanced LaTeX template.
     """
@@ -170,24 +170,22 @@ def compile_tex_to_pdf(tex_source: str) -> bytes:
             proc = subprocess.run(cmd, capture_output=True, text=True)
             if proc.returncode != 0:
                 raise RuntimeError(
-                    "LaTeX error:\nSTDOUT:\n{stdout}\nSTDERR:\n{stderr}".format(
-                        stdout=proc.stdout,
-                        stderr=proc.stderr,
-                    )
+                    f"LaTeX error:\nSTDOUT:\n{proc.stdout}\nSTDERR:\n{proc.stderr}"
                 )
 
         pdf_path = tmpdir / "test.pdf"
         return pdf_path.read_bytes()
 
 
-def test_to_xml_bytes(test: dict) -> bytes:
+def test_to_xml_bytes(test: dict[str, Any]) -> bytes:
     root = ET.Element("quiz")
 
     cat_question = ET.SubElement(root, "question", type="category")
     cat_elem = ET.SubElement(cat_question, "category")
-    ET.SubElement(cat_elem, "text").text = f"$course$/{test.get('title', 'Default Test')}"
+    title = test.get("title", "Default Test")
+    ET.SubElement(cat_elem, "text").text = f"$course$/{title}"
 
-    def _ensure_list(val):
+    def _ensure_list(val: Any) -> list[Any]:
         return val if isinstance(val, list) else []
 
     for question in test.get("questions", []):
@@ -235,7 +233,9 @@ def test_to_xml_bytes(test: dict) -> bytes:
                 
                 fraction = f"{correct_fraction:.5g}" if is_correct else "0"
                 
-                answer_elem = ET.SubElement(q_elem, "answer", fraction=fraction, format="html")
+                answer_elem = ET.SubElement(
+                    q_elem, "answer", fraction=fraction, format="html"
+                )
                 ET.SubElement(answer_elem, "text").text = str(choice)
                 
                 fb_elem = ET.SubElement(answer_elem, "feedback", format="html")
@@ -244,12 +244,12 @@ def test_to_xml_bytes(test: dict) -> bytes:
                 else:
                     ET.SubElement(fb_elem, "text").text = "Incorrect."
 
-    return ET.tostring(root, encoding="utf-8", xml_declaration=True)
+    return cast(bytes, ET.tostring(root, encoding="utf-8", xml_declaration=True))
 
 
 __all__ = [
-    "render_test_to_tex",
     "compile_tex_to_pdf",
-    "test_to_xml_bytes",
     "render_custom_test_to_tex",
+    "render_test_to_tex",
+    "test_to_xml_bytes",
 ]

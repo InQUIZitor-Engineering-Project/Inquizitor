@@ -1,6 +1,6 @@
 import logging
 import time
-from typing import Callable
+from collections.abc import Awaitable, Callable
 
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -11,7 +11,9 @@ logger = logging.getLogger(__name__)
 class LoggingMiddleware(BaseHTTPMiddleware):
     """Middleware do logowania wszystkich requestów HTTP."""
 
-    async def dispatch(self, request: Request, call_next: Callable) -> Response:
+    async def dispatch(
+        self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
         start_time = time.time()
         
         # Loguj request

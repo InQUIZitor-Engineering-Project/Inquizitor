@@ -1,13 +1,12 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import datetime
-from typing import Callable
 
 from app.api.schemas.users import UserStatistics
 from app.application.interfaces import UnitOfWork
-from app.core.security import verify_password, get_password_hash
+from app.core.security import get_password_hash, verify_password
 from app.db.models import User as UserRow
-
 
 
 class UserService:
@@ -24,10 +23,13 @@ class UserService:
 
     def get_user_statistics(self, *, user_id: int) -> UserStatistics:
         with self._uow_factory() as uow:
-            tests = uow.tests.list_for_user(user_id)
+            tests_iter = uow.tests.list_for_user(user_id)
+            tests = list(tests_iter)
 
             files_repo = getattr(uow, "files", None)
-            total_files = len(list(files_repo.list_for_user(user_id))) if files_repo else 0
+            total_files = 0
+            if files_repo:
+                total_files = len(list(files_repo.list_for_user(user_id)))
 
             total_tests = len(tests)
             total_questions = 0
@@ -38,6 +40,8 @@ class UserService:
             last_test_created_at: datetime | None = None
 
             for test in tests:
+                if test.id is None:
+                    continue
                 test_with_q = uow.tests.get_with_questions(test.id)
                 if not test_with_q:
                     continue
@@ -101,7 +105,9 @@ class UserService:
             )
 
 
-    def change_password(self, *, user_id: int, old_password: str, new_password: str) -> None:
+    def change_password(
+        self, *, user_id: int, old_password: str, new_password: str
+    ) -> None:
         with self._uow_factory() as uow:
             session = getattr(uow, "session", None)
             if session is None:

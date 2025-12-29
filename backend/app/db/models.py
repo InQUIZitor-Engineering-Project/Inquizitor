@@ -1,50 +1,53 @@
-from typing import Optional, List
 from datetime import datetime
-from sqlmodel import SQLModel, Field, Relationship
 from enum import Enum
+from typing import Optional
+
+from sqlalchemy import Column, ForeignKey, Integer
+from sqlalchemy import Enum as SAEnum
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy import Column, ForeignKey, Integer, Enum as SAEnum
+from sqlmodel import Field, Relationship, SQLModel
+
 
 class User(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     email: str = Field(index=True, unique=True, max_length=100)
     hashed_password: str
-    first_name: Optional[str] = Field(default=None, max_length=50)
-    last_name:  Optional[str] = Field(default=None, max_length=50)
+    first_name: str | None = Field(default=None, max_length=50)
+    last_name:  str | None = Field(default=None, max_length=50)
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
-    tests: List["Test"] = Relationship(back_populates="owner")
-    files: List["File"] = Relationship(back_populates="owner")
-    materials: List["Material"] = Relationship(back_populates="owner")
+    tests: list["Test"] = Relationship(back_populates="owner")
+    files: list["File"] = Relationship(back_populates="owner")
+    materials: list["Material"] = Relationship(back_populates="owner")
 
 
 class PendingEmailVerification(SQLModel, table=True):
     __tablename__ = "pending_email_verification"
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     email: str = Field(index=True, unique=True, max_length=100)
     hashed_password: str
-    first_name: Optional[str] = Field(default=None, max_length=50)
-    last_name: Optional[str] = Field(default=None, max_length=50)
+    first_name: str | None = Field(default=None, max_length=50)
+    last_name: str | None = Field(default=None, max_length=50)
     token_hash: str = Field(index=True, max_length=128)
     expires_at: datetime = Field(index=True)
     created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
 
 class PasswordResetToken(SQLModel, table=True):
     __tablename__ = "password_reset_tokens"
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     email: str = Field(index=True, max_length=100)
     token_hash: str = Field(index=True, max_length=128)
     expires_at: datetime = Field(index=True)
     created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
 
 class Test(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     owner_id: int = Field(foreign_key="user.id", index=True)
-    title: Optional[str] = Field(default="Nowy test")
+    title: str | None = Field(default="Nowy test")
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
-    owner: Optional[User] = Relationship(back_populates="tests")
-    questions: List["Question"] = Relationship(
+    owner: User | None = Relationship(back_populates="tests")
+    questions: list["Question"] = Relationship(
         back_populates="test",
         sa_relationship_kwargs={
             "cascade": "all, delete-orphan",
@@ -53,7 +56,7 @@ class Test(SQLModel, table=True):
         )
 
 class Question(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     test_id: int = Field(
         sa_column=Column(
             "test_id",
@@ -67,23 +70,23 @@ class Question(SQLModel, table=True):
     is_closed: bool = Field(default=True)
     difficulty: int = Field(default=1)  # 1-easy, 2-medium, 3-hard
 
-    choices: Optional[List[str]] = Field(
+    choices: list[str] | None = Field(
         default=None, sa_column=Column(JSONB)
     )
-    correct_choices: Optional[List[str]] = Field(
+    correct_choices: list[str] | None = Field(
         default=None, sa_column=Column(JSONB)
     )
 
-    test: Optional[Test] = Relationship(back_populates="questions")
+    test: Test | None = Relationship(back_populates="questions")
 
 class File(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     owner_id: int = Field(foreign_key="user.id", index=True)
     filename: str
     filepath: str
     uploaded_at: datetime = Field(default_factory=datetime.utcnow)
 
-    owner: Optional[User] = Relationship(back_populates="files")
+    owner: User | None = Relationship(back_populates="files")
     material: Optional["Material"] = Relationship(back_populates="file")
 
 
@@ -110,28 +113,30 @@ class JobType(str, Enum):
     questions_conversion = "questions_conversion"
 
 class Material(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     owner_id: int = Field(foreign_key="user.id", index=True)
     file_id: int = Field(foreign_key="file.id", unique=True, index=True)
-    mime_type: Optional[str] = Field(default=None, index=True)
-    size_bytes: Optional[int] = None
-    checksum: Optional[str] = Field(default=None, index=True)
-    extracted_text: Optional[str] = None
-    processing_status: ProcessingStatus = Field(default=ProcessingStatus.done, index=True)
-    processing_error: Optional[str] = None
+    mime_type: str | None = Field(default=None, index=True)
+    size_bytes: int | None = None
+    checksum: str | None = Field(default=None, index=True)
+    extracted_text: str | None = None
+    processing_status: ProcessingStatus = Field(
+        default=ProcessingStatus.done, index=True
+    )
+    processing_error: str | None = None
     created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
 
-    owner: Optional[User] = Relationship(back_populates="materials")
-    file: Optional[File] = Relationship(back_populates="material")
+    owner: User | None = Relationship(back_populates="materials")
+    file: File | None = Relationship(back_populates="material")
 
 
 class Job(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     owner_id: int = Field(foreign_key="user.id", index=True)
     job_type: JobType = Field(sa_column=Column("job_type", SAEnum(JobType), index=True))
     status: JobStatus = Field(sa_column=Column("status", SAEnum(JobStatus), index=True))
     payload: dict = Field(default_factory=dict, sa_column=Column(JSONB))
-    result: Optional[dict] = Field(default=None, sa_column=Column(JSONB, nullable=True))
-    error: Optional[str] = Field(default=None)
+    result: dict | None = Field(default=None, sa_column=Column(JSONB, nullable=True))
+    error: str | None = Field(default=None)
     created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
     updated_at: datetime = Field(default_factory=datetime.utcnow, index=True)
