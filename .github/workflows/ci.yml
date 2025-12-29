@@ -45,6 +45,8 @@ jobs:
       - name: Check for missing migrations (drift)
         env:
           DATABASE_URL: postgresql+psycopg2://app:app@localhost:5432/app
+          SECRET_KEY: ci_secret_key_placeholder
+          GEMINI_API_KEY: ci_gemini_key_placeholder
         run: |
           alembic upgrade head
           alembic check
