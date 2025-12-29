@@ -64,20 +64,28 @@ def upgrade() -> None:
             sa.Column('created_at', sa.DateTime(), nullable=False),
             sa.ForeignKeyConstraint(['file_id'], ['file.id'], ),
             sa.ForeignKeyConstraint(['owner_id'], ['user.id'], ),
-            sa.PrimaryKeyConstraint('id'),
-            sa.UniqueConstraint('file_id')
+            sa.PrimaryKeyConstraint('id')
         )
         op.create_index(op.f('ix_material_checksum'), 'material', ['checksum'], unique=False)
         op.create_index(op.f('ix_material_created_at'), 'material', ['created_at'], unique=False)
+        op.create_index(op.f('ix_material_file_id'), 'material', ['file_id'], unique=True)
         op.create_index(op.f('ix_material_mime_type'), 'material', ['mime_type'], unique=False)
         op.create_index(op.f('ix_material_owner_id'), 'material', ['owner_id'], unique=False)
         op.create_index(op.f('ix_material_processing_status'), 'material', ['processing_status'], unique=False)
+    else:
+        # Table exists, but let's fix potential drift from SQLModel auto-creation
+        # 1. Remove unique constraint if it exists (SQLModel often creates it as 'material_file_id_key')
+        op.execute("ALTER TABLE material DROP CONSTRAINT IF EXISTS material_file_id_key")
+        # 2. Create the index if it doesn't exist
+        op.execute("CREATE UNIQUE INDEX IF NOT EXISTS ix_material_file_id ON material (file_id)")
+
 
 
 def downgrade() -> None:
     op.drop_index(op.f('ix_material_processing_status'), table_name='material')
     op.drop_index(op.f('ix_material_owner_id'), table_name='material')
     op.drop_index(op.f('ix_material_mime_type'), table_name='material')
+    op.drop_index(op.f('ix_material_file_id'), table_name='material')
     op.drop_index(op.f('ix_material_created_at'), table_name='material')
     op.drop_index(op.f('ix_material_checksum'), table_name='material')
     op.drop_table('material')
