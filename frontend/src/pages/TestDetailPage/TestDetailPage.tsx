@@ -1,12 +1,12 @@
 import React from "react";
-import { Box, Flex, Stack, Button, Text, Textarea } from "../../design-system/primitives";
+import { Box, Flex, Stack, Text, Textarea } from "../../design-system/primitives";
 import useTestDetail from "./hooks/useTestDetail";
 import TitleBar from "./components/TitleBar";
 import MetaSummary from "./components/MetaSummary";
 import QuestionsSection from "./components/QuestionsSection";
 import PdfConfigSection from "./components/PdfConfigSection";
 import BulkActionBar from "./components/BulkActionBar";
-import { AlertBar, Modal } from "../../design-system/patterns";
+import { Modal } from "../../design-system/patterns";
 import { SelectableItem } from "../../design-system/patterns/Modal";
 import { PageContainer, PageSection } from "../../design-system/patterns";
 import DownloadActions from "./components/DownloadActions"
