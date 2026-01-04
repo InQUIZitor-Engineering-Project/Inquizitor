@@ -9,6 +9,7 @@ import BulkActionBar from "./components/BulkActionBar";
 import { AlertBar, Modal } from "../../design-system/patterns";
 import { SelectableItem } from "../../design-system/patterns/Modal";
 import { PageContainer, PageSection } from "../../design-system/patterns";
+import DownloadActions from "./components/DownloadActions"
 
 const TestDetailPage: React.FC = () => {
   const { state, derived, actions } = useTestDetail();
@@ -85,15 +86,10 @@ const TestDetailPage: React.FC = () => {
                 onReset={actions.resetPdfConfig}
               />
 
-              <Box>
-                <Flex $gap="sm" $align="center" $wrap="wrap" $mt="sm">
-                  <Button onClick={actions.handleDownloadCustomPdf}>Pobierz PDF</Button>
-                  <Button onClick={actions.downloadXml}>Pobierz XML</Button>
-                  <AlertBar variant="warning">
-                    Test został wygenerowany przez AI i może zawierać błędy. Zweryfikuj go przed pobraniem.
-                  </AlertBar>
-                </Flex>
-              </Box>
+              <DownloadActions 
+                onDownloadPdf={actions.handleDownloadCustomPdf}
+                onDownloadXml={actions.downloadXml}
+              />
 
             </Stack>
           </PageContainer>
