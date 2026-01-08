@@ -3,8 +3,6 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional
-
 
 EMAIL_REGEX = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
@@ -13,12 +11,12 @@ EMAIL_REGEX = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 class User:
     """Domain entity representing an application user."""
 
-    id: Optional[int]
+    id: int | None
     email: str
     hashed_password: str
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
-    created_at: Optional[datetime] = None
+    first_name: str | None = None
+    last_name: str | None = None
+    created_at: datetime | None = None
 
     def __post_init__(self) -> None:
         self.email = self.email.strip().lower()
@@ -33,7 +31,7 @@ class User:
         if not EMAIL_REGEX.match(value):
             raise ValueError("Invalid email address format")
 
-    def update_profile(self, *, first_name: Optional[str], last_name: Optional[str]) -> None:
+    def update_profile(self, *, first_name: str | None, last_name: str | None) -> None:
         if first_name is not None:
             self.first_name = first_name.strip() or None
         if last_name is not None:

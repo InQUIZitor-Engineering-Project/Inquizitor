@@ -1,0 +1,41 @@
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+exclude = [
+    ".git",
+    ".mypy_cache",
+    ".ruff_cache",
+    "migrations",
+    "__pypackages__",
+    "dist",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "UP", "B", "A", "C4", "PTH", "RUF"]
+ignore = ["B008", "A003", "RUF012"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = false
+ignore_missing_imports = true
+check_untyped_defs = true
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+warn_redundant_casts = true
+    warn_unused_ignores = false
+    warn_return_any = false
+no_implicit_reexport = true
+disallow_any_generics = false
+disable_error_code = ["var-annotated"]
+plugins = ["pydantic.mypy"]
+exclude = ["migrations"]
+
+[tool.pyright]
+exclude = ["migrations"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"

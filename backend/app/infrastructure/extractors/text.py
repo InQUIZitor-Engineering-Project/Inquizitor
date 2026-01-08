@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional
 
 
 def _read_txt(path: Path) -> str:
@@ -10,7 +9,7 @@ def _read_txt(path: Path) -> str:
 
         data = path.read_bytes()
         encoding = chardet.detect(data)["encoding"] or "utf-8"
-        # Always return valid UTF-8 without surrogate characters – unsupported
+        # Always return valid UTF-8 without surrogate characters - unsupported
         # bytes are replaced when necessary.
         return data.decode(encoding, errors="replace")
     except Exception:
@@ -31,7 +30,8 @@ def _read_docx(path: Path) -> str:
     return "\n".join(paragraph.text for paragraph in document.paragraphs)
 
 
-def extract_text_from_file(path: Path, mime: Optional[str]) -> Optional[str]:
+def extract_text_from_file(path: Path, mime: str | None) -> str | None:
+    _ = mime
     extension = path.suffix.lower()
     try:
         if extension in [".txt", ".md", ".csv"]:
@@ -40,7 +40,7 @@ def extract_text_from_file(path: Path, mime: Optional[str]) -> Optional[str]:
             return _read_pdf(path)
         if extension == ".docx":
             return _read_docx(path)
-        # Image OCR (jpg/png) is not handled here – fallback to dedicated OCR service
+        # Image OCR (jpg/png) is not handled here - fallback to dedicated OCR
         return None
     except Exception:
         return None

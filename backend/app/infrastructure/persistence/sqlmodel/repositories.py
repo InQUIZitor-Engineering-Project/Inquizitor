@@ -1,30 +1,31 @@
 from __future__ import annotations
 
-from typing import Iterable, List
+from collections.abc import Iterable
 from datetime import datetime
+from typing import Any, cast
 
-from sqlalchemy.orm import Session, joinedload
-from sqlmodel import select
+from sqlalchemy.orm import joinedload
+from sqlmodel import Session, select
 
 from app.db import models as db_models
 from app.domain.models import (
     File,
+    Job,
     Material,
+    PasswordResetToken,
+    PendingVerification,
     Question,
     Test,
     User,
-    Job,
-    PendingVerification,
-    PasswordResetToken,
 )
 from app.domain.repositories import (
     FileRepository,
     JobRepository,
     MaterialRepository,
+    PasswordResetTokenRepository,
+    PendingVerificationRepository,
     TestRepository,
     UserRepository,
-    PendingVerificationRepository,
-    PasswordResetTokenRepository,
 )
 
 from . import mappers
@@ -47,7 +48,7 @@ class SqlModelUserRepository(UserRepository):
 
     def get_by_email(self, email: str) -> User | None:
         stmt = select(db_models.User).where(db_models.User.email == email)
-        db_user = self._session.exec(stmt).first()
+        db_user = cast(Any, self._session).exec(stmt).first()
         return mappers.user_to_domain(db_user) if db_user else None
 
     def remove(self, user_id: int) -> None:
@@ -106,10 +107,10 @@ class SqlModelTestRepository(TestRepository):
             select(db_models.Test)
             .where(db_models.Test.owner_id == user_id)
             .order_by(
-                db_models.Test.id.asc(),
+                cast(Any, db_models.Test.id).asc(),
             )
         )
-        rows = self._session.exec(stmt).all()
+        rows = cast(Any, self._session).exec(stmt).all()
         return [mappers.test_to_domain(row) for row in rows]
 
 
@@ -137,7 +138,7 @@ class SqlModelFileRepository(FileRepository):
 
     def list_for_user(self, user_id: int) -> Iterable[File]:
         stmt = select(db_models.File).where(db_models.File.owner_id == user_id)
-        rows = self._session.exec(stmt).all()
+        rows = cast(Any, self._session).exec(stmt).all()
         return [mappers.file_to_domain(row) for row in rows]
 
     def remove(self, file_id: int) -> None:
@@ -168,13 +169,13 @@ class SqlModelMaterialRepository(MaterialRepository):
             .where(db_models.Material.file_id == file_id)
             .options(joinedload(db_models.Material.file))
         )
-        row = self._session.exec(stmt).first()
+        row = cast(Any, self._session).exec(stmt).first()
         return mappers.material_to_domain(row) if row else None
 
     def list_for_user(self, user_id: int) -> Iterable[Material]:
         stmt = select(db_models.Material).where(db_models.Material.owner_id == user_id)
-        rows = self._session.exec(stmt).all()
-        materials: List[Material] = []
+        rows = cast(Any, self._session).exec(stmt).all()
+        materials: list[Material] = []
         for row in rows:
             materials.append(mappers.material_to_domain(row))
         return materials
@@ -188,7 +189,9 @@ class SqlModelMaterialRepository(MaterialRepository):
         db_material.size_bytes = material.size_bytes
         db_material.checksum = material.checksum
         db_material.extracted_text = material.extracted_text
-        db_material.processing_status = material.status.value
+        db_material.processing_status = db_models.ProcessingStatus(
+            material.status.value
+        )
         db_material.processing_error = material.processing_error
 
         self._session.add(db_material)
@@ -219,8 +222,8 @@ class SqlModelJobRepository(JobRepository):
         if not db_job:
             raise ValueError(f"Job {job.id} not found")
 
-        db_job.job_type = job.job_type.value
-        db_job.status = job.status.value
+        db_job.job_type = db_models.JobType(job.job_type.value)
+        db_job.status = db_models.JobStatus(job.status.value)
         db_job.result = job.result or None
         db_job.error = job.error
         db_job.payload = job.payload or {}
@@ -239,9 +242,9 @@ class SqlModelJobRepository(JobRepository):
         stmt = (
             select(db_models.Job)
             .where(db_models.Job.owner_id == owner_id)
-            .order_by(db_models.Job.created_at.desc())
+            .order_by(cast(Any, db_models.Job.created_at).desc())
         )
-        rows = self._session.exec(stmt).all()
+        rows = cast(Any, self._session).exec(stmt).all()
         return [mappers.job_to_domain(row) for row in rows]
 
 
@@ -250,7 +253,9 @@ class SqlModelPendingVerificationRepository(PendingVerificationRepository):
         self._session = session
 
     def upsert(self, pending: PendingVerification) -> PendingVerification:
-        stmt = select(db_models.PendingEmailVerification).where(db_models.PendingEmailVerification.email == pending.email)
+        stmt = select(db_models.PendingEmailVerification).where(
+            db_models.PendingEmailVerification.email == pending.email
+        )
         existing = self._session.exec(stmt).first()
         if existing:
             existing.hashed_password = pending.hashed_password
@@ -268,18 +273,24 @@ class SqlModelPendingVerificationRepository(PendingVerificationRepository):
         return mappers.pending_verification_to_domain(db_obj)
 
     def get_by_email(self, email: str) -> PendingVerification | None:
-        stmt = select(db_models.PendingEmailVerification).where(db_models.PendingEmailVerification.email == email)
-        row = self._session.exec(stmt).first()
+        stmt = select(db_models.PendingEmailVerification).where(
+            db_models.PendingEmailVerification.email == email
+        )
+        row = cast(Any, self._session).exec(stmt).first()
         return mappers.pending_verification_to_domain(row) if row else None
 
     def get_by_token_hash(self, token_hash: str) -> PendingVerification | None:
-        stmt = select(db_models.PendingEmailVerification).where(db_models.PendingEmailVerification.token_hash == token_hash)
-        row = self._session.exec(stmt).first()
+        stmt = select(db_models.PendingEmailVerification).where(
+            db_models.PendingEmailVerification.token_hash == token_hash
+        )
+        row = cast(Any, self._session).exec(stmt).first()
         return mappers.pending_verification_to_domain(row) if row else None
 
     def delete_by_email(self, email: str) -> None:
-        stmt = select(db_models.PendingEmailVerification).where(db_models.PendingEmailVerification.email == email)
-        row = self._session.exec(stmt).first()
+        stmt = select(db_models.PendingEmailVerification).where(
+            db_models.PendingEmailVerification.email == email
+        )
+        row = cast(Any, self._session).exec(stmt).first()
         if row:
             self._session.delete(row)
             self._session.commit()
@@ -290,7 +301,9 @@ class SqlModelPasswordResetTokenRepository(PasswordResetTokenRepository):
         self._session = session
 
     def upsert(self, token: PasswordResetToken) -> PasswordResetToken:
-        stmt = select(db_models.PasswordResetToken).where(db_models.PasswordResetToken.email == token.email)
+        stmt = select(db_models.PasswordResetToken).where(
+            db_models.PasswordResetToken.email == token.email
+        )
         existing = self._session.exec(stmt).first()
         if existing:
             existing.token_hash = token.token_hash
@@ -305,30 +318,36 @@ class SqlModelPasswordResetTokenRepository(PasswordResetTokenRepository):
         return mappers.password_reset_token_to_domain(db_obj)
 
     def get_by_email(self, email: str) -> PasswordResetToken | None:
-        stmt = select(db_models.PasswordResetToken).where(db_models.PasswordResetToken.email == email)
-        row = self._session.exec(stmt).first()
+        stmt = select(db_models.PasswordResetToken).where(
+            db_models.PasswordResetToken.email == email
+        )
+        row = cast(Any, self._session).exec(stmt).first()
         return mappers.password_reset_token_to_domain(row) if row else None
 
     def get_by_token_hash(self, token_hash: str) -> PasswordResetToken | None:
-        stmt = select(db_models.PasswordResetToken).where(db_models.PasswordResetToken.token_hash == token_hash)
-        row = self._session.exec(stmt).first()
+        stmt = select(db_models.PasswordResetToken).where(
+            db_models.PasswordResetToken.token_hash == token_hash
+        )
+        row = cast(Any, self._session).exec(stmt).first()
         return mappers.password_reset_token_to_domain(row) if row else None
 
     def delete_by_email(self, email: str) -> None:
-        stmt = select(db_models.PasswordResetToken).where(db_models.PasswordResetToken.email == email)
-        row = self._session.exec(stmt).first()
+        stmt = select(db_models.PasswordResetToken).where(
+            db_models.PasswordResetToken.email == email
+        )
+        row = cast(Any, self._session).exec(stmt).first()
         if row:
             self._session.delete(row)
             self._session.commit()
 
 
 __all__ = [
-    "SqlModelUserRepository",
-    "SqlModelTestRepository",
     "SqlModelFileRepository",
-    "SqlModelMaterialRepository",
     "SqlModelJobRepository",
-    "SqlModelPendingVerificationRepository",
+    "SqlModelMaterialRepository",
     "SqlModelPasswordResetTokenRepository",
+    "SqlModelPendingVerificationRepository",
+    "SqlModelTestRepository",
+    "SqlModelUserRepository",
 ]
 

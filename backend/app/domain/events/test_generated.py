@@ -13,7 +13,7 @@ class TestGenerated(DomainEvent):
     question_count: int
 
     @staticmethod
-    def create(*, test_id: int, owner_id: int, question_count: int) -> "TestGenerated":
+    def create(*, test_id: int, owner_id: int, question_count: int) -> TestGenerated:
         return TestGenerated(
             occurred_at=datetime.utcnow(),
             test_id=test_id,

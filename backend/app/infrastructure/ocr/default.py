@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import cast
+
 import pytesseract
 from PIL import Image
 
@@ -13,6 +15,8 @@ class DefaultOCRService(OCRService):
     def extract_text(self, *, file_path: str) -> str:
         try:
             with Image.open(file_path) as image:
-                return pytesseract.image_to_string(image, lang=self._language)
-        except Exception:  # noqa: BLE001
+                return cast(
+                    str, pytesseract.image_to_string(image, lang=self._language)
+                )
+        except Exception:
             return ""

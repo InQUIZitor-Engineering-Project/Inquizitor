@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import mimetypes
 import uuid
-from contextlib import contextmanager
+from collections.abc import Iterator
+from contextlib import contextmanager, suppress
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Iterator
 from urllib.parse import urlparse
 
 import boto3
@@ -34,7 +34,8 @@ class R2FileStorage(FileStorage):
         self._public_base_url = public_base_url.rstrip("/") if public_base_url else None
         self._presign_expiration = presign_expiration
 
-        # Validate endpoint: must NOT contain bucket in the path (common R2 gotcha that breaks signatures/CORS)
+        # Validate endpoint: must NOT contain bucket in the path
+        # (common R2 gotcha that breaks signatures/CORS)
         parsed = urlparse(endpoint_url)
         if parsed.path and parsed.path != "/":
             raise ValueError(
@@ -94,10 +95,8 @@ class R2FileStorage(FileStorage):
         try:
             yield tmp_path
         finally:
-            try:
+            with suppress(Exception):
                 tmp_path.unlink(missing_ok=True)
-            except Exception:
-                pass
 
 
 __all__ = ["R2FileStorage"]

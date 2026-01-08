@@ -145,12 +145,6 @@ const QuestionsSection: React.FC<QuestionsSectionProps> = ({
         );
       })}
 
-      <Flex $justify="center">
-        <Button $variant="info" $size="lg" onClick={actions.startAdd}>
-          + Dodaj pytanie
-        </Button>
-      </Flex>
-
       {isAdding && (
         <QuestionCard
           key="new-question"
@@ -178,6 +172,14 @@ const QuestionsSection: React.FC<QuestionsSectionProps> = ({
             ensureChoices={stateFlags.ensureChoices}
           />
         </QuestionCard>
+      )}
+
+      {!isAdding && (
+        <Flex $justify="center" $mt="md">
+          <Button $variant="info" $size="lg" onClick={actions.startAdd}>
+            + Dodaj pytanie
+          </Button>
+        </Flex>
       )}
     </Stack>
   );

@@ -1,15 +1,15 @@
 import React from "react";
-import { Box, Flex, Stack, Button, Text, Textarea } from "../../design-system/primitives";
-import Footer from "../../components/Footer/Footer";
+import { Box, Flex, Stack, Text, Textarea } from "../../design-system/primitives";
 import useTestDetail from "./hooks/useTestDetail";
 import TitleBar from "./components/TitleBar";
 import MetaSummary from "./components/MetaSummary";
 import QuestionsSection from "./components/QuestionsSection";
 import PdfConfigSection from "./components/PdfConfigSection";
 import BulkActionBar from "./components/BulkActionBar";
-import { AlertBar, Modal } from "../../design-system/patterns";
+import { Modal } from "../../design-system/patterns";
 import { SelectableItem } from "../../design-system/patterns/Modal";
 import { PageContainer, PageSection } from "../../design-system/patterns";
+import DownloadActions from "./components/DownloadActions"
 
 const TestDetailPage: React.FC = () => {
   const { state, derived, actions } = useTestDetail();
@@ -21,8 +21,8 @@ const TestDetailPage: React.FC = () => {
   const { data } = state;
   
   return (
-    <Flex $direction="column" $height="100%" $bg="#f5f6f8" $overflow="hidden" style={{ position: "relative" }}>
-      <Box $flex={1} $overflowY="auto" $width="100%">
+    <Flex $direction="column" $height="100%" $bg="#f5f6f8" style={{ position: "relative" }}>
+      <Box $flex={1} $width="100%">
         <PageSection $py="xl">
           <PageContainer>
             <Stack style={{ width: "100%", maxWidth: 960, margin: "0 auto" }} $gap="lg">
@@ -86,17 +86,11 @@ const TestDetailPage: React.FC = () => {
                 onReset={actions.resetPdfConfig}
               />
 
-              <Box>
-                <Flex $gap="sm" $align="center" $wrap="wrap" $mt="sm">
-                  <Button onClick={actions.handleDownloadCustomPdf}>Pobierz PDF</Button>
-                  <Button onClick={actions.downloadXml}>Pobierz XML</Button>
-                  <AlertBar variant="warning">
-                    Test został wygenerowany przez AI i może zawierać błędy. Zweryfikuj go przed pobraniem.
-                  </AlertBar>
-                </Flex>
-              </Box>
+              <DownloadActions 
+                onDownloadPdf={actions.handleDownloadCustomPdf}
+                onDownloadXml={actions.downloadXml}
+              />
 
-              <Footer />
             </Stack>
           </PageContainer>
         </PageSection>
@@ -184,6 +178,8 @@ const TestDetailPage: React.FC = () => {
         isOpen={state.isTypeModalOpen}
         title="🔄 Zmień typ pytań"
         onClose={actions.closeTypeModal}
+        onConfirm={() => state.tempType && actions.handleBulkTypeChange(state.tempType)}
+        confirmLabel="Zastosuj"
         variant="brand"
       >
         <Stack $gap="sm">
@@ -191,7 +187,8 @@ const TestDetailPage: React.FC = () => {
             Na jaki typ chcesz zmienić zaznaczone pytania?
           </Text>
           <SelectableItem
-            onClick={() => actions.handleBulkTypeChange("open")}
+            $active={state.tempType === "open"}
+            onClick={() => actions.setTempType("open")}
             $align="center"
             $gap="sm"
           >
@@ -201,7 +198,8 @@ const TestDetailPage: React.FC = () => {
             </Stack>
           </SelectableItem>
           <SelectableItem
-            onClick={() => actions.handleBulkTypeChange("closed")}
+            $active={state.tempType === "closed"}
+            onClick={() => actions.setTempType("closed")}
             $align="center"
             $gap="sm"
           >

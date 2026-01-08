@@ -12,12 +12,28 @@ Prerequisites: Docker Desktop 4.x
    - Web: http://localhost:5173
 
 ### Useful commands
-- Start only backend: `make start.backend`
-- Start only frontend: `make start.frontend`
-- Start only db: `make start.db`
-- Stop all: `make stop`
-- Logs (follow): `make logs`
-- Run migrations: `make migrate`
+
+#### 🚀 Core Commands
+- `make start`: Starts the entire development environment (API, Web, DB, Celery) and builds images.
+- `make stop`: Stops all running containers and cleans up.
+- `make logs`: Follows logs from all services (last 200 lines).
+- `make rebuild`: Forces a clean rebuild of all Docker images without using cache.
+
+#### 🛠️ Quality Control (Local CI)
+- `make check`: Runs the **full CI suite** locally (migrations drift, linting, and type checking for both backend and frontend).
+- `make fix`: Automatically fixes most linting issues in both backend (Ruff) and frontend (ESLint).
+
+#### 🗄️ Database & Migrations
+- `make migration msg="description"`: Generates a new migration file based on model changes.
+- `make migrate`: Manually applies all pending migrations to the database (also happens automatically on app start).
+- `make migrate-down`: Reverts the last applied migration.
+- `make migration-check`: Only checks if your models are in sync with migrations (no changes made).
+
+#### 🍱 Partial Startup
+- `make start.backend`: Starts only the API container.
+- `make start.frontend`: Starts only the Web container.
+- `make start.db`: Starts only the Database and Adminer.
+- `make start.celery`: Starts only the Celery worker.
 
 ### Backend bootstrap
 - The FastAPI app is built via `create_app()` in `app/bootstrap.py`.

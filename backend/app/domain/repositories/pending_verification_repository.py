@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Optional
 
 from app.domain.models import PendingVerification
 
@@ -12,11 +11,11 @@ class PendingVerificationRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_by_email(self, email: str) -> Optional[PendingVerification]:
+    def get_by_email(self, email: str) -> PendingVerification | None:
         raise NotImplementedError
 
     @abstractmethod
-    def get_by_token_hash(self, token_hash: str) -> Optional[PendingVerification]:
+    def get_by_token_hash(self, token_hash: str) -> PendingVerification | None:
         raise NotImplementedError
 
     @abstractmethod

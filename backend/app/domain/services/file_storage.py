@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from typing import Protocol, ContextManager
+from contextlib import AbstractContextManager
 from pathlib import Path
+from typing import Protocol
 
 
 class FileStorage(Protocol):
@@ -16,7 +17,7 @@ class FileStorage(Protocol):
     def get_url(self, *, stored_path: str) -> str:
         ...
 
-    def download_to_temp(self, *, stored_path: str) -> ContextManager[Path]:
+    def download_to_temp(self, *, stored_path: str) -> AbstractContextManager[Path]:
         """Provide a local path to the stored object for temporary processing."""
         ...
 

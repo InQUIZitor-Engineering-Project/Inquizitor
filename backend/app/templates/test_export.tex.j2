@@ -19,6 +19,8 @@
 ]{Roboto}
 
 % 2. Mathastext: Spójna matematyka
+\usepackage{amsmath}
+\usepackage{amssymb}
 \usepackage[italic]{mathastext}
 
 % --- Kolory ---
@@ -145,7 +147,7 @@
 [% for variant in variants %]
     
     [% if variants|length > 1 %]
-      \section*{\textcolor{brand}{Grupa {{ variant.name }}}}
+      \section*{\textcolor{brand}{\textbf{Grupa {{ variant.name }}}}}
     [% endif %]
 
     \begin{enumerate}
@@ -230,14 +232,14 @@
 
 [% for variant in variants %]
   [% if variants|length > 1 %]
-    \subsection*{Grupa {{ variant.name }}}
+    \subsection*{\textbf{Grupa {{ variant.name }}}}
   [% endif %]
   
   \begin{enumerate}
   [% for q in variant.questions %]
     \item 
     [% if q.is_closed and q.correct_choices %]
-      \textbf{ {{ q.correct_choices|join(', ')|latex_math }} }
+      {{ q.correct_choices|join(', ')|latex_math }}
     [% else %]
       \textit{otwarte}
     [% endif %]

@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { Flex, Stack, Box } from "../../design-system/primitives";
-import Footer from "../../components/Footer/Footer";
 import { useLoader } from "../../components/Loader/GlobalLoader";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import ProfileHeader from "./components/ProfileHeader";
@@ -196,17 +195,15 @@ const ProfilePage: React.FC = () => {
 
   if (loading) {
     return (
-      <Flex $direction="column" $bg="#f5f6f8" style={{ minHeight: "100vh" }}>
+      <Flex $direction="column" $bg="#f5f6f8" style={{ minHeight: "100%" }}>
         {pageContent}
-        <Footer />
       </Flex>
     );
   }
 
   return (
-    <Flex $direction="column" $bg="#f5f6f8" style={{ minHeight: "100vh" }}>
+    <Flex $direction="column" $bg="#f5f6f8" style={{ minHeight: "100%" }}>
       {pageContent}
-      <Footer />
     </Flex>
   );
 };

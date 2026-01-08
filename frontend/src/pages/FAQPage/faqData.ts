@@ -150,6 +150,22 @@ export const faqItems = [
       "Pracujemy nad możliwością dodawania obrazków bezpośrednio do treści pytań oraz nad ulepszeniem silnika OCR, by jeszcze lepiej rozpoznawał tekst i wzory ze zdjęć i skanów.",
     tag: "rozwój",
   },
+  {
+    id: 20,
+    category: "Generowanie testów",
+    question: "Czy wygenerowane pytania są zawsze poprawne merytorycznie?",
+    answer:
+      "Korzystamy z zaawansowanych modeli językowych, które są bardzo skuteczne, ale mogą sporadycznie popełniać błędy (tzw. halucynacje). Zalecamy, abyś jako nauczyciel zawsze przejrzał i zweryfikował test przed udostępnieniem go uczniom.",
+    tag: "weryfikacja",
+  },
+  {
+    id: 21,
+    category: "Edycja i eksport",
+    question: "Do czego mogę wykorzystać format Moodle XML?",
+    answer:
+      "Format ten zapewnia kompatybilność z platformami e-learningowymi (np. Moodle). Pozwala też na bezpośredni import pytań do zewnętrznych gier edukacyjnych, takich jak aplikacja Quizzobara.",
+    tag: "integracja",
+  },
 ] as const;
 
 export const categoriesOrder = [
