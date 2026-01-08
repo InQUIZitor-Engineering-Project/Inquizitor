@@ -4,6 +4,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any, cast
 
+import magic
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import HTTPException as FastAPIHTTPException
 from fastapi.exceptions import RequestValidationError
@@ -37,11 +38,6 @@ from app.infrastructure import (
 )
 from app.infrastructure.extractors.extract_composite import composite_text_extractor
 from app.middleware import LoggingMiddleware
-
-try:  # pragma: no cover - optional dependency
-    import magic
-except ImportError:
-    magic = None
 
 
 class AppContainer:

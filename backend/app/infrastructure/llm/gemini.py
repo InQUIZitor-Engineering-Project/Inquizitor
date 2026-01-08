@@ -142,7 +142,7 @@ class LLMQuestionPayload(BaseModel):
             )
 
         self.choices = choices
-        self.correct_choices = cast(Any, normalized_correct)
+        self.correct_choices = cast("list[str | int] | None", normalized_correct)
         return self
 
 
