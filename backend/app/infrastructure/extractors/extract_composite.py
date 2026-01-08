@@ -6,7 +6,7 @@ from pathlib import Path
 import pytesseract
 from pdf2image import convert_from_path  # type: ignore[attr-defined]
 
-from app.infrastructure.extractors import extract_text_from_file
+from .text import extract_text_from_file
 from app.infrastructure.ocr import DefaultOCRService
 
 IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".tif", ".tiff", ".bmp", ".webp"}
