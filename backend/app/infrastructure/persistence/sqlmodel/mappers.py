@@ -64,6 +64,24 @@ def question_to_domain(row: db_models.Question) -> Question:
         elif correct_choices:
             choices = correct_choices[:]
 
+    choices = row.choices or []
+    correct_choices = row.correct_choices or []
+    
+    # Self-healing logic for corrupted DB data (e.g. from LLM mismatch)
+    if row.is_closed:
+        # 1. Clean whitespace
+        choices = [str(c).strip() for c in choices if str(c).strip()]
+        correct_choices = [str(c).strip() for c in correct_choices if str(c).strip()]
+        
+        # 2. Ensure consistency
+        if choices:
+            valid_correct = [c for c in correct_choices if c in choices]
+            if not valid_correct:
+                valid_correct = [choices[0]]
+            correct_choices = valid_correct
+        elif correct_choices:
+            choices = correct_choices[:]
+
     return Question(
         id=row.id,
         text=row.text,

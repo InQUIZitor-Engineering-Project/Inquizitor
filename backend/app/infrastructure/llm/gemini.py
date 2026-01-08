@@ -19,6 +19,7 @@ from app.core.config import get_settings
 from app.domain.models import Question
 from app.domain.models.enums import QuestionDifficulty
 from app.domain.services import QuestionGenerator
+from .prompts import PromptBuilder
 
 from .prompts import PromptBuilder
 

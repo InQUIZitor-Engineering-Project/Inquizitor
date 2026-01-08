@@ -16,6 +16,10 @@ from app.api.schemas.tests import (
     TestDetailOut,
     TestGenerateRequest,
     TestOut,
+    BulkUpdateQuestionsRequest,
+    BulkDeleteQuestionsRequest,
+    BulkRegenerateQuestionsRequest,
+    BulkConvertQuestionsRequest,
     TestTitleUpdate,
 )
 from app.application.services import JobService, TestService

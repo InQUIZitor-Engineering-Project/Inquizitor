@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+
+import json
 import logging
 import random
 import re
@@ -14,6 +16,14 @@ from typing import Any, cast
 from fastapi import HTTPException
 
 from app.api.schemas.tests import (
+    BulkConvertQuestionsRequest,
+    BulkDeleteQuestionsRequest,
+    BulkRegenerateQuestionsRequest,
+    BulkUpdateQuestionsRequest,
+    PdfExportConfig,
+    QuestionCreate,
+    QuestionOut,
+    QuestionUpdate,
     BulkConvertQuestionsRequest,
     BulkDeleteQuestionsRequest,
     BulkRegenerateQuestionsRequest,
@@ -43,9 +53,15 @@ from app.infrastructure.exporting import (
     compile_tex_to_pdf,
     render_custom_test_to_tex,
     render_test_to_tex,
+    render_test_to_tex,
     test_to_xml_bytes,
 )
 from app.infrastructure.extractors.extract_composite import composite_text_extractor
+from app.infrastructure.llm.gemini import GeminiQuestionGenerator
+from app.infrastructure.llm.prompts import PromptBuilder
+
+logger = logging.getLogger(__name__)
+
 from app.infrastructure.llm.gemini import GeminiQuestionGenerator
 from app.infrastructure.llm.prompts import PromptBuilder
 
@@ -158,6 +174,7 @@ class TestService:
             return questions
 
         prompt = self._build_variant_prompt(questions, instruction)
+        prompt = self._build_variant_prompt(questions, instruction)
 
         try:
             client = GeminiQuestionGenerator._client()
@@ -212,6 +229,11 @@ class TestService:
                 choices = [str(c).strip() for c in choices if str(c).strip()]
                 
                 if not choices:
+                
+                # Czyścimy i normalizujemy choices
+                choices = [str(c).strip() for c in choices if str(c).strip()]
+                
+                if not choices:
                     variants.append(orig)
                     continue
 
@@ -236,6 +258,11 @@ class TestService:
                 choices = choices[:target_len]
                 while len(choices) < target_len:
                     choices.append("")
+                
+                # Ponowna walidacja correct_choices po potencjalnym przycięciu choices
+                correct_choices = [c for c in correct_choices if c in choices]
+                if not correct_choices:
+                    correct_choices = [choices[0]]
                 
                 # Ponowna walidacja correct_choices po potencjalnym przycięciu choices
                 correct_choices = [c for c in correct_choices if c in choices]
@@ -276,6 +303,7 @@ class TestService:
                     source_file = uow.files.get(request.file_id)
                     if not source_file or source_file.owner_id != owner_id:
                         raise ValueError("Plik nie został znaleziony")
+                        raise ValueError("Plik nie został znaleziony")
                     base_title = source_file.filename
                 else:
                     base_title = "From raw text"
@@ -301,6 +329,7 @@ class TestService:
                 else:
                     source_file = uow.files.get(request.file_id)
                     if not source_file or source_file.owner_id != owner_id:
+                        raise ValueError("Plik nie został znaleziony")
                         raise ValueError("Plik nie został znaleziony")
                     with self._storage.download_to_temp(
                         stored_path=str(source_file.stored_path)
@@ -373,6 +402,7 @@ class TestService:
             test = uow.tests.get_with_questions(test_id)
             if not test or test.owner_id != owner_id:
                 raise ValueError("Test nie został znaleziony")
+                raise ValueError("Test nie został znaleziony")
 
             test.questions = self._sort_questions(test.questions)
             return dto.to_test_detail(test)
@@ -386,6 +416,7 @@ class TestService:
         with self._uow_factory() as uow:
             test = uow.tests.get(test_id)
             if not test or test.owner_id != owner_id:
+                raise ValueError("Test nie został znaleziony")
                 raise ValueError("Test nie został znaleziony")
             uow.tests.remove(test_id)
 
@@ -523,6 +554,7 @@ class TestService:
             test = uow.tests.get(test_id)
             if not test or test.owner_id != owner_id:
                 raise ValueError("Test nie został znaleziony")
+                raise ValueError("Test nie został znaleziony")
 
             session = getattr(uow, "session", None)
             if session is None:
@@ -530,6 +562,7 @@ class TestService:
 
             question_row = session.get(QuestionRow, question_id)
             if not question_row or question_row.test_id != test_id:
+                raise ValueError("Pytanie nie zostało znalezione")
                 raise ValueError("Pytanie nie zostało znalezione")
 
             # ogarniamy payload niezależnie czy to Pydantic czy dict
@@ -871,6 +904,7 @@ class TestService:
             test = uow.tests.get(test_id)
             if not test or test.owner_id != owner_id:
                 raise ValueError("Test nie został znaleziony")
+                raise ValueError("Test nie został znaleziony")
 
             session = getattr(uow, "session", None)
             if session is None:
@@ -929,6 +963,7 @@ class TestService:
             test = uow.tests.get(test_id)
             if not test or test.owner_id != owner_id:
                 raise ValueError("Test nie został znaleziony")
+                raise ValueError("Test nie został znaleziony")
 
             session = getattr(uow, "session", None)
             if session is None:
@@ -936,6 +971,7 @@ class TestService:
 
             question_row = session.get(QuestionRow, question_id)
             if not question_row or question_row.test_id != test_id:
+                raise ValueError("Pytanie nie zostało znalezione")
                 raise ValueError("Pytanie nie zostało znalezione")
 
             session.delete(question_row)
@@ -987,6 +1023,7 @@ class TestService:
 
             test_row = session.get(TestRow, test_id)
             if not test_row or test_row.owner_id != owner_id:
+                raise ValueError("Test nie został znaleziony")
                 raise ValueError("Test nie został znaleziony")
 
             test_row.title = title

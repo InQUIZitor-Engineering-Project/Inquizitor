@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any, cast
 
 import jinja2
+import jinja2
 import resend
 
 from app.domain.services import EmailSender

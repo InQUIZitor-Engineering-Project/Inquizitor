@@ -72,6 +72,21 @@ class SqlModelUserRepository(UserRepository):
         self._session.refresh(db_user)
         return mappers.user_to_domain(db_user)
 
+    def update(self, user: User) -> User:
+        db_user = self._session.get(db_models.User, user.id)
+        if not db_user:
+            raise ValueError(f"User {user.id} not found")
+        
+        db_user.email = user.email
+        db_user.hashed_password = user.hashed_password
+        db_user.first_name = user.first_name
+        db_user.last_name = user.last_name
+        
+        self._session.add(db_user)
+        self._session.commit()
+        self._session.refresh(db_user)
+        return mappers.user_to_domain(db_user)
+
 
 class SqlModelTestRepository(TestRepository):
     def __init__(self, session: Session):
