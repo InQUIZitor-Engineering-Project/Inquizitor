@@ -138,6 +138,15 @@ export async function getTestDetail(testId: number): Promise<TestDetail> {
   const res = await apiRequest(`/tests/${testId}`);
   return handleJson<TestDetail>(res, "Nie udało się pobrać testu");
 }
+
+export async function createTest(title: string): Promise<TestOut> {
+  const res = await apiRequest(`/tests/`, {
+    method: "POST",
+    body: JSON.stringify({ title }),
+  });
+  return handleJson<TestOut>(res, "Nie udało się utworzyć testu");
+}
+
 export async function updateTestTitle(testId: number, title: string) {
   const res = await apiRequest(`/tests/${testId}/title`, {
     method: "PATCH",

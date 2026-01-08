@@ -1,7 +1,6 @@
 import React from "react";
 import Hero from "../components/Hero/Hero";
 import HowItWorks from "../components/HowItWorks/HowItWorks";
-import Footer from "../components/Footer/Footer";
 import useDocumentTitle from "../hooks/useDocumentTitle";
 
 const HomePage: React.FC = () => {
@@ -12,7 +11,6 @@ const HomePage: React.FC = () => {
     <>
       <Hero />
       <HowItWorks id="how-it-works"/>
-      <Footer/>
     </>
   );
 };

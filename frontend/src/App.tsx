@@ -13,8 +13,11 @@ import ProfilePage from "./pages/ProfilePage/ProfilePage";
 import TestDetailPage from "./pages/TestDetailPage/TestDetailPage";
 import AboutUsPage from './pages/AboutUsPage/AboutUsPage';
 import FAQPage from './pages/FAQPage/FAQPage';
-import CreateTestPage from "./pages/CreateTestPage/CreateTestPage";
+import CreateTestSelectionPage from "./pages/CreateTestSelectionPage/CreateTestSelectionPage";
+import CreateTestAIPage from "./pages/CreateTestAIPage/CreateTestAIPage";
+import CreateManualTestPage from "./pages/CreateManualTestPage/CreateManualTestPage";
 import MainLayout from "./layouts/MainLayout";
+import PublicLayout from "./layouts/PublicLayout";
 import VerifyEmailPage from "./pages/VerifyEmailPage/VerifyEmailPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage/ResetPasswordPage";
@@ -50,7 +53,45 @@ const App: React.FC = () => {
         <Navbar />
         <ScrollToTop />
         <Routes>
-          <Route path="/" element={<HomePage />} />
+          <Route element={<PublicLayout />}>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/about" element={<AboutUsPage />} />
+            <Route path="/faq" element={<FAQPage />} />
+            <Route 
+              path="/register" 
+              element={
+                <PublicOnlyRoute>
+                  <RegisterPage />
+                </PublicOnlyRoute>
+              } 
+            />
+            <Route 
+              path="/login" 
+              element={
+                <PublicOnlyRoute>
+                  <LoginPage />
+                </PublicOnlyRoute>
+              }
+            />
+            <Route path="/verify-email" element={<VerifyEmailPage />} />
+            <Route 
+              path="/forgot-password" 
+              element={
+                <PublicOnlyRoute>
+                  <ForgotPasswordPage />
+                </PublicOnlyRoute>
+              } 
+            />
+            <Route 
+              path="/reset-password" 
+              element={
+                <PublicOnlyRoute>
+                  <ResetPasswordPage />
+                </PublicOnlyRoute>
+              } 
+            />
+          </Route>
+
           <Route path="/" element={<MainLayout />}>
             <Route 
               path="/dashboard" 
@@ -64,7 +105,23 @@ const App: React.FC = () => {
               path="/tests/new" 
               element={
                 <ProtectedRoute>
-                  <CreateTestPage />
+                  <CreateTestSelectionPage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/tests/new/ai" 
+              element={
+                <ProtectedRoute>
+                  <CreateTestAIPage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/tests/new/manual" 
+              element={
+                <ProtectedRoute>
+                  <CreateManualTestPage />
                 </ProtectedRoute>
               } 
             />
@@ -74,50 +131,16 @@ const App: React.FC = () => {
               </ProtectedRoute>
             }>
             </Route>
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <ProfilePage />
+                </ProtectedRoute>
+              }
+            />
           </Route>
-          <Route path="/about" element={<AboutUsPage />} />
-          <Route path="/faq" element={<FAQPage />} />
-          <Route 
-            path="/register" 
-            element={
-              <PublicOnlyRoute>
-                <RegisterPage />
-              </PublicOnlyRoute>
-            } 
-          />
-          <Route 
-            path="/login" 
-            element={
-              <PublicOnlyRoute>
-                <LoginPage />
-              </PublicOnlyRoute>
-            }
-          />
-          <Route path="/verify-email" element={<VerifyEmailPage />} />
-          <Route 
-            path="/forgot-password" 
-            element={
-              <PublicOnlyRoute>
-                <ForgotPasswordPage />
-              </PublicOnlyRoute>
-            } 
-          />
-          <Route 
-            path="/reset-password" 
-            element={
-              <PublicOnlyRoute>
-                <ResetPasswordPage />
-              </PublicOnlyRoute>
-            } 
-          />
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute>
-                <ProfilePage />
-              </ProtectedRoute>
-            }
-          />
+
           <Route path="*" element={<FallbackRedirect />} />
         </Routes>
       </BrowserRouter>

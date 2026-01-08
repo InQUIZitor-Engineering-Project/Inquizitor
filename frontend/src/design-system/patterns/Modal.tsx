@@ -63,7 +63,7 @@ export interface ModalProps {
   confirmLabel?: string;
   cancelLabel?: string;
   onConfirm?: () => void;
-  isLoading?: boolean;
+  confirmLoading?: boolean;
 }
 
 const Modal: React.FC<ModalProps> = ({
@@ -77,7 +77,7 @@ const Modal: React.FC<ModalProps> = ({
   confirmLabel,
   cancelLabel = "Anuluj",
   onConfirm,
-  isLoading = false,
+  confirmLoading = false,
 }) => {
   if (!isOpen) return null;
 
@@ -103,7 +103,7 @@ const Modal: React.FC<ModalProps> = ({
             </Heading>
             <CloseButton onClick={onClose} $top={0} $right={0} />
           </Flex>
-
+          
           <Box>
             {typeof children === "string" ? (
               <Text $variant="body2" $tone="muted">
@@ -120,14 +120,14 @@ const Modal: React.FC<ModalProps> = ({
                 footer
               ) : (
                 <>
-                  <Button $variant="outline" onClick={onClose} disabled={isLoading}>
+                  <Button $variant="outline" onClick={onClose} disabled={confirmLoading}>
                     {cancelLabel}
                   </Button>
                   {onConfirm && (
                     <Button
                       $variant={getButtonVariant()}
                       onClick={onConfirm}
-                      disabled={isLoading}
+                      disabled={confirmLoading}
                     >
                       {confirmLabel || "Potwierdź"}
                     </Button>

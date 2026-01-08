@@ -13,7 +13,7 @@ const DownloadActions: React.FC<DownloadActionsProps> = ({ onDownloadPdf, onDown
       <Button onClick={onDownloadPdf}>Pobierz PDF</Button>
       <Button onClick={onDownloadXml}>Pobierz XML</Button>
       <AlertBar variant="warning">
-        Test został wygenerowany przez AI i może zawierać błędy. Zweryfikuj go przed pobraniem.
+        AI może generować błędne treści. Zweryfikuj test przed pobraniem.
       </AlertBar>
     </Flex>
   );
