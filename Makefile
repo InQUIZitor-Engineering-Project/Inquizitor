@@ -49,7 +49,7 @@ fix:
 	docker compose exec web npm run lint -- --fix
 
 rebuild:
-	docker compose build --no-cache
+	docker compose up -d --build --force-recreate
 
 start.prod:
 	docker compose -f docker-compose.prod.yml up --build

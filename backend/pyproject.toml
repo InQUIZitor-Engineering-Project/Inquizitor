@@ -31,7 +31,10 @@ no_implicit_reexport = true
 disallow_any_generics = false
 disable_error_code = ["var-annotated"]
 plugins = ["pydantic.mypy"]
-exclude = ["migrations/"]
+exclude = ["migrations"]
+
+[tool.pyright]
+exclude = ["migrations"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

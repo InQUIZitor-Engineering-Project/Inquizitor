@@ -127,7 +127,7 @@ class TestService:
         }
         for q in questions:
             d = q.get("difficulty")
-            if d in (1, 2, 3) and d is not None:
+            if d in (1, 2, 3):
                 buckets[d].append(q)
             else:
                 buckets["other"].append(q)

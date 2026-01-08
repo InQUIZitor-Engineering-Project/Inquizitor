@@ -23,8 +23,7 @@ class UserService:
 
     def get_user_statistics(self, *, user_id: int) -> UserStatistics:
         with self._uow_factory() as uow:
-            tests_iter = uow.tests.list_for_user(user_id)
-            tests = list(tests_iter)
+            tests = list(uow.tests.list_for_user(user_id))
 
             files_repo = getattr(uow, "files", None)
             total_files = 0

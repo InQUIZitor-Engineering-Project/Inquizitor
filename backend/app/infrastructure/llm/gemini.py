@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import logging
-from contextlib import suppress
 from functools import lru_cache
 from typing import Annotated, Any, cast
 
@@ -71,9 +70,29 @@ class LLMQuestionPayload(BaseModel):
         if not isinstance(values, dict):
             raise ValueError("Element listy pytań musi być obiektem JSON.")
         data = dict(values)
-        if "difficulty" in data:
-            with suppress(Exception):
-                data["difficulty"] = int(data["difficulty"])
+
+        # Mapowanie trudności z tekstu na liczby + fallback do 1
+        raw_diff = data.get("difficulty")
+        if isinstance(raw_diff, str):
+            normalized = raw_diff.lower().strip()
+            mapping = {
+                "easy": 1, "medium": 2, "hard": 3,
+                "łatwy": 1, "średni": 2, "trudny": 3,
+            }
+            if normalized in mapping:
+                data["difficulty"] = mapping[normalized]
+            else:
+                try:
+                    data["difficulty"] = int(normalized)
+                except (ValueError, TypeError):
+                    data["difficulty"] = 1
+        elif not isinstance(raw_diff, int):
+            data["difficulty"] = 1
+
+        # Upewnienie się, że trudność mieści się w zakresie 1-3
+        if not (1 <= data.get("difficulty", 1) <= 3):
+            data["difficulty"] = 1
+
         if "is_closed" in data:
             data["is_closed"] = bool(data["is_closed"])
         return data
