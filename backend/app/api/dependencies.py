@@ -17,7 +17,7 @@ from app.application.services import (
 from app.domain.services import FileStorage
 
 if TYPE_CHECKING:  # pragma: no cover - only for type hints
-    from app.bootstrap import Any
+    from app.bootstrap import AppContainer
 
 
 def get_app_container(request: Request) -> Any:
@@ -28,7 +28,7 @@ def get_app_container(request: Request) -> Any:
         )
 
         container = get_container()
-    return cast("Any", container)
+    return cast("AppContainer", container)
 
 
 def get_auth_service(
@@ -66,10 +66,12 @@ def get_export_storage(
 ) -> FileStorage:
     return container.provide_export_storage()
 
+
 def get_user_service(
     container: Annotated[Any, Depends(get_app_container)],
 ) -> UserService:
     return container.provide_user_service()
+
 
 __all__ = [
     "get_app_container",
@@ -81,4 +83,3 @@ __all__ = [
     "get_test_service",
     "get_user_service",
 ]
-

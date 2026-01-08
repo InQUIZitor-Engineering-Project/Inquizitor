@@ -94,6 +94,7 @@ gunicorn
 uvicorn[standard]
 ruff
 mypy
+pre-commit
 types-psycopg2
 types-python-jose
 types-passlib

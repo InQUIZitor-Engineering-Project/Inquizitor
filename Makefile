@@ -1,7 +1,12 @@
 SHELL := /bin/bash
 
 .PHONY: start start.backend start.frontend start.db start.celery stop logs migrate rebuild new-migration \
-	start.prod start.prod.backend start.prod.db start.prod.celery stop.prod logs.prod migrate.prod rebuild.prod new-migration.prod
+	start.prod start.prod.backend start.prod.db start.prod.celery stop.prod logs.prod migrate.prod rebuild.prod new-migration.prod \
+	setup-hooks
+
+setup-hooks:
+	python3 -m pip install pre-commit --break-system-packages
+	python3 -m pre_commit install
 
 start:
 	docker compose up --build

@@ -76,8 +76,12 @@ class LLMQuestionPayload(BaseModel):
         if isinstance(raw_diff, str):
             normalized = raw_diff.lower().strip()
             mapping = {
-                "easy": 1, "medium": 2, "hard": 3,
-                "łatwy": 1, "średni": 2, "trudny": 3,
+                "easy": 1,
+                "medium": 2,
+                "hard": 3,
+                "łatwy": 1,
+                "średni": 2,
+                "trudny": 3,
             }
             if normalized in mapping:
                 data["difficulty"] = mapping[normalized]
@@ -138,7 +142,7 @@ class LLMQuestionPayload(BaseModel):
             )
 
         self.choices = choices
-        self.correct_choices = cast(list[str | int] | None, normalized_correct)
+        self.correct_choices = cast(Any, normalized_correct)
         return self
 
 
@@ -170,9 +174,7 @@ class GeminiQuestionGenerator(QuestionGenerator):
     @lru_cache
     def _client() -> genai.Client:
         settings = get_settings()
-        return genai.Client(
-            api_key=settings.GEMINI_API_KEY
-        )
+        return genai.Client(api_key=settings.GEMINI_API_KEY)
 
     def generate(
         self, *, source_text: str, params: GenerateParams
@@ -229,9 +231,7 @@ class GeminiQuestionGenerator(QuestionGenerator):
 
         closed_p = params.closed
         need_closed = (
-            closed_p.true_false
-            + closed_p.single_choice
-            + closed_p.multi_choice
+            closed_p.true_false + closed_p.single_choice + closed_p.multi_choice
         )
         need_open = params.num_open
 
@@ -245,9 +245,7 @@ class GeminiQuestionGenerator(QuestionGenerator):
                 text=payload.text,
                 is_closed=payload.is_closed,
                 difficulty=QuestionDifficulty(int(payload.difficulty)),
-                choices=cast(list[str], payload.choices or [])
-                if payload.is_closed
-                else [],
+                choices=(payload.choices or []) if payload.is_closed else [],
                 correct_choices=cast(list[str], payload.correct_choices or [])
                 if payload.is_closed
                 else [],
@@ -281,8 +279,7 @@ class GeminiQuestionGenerator(QuestionGenerator):
             return LLMResponse.model_validate(parsed)
         except ValidationError as exc:
             raise ValueError(
-                "Odpowiedź LLM nie spełnia wymaganego schematu. "
-                f"Szczegóły: {exc}"
+                "Odpowiedź LLM nie spełnia wymaganego schematu. " f"Szczegóły: {exc}"
             ) from exc
 
     def _attempt_repair(
@@ -336,8 +333,8 @@ class GeminiQuestionGenerator(QuestionGenerator):
             '"text": "string", '
             '"is_closed": true | false, '
             '"difficulty": 1 | 2 | 3, '
-            '"choices": [\"...\"] (wymagane dla is_closed=true), '
-            '"correct_choices": [\"...\"] (co najmniej jedna dla is_closed=true) '
+            '"choices": ["..."] (wymagane dla is_closed=true), '
+            '"correct_choices": ["..."] (co najmniej jedna dla is_closed=true) '
             "} ] "
             "}\n"
             f"Wymagane liczby pytań: zamknięte={closed_total}, "
@@ -347,6 +344,4 @@ class GeminiQuestionGenerator(QuestionGenerator):
         )
 
 
-
 __all__ = ["GeminiQuestionGenerator"]
-

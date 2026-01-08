@@ -85,12 +85,12 @@ class TestService:
         raw: int | None = None
         if isinstance(value, QuestionDifficulty):
             raw = value.value
-        elif isinstance(value, (int, str)):
+        elif isinstance(value, int | str):
             try:
                 raw = int(value)
             except Exception:
                 raw = None
-        
+
         return {1: 0, 2: 1, 3: 2}.get(raw if raw is not None else -1, 99)
 
     @classmethod
@@ -132,8 +132,8 @@ class TestService:
             else:
                 buckets["other"].append(q)
 
-        for key in (1, 2, 3, "other"):
-            random.shuffle(buckets[key])
+        for key in [1, 2, 3, "other"]:
+            random.shuffle(buckets[cast(Any, key)])
 
         return buckets[1] + buckets[2] + buckets[3] + buckets["other"]
 
@@ -208,10 +208,10 @@ class TestService:
                 if not isinstance(choices, list) or not choices:
                     variants.append(orig)
                     continue
-                
+
                 # Czyścimy i normalizujemy choices
                 choices = [str(c).strip() for c in choices if str(c).strip()]
-                
+
                 if not choices:
                     variants.append(orig)
                     continue
@@ -220,7 +220,7 @@ class TestService:
                     correct_choices = (
                         [correct_choices] if correct_choices is not None else []
                     )
-                
+
                 # Czyścimy i upewniamy się, że są w choices
                 correct_choices = [
                     str(c).strip() for c in correct_choices if str(c).strip()
@@ -237,12 +237,12 @@ class TestService:
                 choices = choices[:target_len]
                 while len(choices) < target_len:
                     choices.append("")
-                
+
                 # Ponowna walidacja correct_choices po potencjalnym przycięciu choices
                 correct_choices = [c for c in correct_choices if c in choices]
                 if not correct_choices:
                     correct_choices = [choices[0]]
-                
+
                 # Ponowna walidacja correct_choices po potencjalnym przycięciu choices
                 correct_choices = [c for c in correct_choices if c in choices]
                 if not correct_choices:
@@ -316,12 +316,12 @@ class TestService:
                         local_path = Path(local_path)
                         # Prefer composite extractor (text layer + PDF OCR fallback).
                         # If still empty, fallback to raw OCR.
-                        source_text = composite_text_extractor(
-                            local_path, None
-                        ).strip()
+                        source_text = composite_text_extractor(local_path, None).strip()
                         if not source_text:
                             source_text = (
-                                self._ocr_service.extract_text(file_path=str(local_path))
+                                self._ocr_service.extract_text(
+                                    file_path=str(local_path)
+                                )
                                 or ""
                             ).strip()
                     if not source_text:
@@ -331,7 +331,7 @@ class TestService:
                     base_title = source_file.filename
             else:
                 raise ValueError("Either text or file_id must be provided")
-            
+
             try:
                 llm_title, questions = self._question_generator.generate(
                     source_text=source_text,
@@ -373,8 +373,6 @@ class TestService:
                 test_id=persisted_test.id,
                 num_questions=len(questions),
             )
-
-
 
     def get_test_detail(self, *, owner_id: int, test_id: int) -> TestDetailOut:
         with self._uow_factory() as uow:
@@ -610,6 +608,7 @@ class TestService:
 
             # Pobieramy pytania należące do tego testu
             from sqlmodel import select
+
             statement: Any = select(QuestionRow).where(
                 QuestionRow.test_id == test_id,
                 cast(Any, QuestionRow.id).in_(payload.question_ids),
@@ -619,15 +618,15 @@ class TestService:
             for q in questions:
                 if payload.difficulty is not None:
                     q.difficulty = payload.difficulty
-                
+
                 if payload.is_closed is not None:
                     q.is_closed = payload.is_closed
                     if payload.is_closed is False:
                         q.choices = None
                         q.correct_choices = None
-                
+
                 session.add(q)
-            
+
             session.flush()
 
     def bulk_delete_questions(
@@ -647,6 +646,7 @@ class TestService:
                 raise RuntimeError("UnitOfWork session is not initialized")
 
             from sqlalchemy import delete
+
             statement: Any = delete(QuestionRow).where(
                 QuestionRow.test_id == test_id,
                 cast(Any, QuestionRow.id).in_(payload.question_ids),
@@ -675,12 +675,13 @@ class TestService:
                 raise RuntimeError("UnitOfWork session is not initialized")
 
             from sqlmodel import select
+
             statement: Any = select(QuestionRow).where(
                 QuestionRow.test_id == test_id,
                 cast(Any, QuestionRow.id).in_(payload.question_ids),
             )
             questions_rows = session.exec(statement).all()
-            
+
             if not questions_rows:
                 return 0
 
@@ -707,16 +708,14 @@ class TestService:
             for row in questions_rows:
                 # Szukamy odpowiadającego wariantu po ID
                 # (nasza metoda _generate_llm_variant zachowuje ID)
-                variant = next(
-                    (v for v in new_variants if v.get("id") == row.id), None
-                )
+                variant = next((v for v in new_variants if v.get("id") == row.id), None)
                 if variant:
                     row.text = variant["text"]
                     row.choices = variant["choices"]
                     row.correct_choices = variant["correct_choices"]
                     session.add(row)
                     updated_count += 1
-            
+
             session.flush()
             return updated_count
 
@@ -741,17 +740,18 @@ class TestService:
                 raise RuntimeError("UnitOfWork session is not initialized")
 
             from sqlmodel import select
+
             statement: Any = select(QuestionRow).where(
                 QuestionRow.test_id == test_id,
                 cast(Any, QuestionRow.id).in_(payload.question_ids),
             )
             questions_rows = session.exec(statement).all()
-            
+
             if not questions_rows:
                 return 0
 
             updated_count = 0
-            
+
             # 1. Konwersja na Otwarte (wymaga LLM do wygładzenia treści)
             if payload.target_type == "open":
                 to_convert_to_open = [q for q in questions_rows if q.is_closed]
@@ -782,9 +782,9 @@ class TestService:
                         raw = raw.split("```json")[1].split("```")[0].strip()
                     elif "```" in raw:
                         raw = raw.split("```")[1].split("```")[0].strip()
-                    
+
                     parsed = json.loads(raw)
-                    
+
                     for row in to_convert_to_open:
                         variant = next(
                             (v for v in parsed if v.get("id") == row.id), None
@@ -797,7 +797,7 @@ class TestService:
                             row.correct_choices = None
                             session.add(row)
                             updated_count += 1
-                    
+
                     session.flush()
                     return updated_count
                 except Exception as exc:
@@ -835,43 +835,43 @@ class TestService:
                     raw = raw.split("```json")[1].split("```")[0].strip()
                 elif "```" in raw:
                     raw = raw.split("```")[1].split("```")[0].strip()
-                
+
                 parsed = json.loads(raw)
-                
+
                 for row in to_convert_to_closed:
                     variant = next((v for v in parsed if v.get("id") == row.id), None)
                     if variant:
                         row.is_closed = True
-                        
+
                         # Aktualizujemy tekst pytania na ten od AI
                         row.text = str(variant.get("text", row.text)).strip()
-                        
+
                         # Pobieramy i czyścimy opcje
                         raw_choices = variant.get("choices", ["A", "B", "C", "D"])
                         row.choices = [
                             str(c).strip() for c in raw_choices if str(c).strip()
                         ]
-                        
+
                         # Pobieramy i czyścimy poprawne odpowiedzi,
                         # upewniając się że są w choices
                         raw_correct = variant.get("correct_choices", [])
                         if not isinstance(raw_correct, list):
                             raw_correct = [raw_correct]
-                        
+
                         clean_correct = [
                             str(c).strip() for c in raw_correct if str(c).strip()
                         ]
                         valid_correct = [c for c in clean_correct if c in row.choices]
-                        
+
                         # Jeśli LLM nawaliło i nie podało poprawnej z listy,
                         # bierzemy pierwszą jako fallback
                         if not valid_correct and row.choices:
                             valid_correct = [row.choices[0]]
-                            
+
                         row.correct_choices = valid_correct
                         session.add(row)
                         updated_count += 1
-                
+
                 session.flush()
                 return updated_count
             except Exception as exc:
@@ -999,7 +999,7 @@ class TestService:
             base = f"test_{test_id}"
 
         return f"{base}_{test_id}.{suffix}"
-    
+
     def update_test_title(self, *, owner_id: int, test_id: int, title: str) -> TestOut:
         title = (title or "").strip()
         if not title:
@@ -1022,6 +1022,4 @@ class TestService:
             return dto.to_test_out(test_row)
 
 
-
 __all__ = ["TestService"]
-
