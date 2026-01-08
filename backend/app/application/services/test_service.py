@@ -237,6 +237,11 @@ class TestService:
                 choices = choices[:target_len]
                 while len(choices) < target_len:
                     choices.append("")
+                
+                # Ponowna walidacja correct_choices po potencjalnym przycięciu choices
+                correct_choices = [c for c in correct_choices if c in choices]
+                if not correct_choices:
+                    correct_choices = [choices[0]]
 
                 # Ponowna walidacja correct_choices po potencjalnym przycięciu choices
                 correct_choices = [c for c in correct_choices if c in choices]
