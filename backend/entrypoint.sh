@@ -31,8 +31,12 @@ while True:
         time.sleep(1)
 END
 
-echo "Database is up - running migrations"
-alembic upgrade head
+if [ "$RUN_MIGRATIONS" = "true" ]; then
+    echo "Database is up - running migrations"
+    alembic upgrade head
+else
+    echo "Skipping migrations (RUN_MIGRATIONS != true)"
+fi
 
 echo "Starting application..."
 exec "$@"

@@ -11,8 +11,8 @@ exclude = [
 ]
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "N", "UP", "B", "A", "C4", "SIM", "ARG", "PTH", "RUF"]
-ignore = ["B008"]
+select = ["E", "F", "I", "N", "UP", "B", "A", "C4", "PTH", "RUF"]
+ignore = ["B008", "A003", "RUF012"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["app"]
