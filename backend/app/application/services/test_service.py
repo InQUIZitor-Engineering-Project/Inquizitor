@@ -3,8 +3,6 @@
 from __future__ import annotations
 
 import json
-
-import json
 import logging
 import random
 import re
@@ -16,14 +14,6 @@ from typing import Any, cast
 from fastapi import HTTPException
 
 from app.api.schemas.tests import (
-    BulkConvertQuestionsRequest,
-    BulkDeleteQuestionsRequest,
-    BulkRegenerateQuestionsRequest,
-    BulkUpdateQuestionsRequest,
-    PdfExportConfig,
-    QuestionCreate,
-    QuestionOut,
-    QuestionUpdate,
     BulkConvertQuestionsRequest,
     BulkDeleteQuestionsRequest,
     BulkRegenerateQuestionsRequest,
@@ -53,15 +43,9 @@ from app.infrastructure.exporting import (
     compile_tex_to_pdf,
     render_custom_test_to_tex,
     render_test_to_tex,
-    render_test_to_tex,
     test_to_xml_bytes,
 )
 from app.infrastructure.extractors.extract_composite import composite_text_extractor
-from app.infrastructure.llm.gemini import GeminiQuestionGenerator
-from app.infrastructure.llm.prompts import PromptBuilder
-
-logger = logging.getLogger(__name__)
-
 from app.infrastructure.llm.gemini import GeminiQuestionGenerator
 from app.infrastructure.llm.prompts import PromptBuilder
 
@@ -224,11 +208,6 @@ class TestService:
                 if not isinstance(choices, list) or not choices:
                     variants.append(orig)
                     continue
-                
-                # Czyścimy i normalizujemy choices
-                choices = [str(c).strip() for c in choices if str(c).strip()]
-                
-                if not choices:
                 
                 # Czyścimy i normalizujemy choices
                 choices = [str(c).strip() for c in choices if str(c).strip()]

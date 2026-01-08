@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, cast
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 
@@ -16,10 +16,6 @@ from app.api.schemas.tests import (
     TestDetailOut,
     TestGenerateRequest,
     TestOut,
-    BulkUpdateQuestionsRequest,
-    BulkDeleteQuestionsRequest,
-    BulkRegenerateQuestionsRequest,
-    BulkConvertQuestionsRequest,
     TestTitleUpdate,
 )
 from app.application.services import JobService, TestService
@@ -67,7 +63,7 @@ def create_test(
     """Create a new empty test with a title."""
     try:
         return test_service.create_empty_test(
-            owner_id=current_user.id,
+            owner_id=cast(int, current_user.id),
             title=payload.title,
         )
     except Exception as exc:
