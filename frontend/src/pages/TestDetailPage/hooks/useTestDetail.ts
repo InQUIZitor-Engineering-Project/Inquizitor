@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react";
-import { useOutletContext, useParams } from "react-router-dom";
+import { useState, useMemo, useEffect } from "react";
+import { useOutletContext, useParams, useSearchParams } from "react-router-dom";
 import { useLoader } from "../../../components/Loader/GlobalLoader";
 import useDocumentTitle from "../../../hooks/useDocumentTitle";
 import useTestData, { sortQuestions } from "./useTestData";
@@ -31,6 +31,7 @@ type UseTestDetailResult = {
     isBulkDeleteModalOpen: boolean;
     isMobileMenuOpen: boolean;
     tempDifficulty: number | null;
+    tempType: "open" | "closed" | null;
     editorError: string | null;
     savingEdit: boolean;
     savingAdd: boolean;
@@ -82,6 +83,7 @@ type UseTestDetailResult = {
     closeMobileMenu: () => void;
     handleBulkTypeChange: (targetType: "open" | "closed") => Promise<void>;
     setTempDifficulty: (d: number) => void;
+    setTempType: (t: "open" | "closed") => void;
     beginTitleEdit: (title: string) => void;
     saveTitle: () => Promise<void>;
     cancelTitle: () => void;
@@ -135,10 +137,20 @@ const useTestDetail = (): UseTestDetailResult => {
   const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [tempDifficulty, setTempDifficulty] = useState<number | null>(null);
+  const [tempType, setTempType] = useState<"open" | "closed" | null>(null);
 
   const { testId } = useParams<{ testId: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
   const testIdNum = Number(testId);
   useDocumentTitle("Test | Inquizitor");
+
+  useEffect(() => {
+    if (searchParams.get("isAdding") === "true" && data && !draftState.isAdding) {
+      draftActions.startAdd();
+      searchParams.delete("isAdding");
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams, data, draftState.isAdding, draftActions, setSearchParams]);
 
   const setDataSorted = (next: TestDetail | null) => {
     setData(next ? { ...next, questions: sortQuestions(next.questions) } : next);
@@ -265,7 +277,10 @@ const useTestDetail = (): UseTestDetailResult => {
   };
 
   const openTypeModal = () => setIsTypeModalOpen(true);
-  const closeTypeModal = () => setIsTypeModalOpen(false);
+  const closeTypeModal = () => {
+    setIsTypeModalOpen(false);
+    setTempType(null);
+  };
 
   const handleBulkTypeChange = async (targetType: "open" | "closed") => {
     if (selectedIds.length === 0 || !data) return;
@@ -341,6 +356,7 @@ const useTestDetail = (): UseTestDetailResult => {
       isBulkDeleteModalOpen,
       isMobileMenuOpen,
       tempDifficulty,
+      tempType,
       editorError: draftState.editorError,
       savingEdit: draftState.savingEdit,
       savingAdd: draftState.savingAdd,
@@ -392,6 +408,7 @@ const useTestDetail = (): UseTestDetailResult => {
       closeMobileMenu,
       handleBulkTypeChange,
       setTempDifficulty,
+      setTempType,
       beginTitleEdit,
       saveTitle,
       cancelTitle,

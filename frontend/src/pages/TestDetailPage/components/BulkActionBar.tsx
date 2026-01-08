@@ -1,16 +1,29 @@
 import React from "react";
+import { createPortal } from "react-dom";
 import styled from "styled-components";
 import { Box, Flex, Button, Text, Stack, CloseButton } from "../../../design-system/primitives";
-import { BottomSheet, SelectableItem } from "../../../design-system/patterns";
+import { BottomSheet, SelectableItem, PageContainer } from "../../../design-system/patterns";
+
+const ActionBarPortalWrapper = styled.div`
+  position: absolute;
+  bottom: 12px;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  pointer-events: none;
+  display: flex;
+  justify-content: center;
+
+  @media (min-width: 600px) {
+    bottom: 24px;
+  }
+`;
 
 const FloatingContainer = styled(Box)`
-  position: absolute;
-  bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 1000;
-  width: 93%;
-  max-width: 1000px;
+  position: relative;
+  pointer-events: auto;
+  width: 100%;
+  max-width: 960px;
   background: white;
   border-radius: 16px;
   box-shadow: 0 12px 48px rgba(0, 0, 0, 0.2);
@@ -19,17 +32,17 @@ const FloatingContainer = styled(Box)`
   animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 
   @media (min-width: 600px) {
-    width: 60%;
+    width: 70%;
     padding: 16px 24px;
   }
 
   @keyframes slideUp {
     from {
-      transform: translate(-50%, 120%);
+      transform: translateY(120%);
       opacity: 0;
     }
     to {
-      transform: translate(-50%, 0);
+      transform: translateY(0);
       opacity: 1;
     }
   }
@@ -80,13 +93,22 @@ const HideOnMobile = styled.span`
   }
 `;
 
-const getPlural = (count: number) => {
-  if (count === 1) return "pytanie";
-  const lastDigit = count % 10;
-  const lastTwoDigits = count % 100;
+const getPluralNominative = (count: number): string => {
+  const absCount = Math.abs(count);
+  if (absCount === 1) return "pytanie";
+  
+  const lastDigit = absCount % 10;
+  const lastTwoDigits = absCount % 100;
+
   if (lastDigit >= 2 && lastDigit <= 4 && (lastTwoDigits < 10 || lastTwoDigits >= 20)) {
     return "pytania";
   }
+  return "pytań";
+};
+
+const getPluralGenitive = (count: number): string => {
+  const absCount = Math.abs(count);
+  if (absCount === 1) return "pytania";
   return "pytań";
 };
 
@@ -120,60 +142,64 @@ const BulkActionBar: React.FC<BulkActionBarProps> = ({
     action();
   };
 
-  return (
+  const content = (
     <>
-      <FloatingContainer>
-        <CloseButton onClick={onClear} aria-label="Anuluj zaznaczenie" $hideOnMobile />
-        <Stack $gap="md">
-          <HeaderWrapper>
-            <Flex $align="center" $gap="xs">
-              <Text $variant="body3" $weight="medium" as="div">
-                <HideOnMobile>Wybrano </HideOnMobile>
-              </Text>
-              <CountCircle>{selectedCount}</CountCircle>
-              <Text $variant="body3" $weight="medium">
-                {getPlural(selectedCount)}
-              </Text>
-            </Flex>
+      <ActionBarPortalWrapper>
+        <PageContainer style={{ display: 'flex', justifyContent: 'center' }}>
+          <FloatingContainer>
+            <CloseButton onClick={onClear} aria-label="Anuluj zaznaczenie" $hideOnMobile />
+            <Stack $gap="md">
+              <HeaderWrapper>
+                <Flex $align="center" $gap="xs">
+                  <Text $variant="body3" $weight="medium" as="div">
+                    <HideOnMobile>Wybrano </HideOnMobile>
+                  </Text>
+                  <CountCircle>{selectedCount}</CountCircle>
+                  <Text $variant="body3" $weight="medium">
+                    {getPluralNominative(selectedCount)}
+                  </Text>
+                </Flex>
 
-            <MobileActions $gap="sm">
-              <Button $variant="primary" $size="sm" onClick={onOpenMenu}>
-                Opcje
-              </Button>
-              <Button $variant="ghost" $size="sm" onClick={onClear}>
-                Anuluj
-              </Button>
-            </MobileActions>
-          </HeaderWrapper>
+                <MobileActions $gap="sm">
+                  <Button $variant="primary" $size="sm" onClick={onOpenMenu}>
+                    Opcje
+                  </Button>
+                  <Button $variant="ghost" $size="sm" onClick={onClear}>
+                    Anuluj
+                  </Button>
+                </MobileActions>
+              </HeaderWrapper>
 
-          <DesktopActions $justify="center" $align="center" $gap="md" $wrap="wrap">
-            <Button $variant="info" $size="sm" onClick={onRegenerate} style={{ gap: "6px" }}>
-              ✨ Regeneruj z AI
-            </Button>
+              <DesktopActions $justify="center" $align="center" $gap="md" $wrap="wrap">
+                <Button $variant="info" $size="sm" onClick={onRegenerate} style={{ gap: "6px" }}>
+                  ✨ Regeneruj z AI
+                </Button>
 
-            <Button $variant="outline" $size="sm" onClick={onOpenDifficulty}>
-              📊 Zmień trudność
-            </Button>
+                <Button $variant="outline" $size="sm" onClick={onOpenDifficulty}>
+                  📊 Zmień trudność
+                </Button>
 
-            <Button $variant="outline" $size="sm" onClick={onOpenTypeChange}>
-              🔄 Zmień typ
-            </Button>
+                <Button $variant="outline" $size="sm" onClick={onOpenTypeChange}>
+                  🔄 Zmień typ
+                </Button>
 
-            <Button $variant="danger" $size="sm" onClick={onDelete}>
-              Usuń zaznaczone
-            </Button>
+                <Button $variant="danger" $size="sm" onClick={onDelete}>
+                  Usuń zaznaczone
+                </Button>
 
-            <Button $variant="ghost" $size="sm" onClick={onClear}>
-              Anuluj zaznaczenie
-            </Button>
-          </DesktopActions>
-        </Stack>
-      </FloatingContainer>
+                <Button $variant="ghost" $size="sm" onClick={onClear}>
+                  Anuluj zaznaczenie
+                </Button>
+              </DesktopActions>
+            </Stack>
+          </FloatingContainer>
+        </PageContainer>
+      </ActionBarPortalWrapper>
 
       <BottomSheet
         isOpen={isMenuOpen}
         onClose={onCloseMenu}
-        title={`Opcje dla ${selectedCount} ${getPlural(selectedCount)}`}
+        title={`Opcje dla ${selectedCount} ${getPluralGenitive(selectedCount)}`}
       >
         <Stack $gap="sm">
           <SelectableItem onClick={() => handleMobileAction(onRegenerate)}>
@@ -203,6 +229,9 @@ const BulkActionBar: React.FC<BulkActionBarProps> = ({
       </BottomSheet>
     </>
   );
+
+  const mountNode = document.getElementById("main-content-area");
+  return mountNode ? createPortal(content, mountNode) : content;
 };
 
 export default BulkActionBar;

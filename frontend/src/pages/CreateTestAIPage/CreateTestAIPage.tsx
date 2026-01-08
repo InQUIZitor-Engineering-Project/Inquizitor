@@ -1,7 +1,6 @@
 import React from "react";
 import { Box, Flex, Stack, Heading, Text, Button } from "../../design-system/primitives";
 import { AlertBar } from "../../design-system/patterns";
-import Footer from "../../components/Footer/Footer";
 import useGenerateTestForm from "./hooks/useGenerateTestForm";
 import SourceSection from "./components/SourceSection";
 import PersonalizationSection from "./components/PersonalizationSection";
@@ -9,12 +8,12 @@ import StructureCard from "./components/StructureCard";
 import DifficultyCard from "./components/DifficultyCard";
 import { PageContainer, PageSection } from "../../design-system/patterns";
 
-const CreateTestPage: React.FC = () => {
+const CreateTestAIPage: React.FC = () => {
   const { state, derived, status, actions, refs } = useGenerateTestForm();
 
   return (
-    <Flex $direction="column" $height="100%" $bg="#f5f6f8" $overflow="hidden">
-      <Box $flex={1} $overflowY="auto" $width="100%">
+    <Flex $direction="column" $height="100%" $bg="#f5f6f8">
+      <Box $flex={1} $width="100%">
         <PageSection $py="xl">
           <PageContainer>
             <Stack style={{ width: "100%", maxWidth: 960, margin: "0 auto" }} $gap="lg">
@@ -27,7 +26,7 @@ const CreateTestPage: React.FC = () => {
                 $tone="muted"
                 style={{ fontSize: "clamp(14px, 4vw, 16px)", lineHeight: "1.4" }}
               >
-                Wgraj materiał lub wklej treść, wybierz typ pytań oraz poziom trudności, a my wygenerujemy gotowy test.
+                Wgraj materiał lub wklej treść, wybierz typ pytań oraz poziom trudności, a we wygenerujemy gotowy test.
               </Text>
               </Stack>
 
@@ -92,7 +91,6 @@ const CreateTestPage: React.FC = () => {
 
               {status.genError && <AlertBar variant="danger">{status.genError}</AlertBar>}
 
-              <Footer />
             </Stack>
           </PageContainer>
         </PageSection>
@@ -101,4 +99,4 @@ const CreateTestPage: React.FC = () => {
   );
 };
 
-export default CreateTestPage;
+export default CreateTestAIPage;

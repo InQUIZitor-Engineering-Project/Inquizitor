@@ -58,6 +58,22 @@ def generate_test(
     return JobEnqueueResponse(job_id=job.id, status=job.status.value)
 
 
+@router.post("/", response_model=TestOut, status_code=status.HTTP_201_CREATED)
+def create_test(
+    payload: TestTitleUpdate,
+    current_user: User = Depends(get_current_user),
+    test_service: TestService = Depends(get_test_service),
+):
+    """Create a new empty test with a title."""
+    try:
+        return test_service.create_empty_test(
+            owner_id=current_user.id,
+            title=payload.title,
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
 @router.get("/{test_id}", response_model=TestDetailOut)
 def get_test(
     test_id: int,

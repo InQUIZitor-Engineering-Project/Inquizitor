@@ -412,6 +412,16 @@ class TestService:
             tests = uow.tests.list_for_user(owner_id)
         return [dto.to_test_out(t) for t in tests]
 
+    def create_empty_test(self, *, owner_id: int, title: str) -> TestOut:
+        with self._uow_factory() as uow:
+            test = TestDomain(
+                id=None,
+                owner_id=owner_id,
+                title=title,
+            )
+            persisted_test = uow.tests.create(test)
+            return dto.to_test_out(persisted_test)
+
     def delete_test(self, *, owner_id: int, test_id: int) -> None:
         with self._uow_factory() as uow:
             test = uow.tests.get(test_id)
