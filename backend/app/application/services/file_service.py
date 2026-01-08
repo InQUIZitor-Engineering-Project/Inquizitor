@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable, Iterable, Sequence
 from datetime import datetime
 from pathlib import Path
-from typing import Callable, Iterable, List, Optional, Sequence
 
 from app.api.schemas.tests import FileUploadResponse
-from app.application import dto
 from app.application.interfaces import FileStorage, UnitOfWork
 from app.domain.models import File as FileDomain
 
@@ -28,7 +27,7 @@ class FileService:
         owner_id: int,
         filename: str,
         content: bytes,
-        allowed_extensions: Optional[Sequence[str]] = None,
+        allowed_extensions: Sequence[str] | None = None,
     ) -> FileUploadResponse:
         extension = Path(filename).suffix.lower()
         if allowed_extensions and extension not in allowed_extensions:

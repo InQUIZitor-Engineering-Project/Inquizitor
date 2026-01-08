@@ -1,5 +1,4 @@
 from functools import lru_cache
-from typing import List
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -35,7 +34,7 @@ class Settings(BaseSettings):
     EMAIL_VERIFICATION_EXP_MIN: int = 60
     GUNICORN_WORKERS: int = 4
     GUNICORN_TIMEOUT: int = 120
-    BACKEND_CORS_ORIGINS: List[str] = Field(
+    BACKEND_CORS_ORIGINS: list[str] = Field(
         default_factory=lambda: [
             "http://localhost:5173",
             "http://127.0.0.1:5173",
@@ -46,10 +45,10 @@ class Settings(BaseSettings):
         ]
     )
     LOG_LEVEL: str = "INFO"
-    AUTO_CREATE_TABLES: bool = True
+    AUTO_CREATE_TABLES: bool = False
     SQL_ECHO: bool = True
 
 
-@lru_cache()
+@lru_cache
 def get_settings() -> Settings:
     return Settings()

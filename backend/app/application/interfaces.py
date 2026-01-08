@@ -2,31 +2,58 @@
 
 from __future__ import annotations
 
-from typing import Protocol
+from typing import Any, Protocol
 
 from app.domain.repositories import (
     FileRepository,
+    JobRepository,
     MaterialRepository,
+    PasswordResetTokenRepository,
+    PendingVerificationRepository,
     TestRepository,
     UserRepository,
-    JobRepository,
-    PendingVerificationRepository,
 )
 from app.domain.services import FileStorage, OCRService, QuestionGenerator
 
 
 class UnitOfWork(Protocol):
-    users: UserRepository
-    tests: TestRepository
-    files: FileRepository
-    materials: MaterialRepository
-    jobs: JobRepository
-    pending_verifications: PendingVerificationRepository
-
-    def __enter__(self) -> "UnitOfWork":
+    @property
+    def users(self) -> UserRepository:
         ...
 
-    def __exit__(self, exc_type, exc, tb) -> None:
+    @property
+    def tests(self) -> TestRepository:
+        ...
+
+    @property
+    def files(self) -> FileRepository:
+        ...
+
+    @property
+    def materials(self) -> MaterialRepository:
+        ...
+
+    @property
+    def jobs(self) -> JobRepository:
+        ...
+
+    @property
+    def pending_verifications(self) -> PendingVerificationRepository:
+        ...
+
+    @property
+    def password_reset_tokens(self) -> PasswordResetTokenRepository:
+        ...
+
+    def __enter__(self) -> UnitOfWork:
+        ...
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: Any,
+    ) -> None:
         ...
 
     def commit(self) -> None:
@@ -36,5 +63,5 @@ class UnitOfWork(Protocol):
         ...
 
 
-__all__ = ["UnitOfWork", "FileStorage", "OCRService", "QuestionGenerator"]
+__all__ = ["FileStorage", "OCRService", "QuestionGenerator", "UnitOfWork"]
 

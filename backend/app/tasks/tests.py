@@ -1,15 +1,21 @@
 from __future__ import annotations
 
 import logging
+from typing import Any
 
-from app.api.schemas.tests import TestGenerateRequest, PdfExportConfig, BulkRegenerateQuestionsRequest, BulkConvertQuestionsRequest
+from app.api.schemas.tests import (
+    BulkConvertQuestionsRequest,
+    BulkRegenerateQuestionsRequest,
+    PdfExportConfig,
+    TestGenerateRequest,
+)
 from app.celery_app import celery_app
 from app.domain.models.enums import JobStatus
 
 logger = logging.getLogger(__name__)
 
 
-def _get_services():
+def _get_services() -> tuple[Any, Any, Any]:
     # Lazy import to avoid circular imports during app startup
     from app.bootstrap import get_container
 
@@ -22,24 +28,32 @@ def _get_services():
 
 
 @celery_app.task(name="app.tasks.generate_test", bind=True)
-def generate_test_task(self, job_id: int, owner_id: int, request_payload: dict):
+def generate_test_task(
+    self: Any, job_id: int, owner_id: int, request_payload: dict[str, Any]
+) -> int:
+    _ = self
     test_service, job_service, _ = _get_services()
 
     try:
         job_service.update_job_status(job_id=job_id, status=JobStatus.RUNNING)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.exception("Failed to mark job %s as running: %s", job_id, exc)
 
     try:
         request = TestGenerateRequest(**request_payload)
-        response = test_service.generate_test_from_input(request=request, owner_id=owner_id)
+        response = test_service.generate_test_from_input(
+            request=request, owner_id=owner_id
+        )
         job_service.update_job_status(
             job_id=job_id,
             status=JobStatus.DONE,
-            result={"test_id": response.test_id, "num_questions": response.num_questions},
+            result={
+                "test_id": response.test_id,
+                "num_questions": response.num_questions,
+            },
         )
         return response.test_id
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.exception("Job %s failed: %s", job_id, exc)
         job_service.update_job_status(
             job_id=job_id,
@@ -50,12 +64,15 @@ def generate_test_task(self, job_id: int, owner_id: int, request_payload: dict):
 
 
 @celery_app.task(name="app.tasks.export_test_pdf", bind=True)
-def export_test_pdf_task(self, job_id: int, owner_id: int, test_id: int, show_answers: bool = False):
+def export_test_pdf_task(
+    self: Any, job_id: int, owner_id: int, test_id: int, show_answers: bool = False
+) -> str:
+    _ = self
     test_service, job_service, export_storage = _get_services()
 
     try:
         job_service.update_job_status(job_id=job_id, status=JobStatus.RUNNING)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.exception("Failed to mark job %s as running: %s", job_id, exc)
 
     try:
@@ -79,7 +96,7 @@ def export_test_pdf_task(self, job_id: int, owner_id: int, test_id: int, show_an
             },
         )
         return stored_path
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.exception("PDF export job %s failed: %s", job_id, exc)
         job_service.update_job_status(
             job_id=job_id,
@@ -90,12 +107,15 @@ def export_test_pdf_task(self, job_id: int, owner_id: int, test_id: int, show_an
 
 
 @celery_app.task(name="app.tasks.export_custom_test_pdf", bind=True)
-def export_custom_test_pdf_task(self, job_id: int, owner_id: int, test_id: int, config_payload: dict):
+def export_custom_test_pdf_task(
+    self: Any, job_id: int, owner_id: int, test_id: int, config_payload: dict[str, Any]
+) -> str:
+    _ = self
     test_service, job_service, export_storage = _get_services()
 
     try:
         job_service.update_job_status(job_id=job_id, status=JobStatus.RUNNING)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.exception("Failed to mark job %s as running: %s", job_id, exc)
 
     try:
@@ -122,7 +142,7 @@ def export_custom_test_pdf_task(self, job_id: int, owner_id: int, test_id: int, 
             },
         )
         return stored_path
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.exception("Custom PDF export job %s failed: %s", job_id, exc)
         job_service.update_job_status(
             job_id=job_id,
@@ -133,12 +153,15 @@ def export_custom_test_pdf_task(self, job_id: int, owner_id: int, test_id: int, 
 
 
 @celery_app.task(name="app.tasks.bulk_regenerate_questions", bind=True)
-def bulk_regenerate_questions_task(self, job_id: int, owner_id: int, test_id: int, payload_dict: dict):
+def bulk_regenerate_questions_task(
+    self: Any, job_id: int, owner_id: int, test_id: int, payload_dict: dict[str, Any]
+) -> int:
+    _ = self
     test_service, job_service, _ = _get_services()
 
     try:
         job_service.update_job_status(job_id=job_id, status=JobStatus.RUNNING)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.exception("Failed to mark job %s as running: %s", job_id, exc)
 
     try:
@@ -154,7 +177,7 @@ def bulk_regenerate_questions_task(self, job_id: int, owner_id: int, test_id: in
             result={"num_regenerated": num_regenerated, "test_id": test_id},
         )
         return num_regenerated
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.exception("Bulk regeneration job %s failed: %s", job_id, exc)
         job_service.update_job_status(
             job_id=job_id,
@@ -165,12 +188,15 @@ def bulk_regenerate_questions_task(self, job_id: int, owner_id: int, test_id: in
 
 
 @celery_app.task(name="app.tasks.bulk_convert_questions", bind=True)
-def bulk_convert_questions_task(self, job_id: int, owner_id: int, test_id: int, payload_dict: dict):
+def bulk_convert_questions_task(
+    self: Any, job_id: int, owner_id: int, test_id: int, payload_dict: dict[str, Any]
+) -> int:
+    _ = self
     test_service, job_service, _ = _get_services()
 
     try:
         job_service.update_job_status(job_id=job_id, status=JobStatus.RUNNING)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.exception("Failed to mark job %s as running: %s", job_id, exc)
 
     try:
@@ -186,7 +212,7 @@ def bulk_convert_questions_task(self, job_id: int, owner_id: int, test_id: int, 
             result={"num_converted": num_converted, "test_id": test_id},
         )
         return num_converted
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.exception("Bulk conversion job %s failed: %s", job_id, exc)
         job_service.update_job_status(
             job_id=job_id,

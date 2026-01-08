@@ -23,6 +23,10 @@ export default tseslint.config(
         'warn',
         { allowConstantExport: true },
       ],
+      'max-len': ['warn', { code: 110, ignoreUrls: true, ignoreStrings: true, ignoreTemplateLiterals: true }],
+      '@typescript-eslint/no-explicit-any': 'off',
+      'react-hooks/exhaustive-deps': 'warn',
+      'no-empty': 'warn',
       'no-restricted-syntax': [
         'warn',
         {

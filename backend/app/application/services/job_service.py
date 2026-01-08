@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import datetime
-from typing import Any, Callable, Dict, Optional
+from typing import Any
 
 from app.application.interfaces import UnitOfWork
 from app.domain.models import Job
@@ -12,7 +13,9 @@ class JobService:
     def __init__(self, uow_factory: Callable[[], UnitOfWork]) -> None:
         self._uow_factory = uow_factory
 
-    def create_job(self, *, owner_id: int, job_type: JobType, payload: Dict[str, Any]) -> Job:
+    def create_job(
+        self, *, owner_id: int, job_type: JobType, payload: dict[str, Any]
+    ) -> Job:
         job = Job(
             id=None,
             owner_id=owner_id,
@@ -34,9 +37,9 @@ class JobService:
                 raise ValueError("Job not found")
             return job
 
-    def list_jobs(self, *, owner_id: int):
+    def list_jobs(self, *, owner_id: int) -> list[Job]:
         with self._uow_factory() as uow:
-            jobs = uow.jobs.list_for_user(owner_id)
+            jobs = list(uow.jobs.list_for_user(owner_id))
         return jobs
 
     def update_job_status(
@@ -44,8 +47,8 @@ class JobService:
         *,
         job_id: int,
         status: JobStatus,
-        result: Optional[Dict[str, Any]] = None,
-        error: Optional[str] = None,
+        result: dict[str, Any] | None = None,
+        error: str | None = None,
     ) -> Job:
         with self._uow_factory() as uow:
             job = uow.jobs.get(job_id)

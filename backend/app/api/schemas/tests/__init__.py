@@ -1,8 +1,9 @@
 # app/schemas/test.py
-from typing import List, Optional, Literal
-from pydantic import BaseModel, Field, field_validator, model_validator
-from datetime import datetime
 import json
+from datetime import datetime
+from typing import Literal
+
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 ClosedType = Literal["true_false", "single_choice", "multi_choice"]
 
@@ -44,7 +45,7 @@ class GenerateParams(BaseModel):
     medium: int = 0
     hard: int = 0
 
-    additional_instructions: Optional[str] = None
+    additional_instructions: str | None = None
 
     @model_validator(mode="after")
     def check_counts(self):
@@ -63,8 +64,8 @@ class GenerateParams(BaseModel):
 
 
 class TestGenerateRequest(GenerateParams):
-    text: Optional[str] = None
-    file_id: Optional[int] = None
+    text: str | None = None
+    file_id: int | None = None
 
     @model_validator(mode="after")
     def validate_source(self):
@@ -89,8 +90,8 @@ class QuestionOut(BaseModel):
     text: str
     is_closed: bool
     difficulty: int
-    choices: Optional[List[str]] = None
-    correct_choices: Optional[List[str]] = None
+    choices: list[str] | None = None
+    correct_choices: list[str] | None = None
 
     @field_validator("choices", "correct_choices", mode="before")
     @classmethod
@@ -113,8 +114,8 @@ class QuestionCreate(BaseModel):
     text: str
     is_closed: bool = True
     difficulty: int = 1
-    choices: Optional[List[str]] = None
-    correct_choices: Optional[List[str]] = None
+    choices: list[str] | None = None
+    correct_choices: list[str] | None = None
 
     @field_validator("choices", "correct_choices", mode="before")
     @classmethod
@@ -135,11 +136,11 @@ class QuestionCreate(BaseModel):
 
 
 class QuestionUpdate(BaseModel):
-    text: Optional[str] = None
-    is_closed: Optional[bool] = None
-    difficulty: Optional[int] = None
-    choices: Optional[List[str]] = None
-    correct_choices: Optional[List[str]] = None
+    text: str | None = None
+    is_closed: bool | None = None
+    difficulty: int | None = None
+    choices: list[str] | None = None
+    correct_choices: list[str] | None = None
 
     @field_validator("choices", "correct_choices", mode="before")
     @classmethod
@@ -163,25 +164,25 @@ class QuestionUpdate(BaseModel):
 class TestDetailOut(BaseModel):
     test_id: int
     title: str
-    questions: List[QuestionOut]
+    questions: list[QuestionOut]
 
 class TestTitleUpdate(BaseModel):
     title: str = Field(..., min_length=1, max_length=200)
 
 class BulkUpdateQuestionsRequest(BaseModel):
-    question_ids: List[int]
-    difficulty: Optional[int] = None
-    is_closed: Optional[bool] = None
+    question_ids: list[int]
+    difficulty: int | None = None
+    is_closed: bool | None = None
 
 class BulkDeleteQuestionsRequest(BaseModel):
-    question_ids: List[int]
+    question_ids: list[int]
 
 class BulkRegenerateQuestionsRequest(BaseModel):
-    question_ids: List[int]
-    instruction: Optional[str] = None
+    question_ids: list[int]
+    instruction: str | None = None
 
 class BulkConvertQuestionsRequest(BaseModel):
-    question_ids: List[int]
+    question_ids: list[int]
     target_type: Literal["open", "closed"]
 
 class PdfExportConfig(BaseModel):
@@ -195,7 +196,7 @@ class PdfExportConfig(BaseModel):
     include_answer_key: bool = False
     generate_variants: bool = False
     variant_mode: Literal["shuffle", "llm_variant"] = "shuffle"
-    swap_order_variants: Optional[bool] = None
+    swap_order_variants: bool | None = None
 
     student_header: bool = True
     use_scratchpad: bool = False
@@ -208,21 +209,21 @@ class PdfExportConfig(BaseModel):
         return self
 
 __all__ = [
-    "FileUploadResponse",
-    "TextInput",
-    "TestOut",
-    "ClosedBreakdown",
-    "GenerateParams",
-    "TestGenerateRequest",
-    "TestGenerateResponse",
-    "QuestionOut",
-    "TestDetailOut",
-    "QuestionCreate",
-    "QuestionUpdate",
-    "TestTitleUpdate",
-    "BulkUpdateQuestionsRequest",
+    "BulkConvertQuestionsRequest",
     "BulkDeleteQuestionsRequest",
     "BulkRegenerateQuestionsRequest",
-    "BulkConvertQuestionsRequest",
+    "BulkUpdateQuestionsRequest",
+    "ClosedBreakdown",
+    "FileUploadResponse",
+    "GenerateParams",
     "PdfExportConfig",
+    "QuestionCreate",
+    "QuestionOut",
+    "QuestionUpdate",
+    "TestDetailOut",
+    "TestGenerateRequest",
+    "TestGenerateResponse",
+    "TestOut",
+    "TestTitleUpdate",
+    "TextInput",
 ]

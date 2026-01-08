@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import List, Optional
 
 from .enums import QuestionDifficulty
 from .question import Question
@@ -12,11 +11,11 @@ from .question import Question
 class Test:
     """Aggregate root for a test with an associated question collection."""
 
-    id: Optional[int]
+    id: int | None
     owner_id: int
     title: str
-    created_at: Optional[datetime] = None
-    questions: List[Question] = field(default_factory=list)
+    created_at: datetime | None = None
+    questions: list[Question] = field(default_factory=list)
 
     def __post_init__(self) -> None:
         self.title = self.title.strip() or "Untitled Test"

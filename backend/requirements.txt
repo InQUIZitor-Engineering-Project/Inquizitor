@@ -1,4 +1,5 @@
 alembic==1.16.1
+alembic-postgresql-enum==1.8.0
 amqp==5.3.1
 annotated-types==0.7.0
 anyio==4.9.0
@@ -91,3 +92,8 @@ python-magic~=0.4.27
 Jinja2~=3.1
 gunicorn
 uvicorn[standard]
+ruff
+mypy
+types-psycopg2
+types-python-jose
+types-passlib

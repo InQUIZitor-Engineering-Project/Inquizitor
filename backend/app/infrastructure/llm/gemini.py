@@ -3,17 +3,23 @@ from __future__ import annotations
 import json
 import logging
 from functools import lru_cache
-from typing import Any, List, Optional, Union
+from typing import Annotated, Any, cast
 
-from google import genai  # type: ignore[reportMissingImports]
-from google.genai import types  # type: ignore[reportMissingImports]
-from pydantic import BaseModel, Field, ValidationError, conint, model_validator  # type: ignore[reportMissingImports]
+from google import genai
+from google.genai import types
+from pydantic import (
+    BaseModel,
+    Field,
+    ValidationError,
+    model_validator,
+)
 
 from app.api.schemas.tests import GenerateParams
 from app.core.config import get_settings
 from app.domain.models import Question
 from app.domain.models.enums import QuestionDifficulty
 from app.domain.services import QuestionGenerator
+
 from .prompts import PromptBuilder
 
 logger = logging.getLogger(__name__)
@@ -23,7 +29,7 @@ def _build_prompt(text: str, params: GenerateParams) -> str:
     return PromptBuilder.build_full_test_prompt(text, params)
 
 
-def _response_schema() -> dict:
+def _response_schema() -> dict[str, Any]:
     """Schema passed to Gemini structured output."""
     return {
         "type": "object",
@@ -54,9 +60,9 @@ def _response_schema() -> dict:
 class LLMQuestionPayload(BaseModel):
     text: str
     is_closed: bool
-    difficulty: conint(ge=1, le=3)  # type: ignore[call-arg]
-    choices: Optional[List[str]] = None
-    correct_choices: Optional[List[Union[str, int]]] = None
+    difficulty: Annotated[int, Field(ge=1, le=3)]
+    choices: list[str] | None = None
+    correct_choices: list[str | int] | None = None
 
     @model_validator(mode="before")
     @classmethod
@@ -64,17 +70,39 @@ class LLMQuestionPayload(BaseModel):
         if not isinstance(values, dict):
             raise ValueError("Element listy pytań musi być obiektem JSON.")
         data = dict(values)
-        if "difficulty" in data:
-            try:
-                data["difficulty"] = int(data["difficulty"])
-            except Exception:
-                pass
+
+        # Mapowanie trudności z tekstu na liczby + fallback do 1
+        raw_diff = data.get("difficulty")
+        if isinstance(raw_diff, str):
+            normalized = raw_diff.lower().strip()
+            mapping = {
+                "easy": 1,
+                "medium": 2,
+                "hard": 3,
+                "łatwy": 1,
+                "średni": 2,
+                "trudny": 3,
+            }
+            if normalized in mapping:
+                data["difficulty"] = mapping[normalized]
+            else:
+                try:
+                    data["difficulty"] = int(normalized)
+                except (ValueError, TypeError):
+                    data["difficulty"] = 1
+        elif not isinstance(raw_diff, int):
+            data["difficulty"] = 1
+
+        # Upewnienie się, że trudność mieści się w zakresie 1-3
+        if not (1 <= data.get("difficulty", 1) <= 3):
+            data["difficulty"] = 1
+
         if "is_closed" in data:
             data["is_closed"] = bool(data["is_closed"])
         return data
 
     @model_validator(mode="after")
-    def _normalize(self) -> "LLMQuestionPayload":
+    def _normalize(self) -> LLMQuestionPayload:
         self.text = str(self.text).strip()
         if not self.text:
             raise ValueError("Pole 'text' nie może być puste.")
@@ -88,7 +116,7 @@ class LLMQuestionPayload(BaseModel):
         if not choices:
             raise ValueError("Pytanie zamknięte musi zawierać 'choices'.")
 
-        normalized_correct: List[str] = []
+        normalized_correct: list[str] = []
         for c in self.correct_choices or []:
             if isinstance(c, int):
                 if 0 <= c < len(choices):
@@ -101,34 +129,38 @@ class LLMQuestionPayload(BaseModel):
         if normalized_correct:
             normalized_correct = [c for c in normalized_correct if c in choices]
             seen: set[str] = set()
-            normalized_correct = [
-                c for c in normalized_correct if not (c in seen or seen.add(c))
-            ]
+            new_correct: list[str] = []
+            for c in normalized_correct:
+                if c not in seen:
+                    seen.add(c)
+                    new_correct.append(c)
+            normalized_correct = new_correct
 
         if not normalized_correct:
-            raise ValueError("Pytanie zamknięte musi mieć co najmniej jedną poprawną odpowiedź.")
+            raise ValueError(
+                "Pytanie zamknięte musi mieć co najmniej jedną poprawną odpowiedź."
+            )
 
         self.choices = choices
-        self.correct_choices = normalized_correct
+        self.correct_choices = cast("list[str | int] | None", normalized_correct)
         return self
 
 
 class LLMResponse(BaseModel):
-    title: Optional[str] = Field(default=None)
-    questions: List[LLMQuestionPayload]
+    title: str | None = Field(default=None)
+    questions: list[LLMQuestionPayload]
 
     @model_validator(mode="before")
     @classmethod
     def _ensure_container(cls, values: Any) -> Any:
         if isinstance(values, list):
             return {"questions": values}
-        if isinstance(values, dict):
-            if "questions" not in values:
-                raise ValueError("Brak pola 'questions' w odpowiedzi.")
+        if isinstance(values, dict) and "questions" not in values:
+            raise ValueError("Brak pola 'questions' w odpowiedzi.")
         return values
 
     @model_validator(mode="after")
-    def _normalize_title(self) -> "LLMResponse":
+    def _normalize_title(self) -> LLMResponse:
         if self.title is not None:
             self.title = str(self.title).strip() or None
         return self
@@ -139,16 +171,14 @@ class GeminiQuestionGenerator(QuestionGenerator):
         self._model_name = model_name
 
     @staticmethod
-    @lru_cache()
+    @lru_cache
     def _client() -> genai.Client:
         settings = get_settings()
-        return genai.Client(
-            api_key=settings.GEMINI_API_KEY
-        )
+        return genai.Client(api_key=settings.GEMINI_API_KEY)
 
     def generate(
         self, *, source_text: str, params: GenerateParams
-    ) -> tuple[str | None, List[Question]]:
+    ) -> tuple[str | None, list[Question]]:
         prompt = _build_prompt(source_text, params)
         generation_config = types.GenerateContentConfig(
             response_mime_type="application/json",
@@ -159,14 +189,21 @@ class GeminiQuestionGenerator(QuestionGenerator):
             response = self._client().models.generate_content(
                 model=self._model_name,
                 contents=prompt,
-                config=generation_config,
+                config=cast(Any, generation_config),
             )
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             message = str(exc)
-            # Map quota/rate errors to ValueError so they surface to the user and don't look like 500s
-            if "RESOURCE_EXHAUSTED" in message or "quota" in message.lower() or "429" in message:
+            # Map quota/rate errors to ValueError so they surface to the user
+            # and don't look like 500s
+            is_quota = (
+                "RESOURCE_EXHAUSTED" in message
+                or "quota" in message.lower()
+                or "429" in message
+            )
+            if is_quota:
                 raise ValueError(
-                    "Limit zapytań do Gemini został przekroczony. Spróbuj ponownie za chwilę."
+                    "Limit zapytań do Gemini został przekroczony. "
+                    "Spróbuj ponownie za chwilę."
                 ) from exc
             raise RuntimeError(f"Gemini request failed: {exc}") from exc
 
@@ -185,15 +222,20 @@ class GeminiQuestionGenerator(QuestionGenerator):
         try:
             validated = self._parse_and_validate(raw_output)
         except ValueError as initial_err:
-            repaired = self._attempt_repair(raw_output, params, generation_config)
+            repaired = self._attempt_repair(
+                raw_output, params, cast(dict[str, Any], generation_config)
+            )
             if repaired is None:
                 raise initial_err
             validated = repaired
 
-        need_closed = params.closed.true_false + params.closed.single_choice + params.closed.multi_choice
+        closed_p = params.closed
+        need_closed = (
+            closed_p.true_false + closed_p.single_choice + closed_p.multi_choice
+        )
         need_open = params.num_open
 
-        selected: List[Question] = []
+        selected: list[Question] = []
         got_closed = 0
         got_open = 0
 
@@ -203,8 +245,10 @@ class GeminiQuestionGenerator(QuestionGenerator):
                 text=payload.text,
                 is_closed=payload.is_closed,
                 difficulty=QuestionDifficulty(int(payload.difficulty)),
-                choices=(payload.choices or None) if payload.is_closed else None,
-                correct_choices=(payload.correct_choices or None) if payload.is_closed else None,
+                choices=(payload.choices or []) if payload.is_closed else [],
+                correct_choices=cast(list[str], payload.correct_choices or [])
+                if payload.is_closed
+                else [],
             )
 
             if q.is_closed and got_closed < need_closed:
@@ -235,24 +279,23 @@ class GeminiQuestionGenerator(QuestionGenerator):
             return LLMResponse.model_validate(parsed)
         except ValidationError as exc:
             raise ValueError(
-                "Odpowiedź LLM nie spełnia wymaganego schematu. "
-                f"Szczegóły: {exc}"
+                "Odpowiedź LLM nie spełnia wymaganego schematu. " f"Szczegóły: {exc}"
             ) from exc
 
     def _attempt_repair(
         self,
         bad_output: str,
         params: GenerateParams,
-        generation_config: dict,
+        generation_config: dict[str, Any],
     ) -> LLMResponse | None:
         prompt = self._build_repair_prompt(bad_output, params)
         try:
             response = self._client().models.generate_content(
                 model=self._model_name,
                 contents=prompt,
-                config=generation_config,
+                config=cast(Any, generation_config),
             )
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.warning("LLM repair attempt failed to call model: %s", exc)
             return None
 
@@ -274,8 +317,14 @@ class GeminiQuestionGenerator(QuestionGenerator):
 
     @staticmethod
     def _build_repair_prompt(bad_json: str, params: GenerateParams) -> str:
+        closed_total = (
+            params.closed.true_false
+            + params.closed.single_choice
+            + params.closed.multi_choice
+        )
         return (
-            "Napraw poniższą odpowiedź LLM tak, aby była poprawnym JSON zgodnym ze schematem. "
+            "Napraw poniższą odpowiedź LLM tak, aby była poprawnym JSON "
+            "zgodnym ze schematem. "
             "Zwróć WYŁĄCZNIE JSON, bez komentarzy ani kodowych fence'ów. "
             "Schema:\n"
             "{"
@@ -284,17 +333,15 @@ class GeminiQuestionGenerator(QuestionGenerator):
             '"text": "string", '
             '"is_closed": true | false, '
             '"difficulty": 1 | 2 | 3, '
-            '"choices": [\"...\"] (wymagane dla is_closed=true), '
-            '"correct_choices": [\"...\"] (co najmniej jedna dla is_closed=true) '
+            '"choices": ["..."] (wymagane dla is_closed=true), '
+            '"correct_choices": ["..."] (co najmniej jedna dla is_closed=true) '
             "} ] "
             "}\n"
-            f"Wymagane liczby pytań: zamknięte={params.closed.true_false + params.closed.single_choice + params.closed.multi_choice}, "
+            f"Wymagane liczby pytań: zamknięte={closed_total}, "
             f"otwarte={params.num_open}. "
             "Wejściowa odpowiedź do naprawy:\n"
             f"{bad_json}"
         )
 
 
-
 __all__ = ["GeminiQuestionGenerator"]
-

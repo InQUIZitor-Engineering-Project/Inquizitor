@@ -275,15 +275,26 @@ const useGenerateTestForm = (): UseGenerateTestFormResult => {
       stopLoading();
       resetJobPolling();
     }
-  }, [jobStatus, jobResult, jobError, navigate, refreshSidebarTests, resetJobPolling]);
+  }, [
+    jobStatus,
+    jobResult,
+    jobError,
+    navigate,
+    refreshSidebarTests,
+    resetJobPolling,
+    stopLoading,
+  ]);
 
   useEffect(() => {
     const normalized = (materialJobStatus || "").toLowerCase();
     if (!normalized) return;
 
     if (normalized === "done") {
-      const extracted = (materialJobResult as any)?.extracted_text as string | undefined;
-      const processingStatus = (materialJobResult as any)?.processing_status || "done";
+      const extracted = (materialJobResult as any)?.extracted_text as
+        | string
+        | undefined;
+      const processingStatus =
+        (materialJobResult as any)?.processing_status || "done";
       setMaterialData((prev) =>
         prev
           ? {
@@ -302,7 +313,10 @@ const useGenerateTestForm = (): UseGenerateTestFormResult => {
       resetMaterialPolling();
       clearFileInput();
     } else if (normalized === "failed") {
-      const errMsg = materialJobError || (materialJobResult as any)?.error || "Nie udało się wyodrębnić tekstu z pliku.";
+      const errMsg =
+        materialJobError ||
+        (materialJobResult as any)?.error ||
+        "Nie udało się wyodrębnić tekstu z pliku.";
       setMaterialError(errMsg);
       setMaterialData((prev) =>
         prev
@@ -317,7 +331,13 @@ const useGenerateTestForm = (): UseGenerateTestFormResult => {
       resetMaterialPolling();
       clearFileInput();
     }
-  }, [materialJobStatus, materialJobResult, materialJobError]);
+  }, [
+    materialJobStatus,
+    materialJobResult,
+    materialJobError,
+    resetMaterialPolling,
+    clearFileInput,
+  ]);
 
   return {
     state: {

@@ -1,13 +1,15 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 
 from app.api.dependencies import get_auth_service
 from app.api.schemas.auth import (
-    Token,
-    RegistrationRequested,
-    VerificationResponse,
-    PasswordResetRequest,
     PasswordResetConfirm,
+    PasswordResetRequest,
+    RegistrationRequested,
+    Token,
+    VerificationResponse,
 )
 from app.api.schemas.users import UserCreate
 from app.application.services import AuthService
@@ -16,11 +18,15 @@ from app.application.services.auth_service import normalize_frontend_base_url
 router = APIRouter()
 
 
-@router.post("/register", response_model=RegistrationRequested, status_code=status.HTTP_202_ACCEPTED)
+@router.post(
+    "/register",
+    response_model=RegistrationRequested,
+    status_code=status.HTTP_202_ACCEPTED,
+)
 def register(
     user_in: UserCreate,
-    auth_service: AuthService = Depends(get_auth_service),
-):
+    auth_service: Annotated[AuthService, Depends(get_auth_service)],
+) -> RegistrationRequested:
     try:
         auth_service.register_user(user_in)
         return RegistrationRequested()
@@ -33,9 +39,9 @@ def register(
 
 @router.post("/login", response_model=Token)
 def login(
-    form_data: OAuth2PasswordRequestForm = Depends(),
-    auth_service: AuthService = Depends(get_auth_service),
-):
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    auth_service: Annotated[AuthService, Depends(get_auth_service)],
+) -> Token:
     try:
         user = auth_service.authenticate_user(
             email=form_data.username,
@@ -54,9 +60,9 @@ def login(
 @router.get("/verify-email", response_model=VerificationResponse)
 def verify_email(
     token: str,
+    auth_service: Annotated[AuthService, Depends(get_auth_service)],
     redirect: bool = False,
-    auth_service: AuthService = Depends(get_auth_service),
-):
+) -> VerificationResponse:
     try:
         token_obj = auth_service.verify_and_create_user(token=token)
         redirect_url = None
@@ -86,17 +92,22 @@ def verify_email(
 @router.post("/password-reset/request", status_code=status.HTTP_202_ACCEPTED)
 def request_password_reset(
     payload: PasswordResetRequest,
-    auth_service: AuthService = Depends(get_auth_service),
-):
+    auth_service: Annotated[AuthService, Depends(get_auth_service)],
+) -> dict[str, str]:
     auth_service.request_password_reset(payload.email)
-    return {"message": "Jeśli e-mail istnieje, link do resetowania hasła został wysłany."}
+    return {
+        "message": (
+            "Jeśli e-mail istnieje, "
+            "link do resetowania hasła został wysłany."
+        )
+    }
 
 
 @router.post("/password-reset/reset")
 def reset_password(
     payload: PasswordResetConfirm,
-    auth_service: AuthService = Depends(get_auth_service),
-):
+    auth_service: Annotated[AuthService, Depends(get_auth_service)],
+) -> dict[str, str]:
     try:
         auth_service.reset_password(
             token=payload.token,

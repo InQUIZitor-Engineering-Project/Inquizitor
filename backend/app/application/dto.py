@@ -3,15 +3,17 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Dict, Iterable, List, Optional
+from collections.abc import Iterable
+from typing import Any
 
-from app.api.schemas.materials import MaterialOut
-from app.api.schemas.tests import TestOut, TestDetailOut, QuestionOut
 from app.api.schemas.jobs import JobOut
+from app.api.schemas.materials import MaterialOut
+from app.api.schemas.tests import QuestionOut, TestDetailOut, TestOut
 from app.api.schemas.users import UserRead
-from app.domain.models import Material, Question, Test, User, Job
+from app.domain.models import Job, Material, Question, Test, User
 
-def _as_list(value: Any) -> Optional[List[str]]:
+
+def _as_list(value: Any) -> list[str] | None:
     """
     Zwraca listę stringów albo None.
     - Jeśli value to list -> rzutuje elementy na str.
@@ -48,7 +50,7 @@ def to_test_out(test: Test) -> TestOut:
     return TestOut.model_validate(test, from_attributes=True)
 
 
-def to_question_dict(question: Question) -> Dict:
+def to_question_dict(question: Question) -> dict:
     return {
         "id": question.id,
         "text": question.text,
@@ -78,7 +80,7 @@ def to_test_detail(test: Test) -> TestDetailOut:
     )
 
 
-def to_test_response(test: Test) -> Dict:
+def to_test_response(test: Test) -> dict:
     return {
         "test_id": test.id,
         "title": test.title,
@@ -101,7 +103,7 @@ def to_material_out(material: Material) -> MaterialOut:
     )
 
 
-def to_materials_out(materials: Iterable[Material]) -> List[MaterialOut]:
+def to_materials_out(materials: Iterable[Material]) -> list[MaterialOut]:
     return [to_material_out(m) for m in materials]
 
 
@@ -120,13 +122,13 @@ def to_job_out(job: Job) -> JobOut:
 
 
 __all__ = [
-    "to_user_read",
-    "to_test_out",
-    "to_question_dict",
-    "to_question_out",
-    "to_test_response",
-    "to_test_detail",
+    "to_job_out",
     "to_material_out",
     "to_materials_out",
-    "to_job_out",
+    "to_question_dict",
+    "to_question_out",
+    "to_test_detail",
+    "to_test_out",
+    "to_test_response",
+    "to_user_read",
 ]

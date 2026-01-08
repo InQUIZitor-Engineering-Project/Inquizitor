@@ -5,10 +5,9 @@ Revises: final_bulk_ops_migration
 Create Date: 2025-12-27 10:23:48.818962
 
 """
-from alembic import op
 import sqlalchemy as sa
 import sqlmodel
-from sqlalchemy.dialects import postgresql
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = '5a0ba3f4f656'

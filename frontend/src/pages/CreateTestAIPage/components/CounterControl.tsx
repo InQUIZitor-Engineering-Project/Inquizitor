@@ -65,10 +65,8 @@ const CounterControl: React.FC<CounterControlProps> = ({ label, value, onChange,
   useEffect(() => {
     if (Number(inputValue) !== value && inputValue !== "") {
       setInputValue(value.toString());
-    } else if (value === 0 && inputValue === "") {
-      
-    } else if (Number(inputValue) !== value) {
-       setInputValue(value.toString());
+    } else if (Number(inputValue) !== value && value !== 0) {
+      setInputValue(value.toString());
     }
   }, [value, inputValue]);
 

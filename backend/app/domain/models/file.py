@@ -3,18 +3,17 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
 
 @dataclass(slots=True)
 class File:
     """Domain entity representing a file stored by a user."""
 
-    id: Optional[int]
+    id: int | None
     owner_id: int
     filename: str
     stored_path: Path
-    uploaded_at: Optional[datetime] = None
+    uploaded_at: datetime | None = None
 
     def __post_init__(self) -> None:
         self.filename = self.filename.strip()

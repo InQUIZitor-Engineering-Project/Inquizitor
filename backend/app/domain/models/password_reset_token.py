@@ -2,12 +2,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional
 
 
 @dataclass(slots=True)
 class PasswordResetToken:
-    id: Optional[int]
+    id: int | None
     email: str
     token_hash: str
     expires_at: datetime

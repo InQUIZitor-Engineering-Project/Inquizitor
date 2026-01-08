@@ -25,14 +25,31 @@ logs:
 	docker compose logs -f --tail=200
 
 migrate:
-	docker compose run --rm api alembic upgrade head
+	docker compose exec api alembic upgrade head
+
+migration:
+	@if [ -z "$(msg)" ]; then echo "Error: provide msg, e.g. make migration msg='add users table'"; exit 1; fi; \
+		docker compose exec api alembic revision --autogenerate -m "$(msg)"
+
+migrate-down:
+	docker compose exec api alembic downgrade -1
+
+migration-check:
+	docker compose exec api alembic check
+
+check: migration-check
+	docker compose exec api ruff check .
+	docker compose exec api mypy .
+	docker compose exec web npm run lint
+	docker compose exec web npx tsc --noEmit
+	@echo "All checks passed!"
+
+fix:
+	docker compose exec api ruff check --fix .
+	docker compose exec web npm run lint -- --fix
 
 rebuild:
-	docker compose build --no-cache
-
-new-migration:
-	@if [ -z "$(name)" ]; then echo "Error: provide name, e.g. make new-migration name='add users table'"; exit 1; fi; \
-		docker compose run --rm api alembic revision --autogenerate -m "$(name)"
+	docker compose up -d --build --force-recreate
 
 start.prod:
 	docker compose -f docker-compose.prod.yml up --build

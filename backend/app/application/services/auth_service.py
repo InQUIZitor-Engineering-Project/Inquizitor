@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta
-from typing import Callable
-from urllib.parse import urlparse, urlunparse
-import secrets
 import hashlib
+import secrets
+from collections.abc import Callable
+from datetime import datetime, timedelta
+from urllib.parse import urlparse, urlunparse
 
 from app.api.schemas.auth import Token
 from app.api.schemas.users import UserCreate
@@ -17,8 +17,7 @@ from app.core.security import (
     get_password_hash,
     verify_password,
 )
-from app.domain.models import User
-from app.domain.models import PendingVerification, PasswordResetToken
+from app.domain.models import PasswordResetToken, PendingVerification, User
 
 
 def normalize_frontend_base_url(url: str | None) -> str:
@@ -97,7 +96,9 @@ class AuthService:
             )
             uow.pending_verifications.upsert(pending_entry)
 
-        from app.tasks.email import send_verification_email_task  # local import to avoid cycles
+        from app.tasks.email import (
+            send_verification_email_task,  # local import to avoid cycles
+        )
 
         verify_url = f"{frontend_base.rstrip('/')}/verify-email?token={raw_token}"
         send_verification_email_task.delay(
@@ -115,7 +116,10 @@ class AuthService:
                 # Check if account is awaiting verification
                 pending = uow.pending_verifications.get_by_email(email)
                 if pending:
-                    raise ValueError("Konto nie zostało jeszcze aktywowane. Sprawdź swoją skrzynkę e-mail.")
+                    raise ValueError(
+                        "Konto nie zostało jeszcze aktywowane. "
+                        "Sprawdź swoją skrzynkę e-mail."
+                    )
                 raise ValueError("Niepoprawny e-mail lub hasło")
 
             if not self._password_verifier(password, user.hashed_password):
