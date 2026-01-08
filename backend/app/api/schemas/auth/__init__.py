@@ -27,15 +27,6 @@ class PasswordResetConfirm(BaseModel):
     new_password: str
 
 
-class PasswordResetRequest(BaseModel):
-    email: str
-
-
-class PasswordResetConfirm(BaseModel):
-    token: str
-    new_password: str
-
-
 __all__ = [
     "PasswordResetConfirm",
     "PasswordResetRequest",
