@@ -55,9 +55,9 @@ class ChangePasswordRequest(BaseModel):
     new_password: str
 
 __all__ = [
+    "ChangePasswordRequest",
     "UserBase",
     "UserCreate",
     "UserRead",
     "UserStatistics",
-    "ChangePasswordRequest",
 ]

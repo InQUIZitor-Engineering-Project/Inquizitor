@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from typing import Any
 
 from app.celery_app import celery_app
 from app.domain.models.enums import JobStatus
@@ -8,7 +9,7 @@ from app.domain.models.enums import JobStatus
 logger = logging.getLogger(__name__)
 
 
-def _get_services():
+def _get_services() -> tuple[Any, Any]:
     # Lazy import to avoid circular imports during app startup
     from app.bootstrap import get_container
 
@@ -20,16 +21,21 @@ def _get_services():
 
 
 @celery_app.task(name="app.tasks.process_material", bind=True)
-def process_material_task(self, job_id: int, owner_id: int, material_id: int):
+def process_material_task(
+    self: Any, job_id: int, owner_id: int, material_id: int
+) -> int:
+    _ = self
     material_service, job_service = _get_services()
 
     try:
         job_service.update_job_status(job_id=job_id, status=JobStatus.RUNNING)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.exception("Failed to mark job %s as running: %s", job_id, exc)
 
     try:
-        material = material_service.process_material(owner_id=owner_id, material_id=material_id)
+        material = material_service.process_material(
+            owner_id=owner_id, material_id=material_id
+        )
         status_value = (material.processing_status or "").lower()
         if status_value != JobStatus.DONE.value:
             error_msg = material.processing_error or "Could not extract text"
@@ -57,7 +63,7 @@ def process_material_task(self, job_id: int, owner_id: int, material_id: int):
             },
         )
         return material.id
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.exception("Material processing job %s failed: %s", job_id, exc)
         job_service.update_job_status(
             job_id=job_id,

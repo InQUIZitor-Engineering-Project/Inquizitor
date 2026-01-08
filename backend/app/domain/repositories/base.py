@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Generic, Iterable, Optional, TypeVar
-
+from collections.abc import Iterable
+from typing import Generic, TypeVar
 
 T = TypeVar("T")
 
@@ -15,7 +15,7 @@ class Repository(ABC, Generic[T]):
         raise NotImplementedError
 
     @abstractmethod
-    def get(self, entity_id: int) -> Optional[T]:
+    def get(self, entity_id: int) -> T | None:
         raise NotImplementedError
 
     @abstractmethod

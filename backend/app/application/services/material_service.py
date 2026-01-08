@@ -3,14 +3,15 @@
 from __future__ import annotations
 
 import hashlib
+from collections.abc import Callable, Sequence
 from datetime import datetime
 from pathlib import Path
-from typing import Callable, Optional, Sequence, List
 
 from app.api.schemas.materials import MaterialOut, MaterialUpdate
 from app.application import dto
 from app.application.interfaces import FileStorage, UnitOfWork
-from app.domain.models import File as FileDomain, Material as MaterialDomain
+from app.domain.models import File as FileDomain
+from app.domain.models import Material as MaterialDomain
 from app.domain.models.enums import ProcessingStatus
 
 
@@ -20,8 +21,8 @@ class MaterialService:
         uow_factory: Callable[[], UnitOfWork],
         *,
         storage: FileStorage,
-        text_extractor: Callable[[Path, Optional[str]], str],
-        mime_detector: Optional[Callable[[Path], Optional[str]]] = None,
+        text_extractor: Callable[[Path, str | None], str],
+        mime_detector: Callable[[Path], str | None] | None = None,
         max_text_length: int = 1_000_000,
     ) -> None:
         self._uow_factory = uow_factory
@@ -36,7 +37,7 @@ class MaterialService:
         owner_id: int,
         filename: str,
         content: bytes,
-        allowed_extensions: Optional[Sequence[str]] = None,
+        allowed_extensions: Sequence[str] | None = None,
     ) -> MaterialOut:
         extension = Path(filename).suffix.lower()
         if allowed_extensions and extension not in allowed_extensions:
@@ -81,7 +82,7 @@ class MaterialService:
 
         return dto.to_material_out(material_record)
 
-    def list_materials(self, *, owner_id: int) -> List[MaterialOut]:
+    def list_materials(self, *, owner_id: int) -> list[MaterialOut]:
         with self._uow_factory() as uow:
             materials = list(uow.materials.list_for_user(owner_id))
 
@@ -132,7 +133,7 @@ class MaterialService:
             if file_id is not None:
                 uow.files.remove(file_id)
 
-    def _detect_mime(self, path: Path) -> Optional[str]:
+    def _detect_mime(self, path: Path) -> str | None:
         if not self._mime_detector:
             return None
         try:
@@ -178,8 +179,10 @@ class MaterialService:
                     if normalized_text:
                         material.mark_processed(normalized_text)
                     else:
-                        material.mark_failed("Could not extract text (unsupported or empty)")
-                except Exception as exc:  # noqa: BLE001
+                        material.mark_failed(
+                            "Could not extract text (unsupported or empty)"
+                        )
+                except Exception as exc:
                     material.mark_failed(str(exc))
 
             updated = uow.materials.update(material)

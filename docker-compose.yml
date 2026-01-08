@@ -22,10 +22,11 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile.dev
-    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     working_dir: /app
     environment:
       - DATABASE_URL=postgresql+psycopg2://app:app@db:5432/app
+      - RUN_MIGRATIONS=true
       - PYTHONUNBUFFERED=1
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/1
@@ -82,7 +83,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile.dev
-    command: sh -c "alembic upgrade head && celery -A app.celery_app worker --loglevel=info"
+    command: celery -A app.celery_app worker --loglevel=info
     working_dir: /app
     environment:
       - DATABASE_URL=postgresql+psycopg2://app:app@db:5432/app

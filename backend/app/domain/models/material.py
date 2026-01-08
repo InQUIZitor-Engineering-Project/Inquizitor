@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 from .enums import ProcessingStatus
 from .file import File
@@ -11,15 +10,15 @@ from .file import File
 class Material:
     """Domain entity representing source material for generating content."""
 
-    id: Optional[int]
+    id: int | None
     owner_id: int
     file: File
-    mime_type: Optional[str]
-    size_bytes: Optional[int]
-    checksum: Optional[str]
+    mime_type: str | None
+    size_bytes: int | None
+    checksum: str | None
     status: ProcessingStatus = ProcessingStatus.PENDING
-    extracted_text: Optional[str] = None
-    processing_error: Optional[str] = None
+    extracted_text: str | None = None
+    processing_error: str | None = None
 
     def mark_processed(self, text: str) -> None:
         self.status = ProcessingStatus.DONE

@@ -1,7 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Flex, Stack } from "../../design-system/primitives";
-import Footer from "../../components/Footer/Footer";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import useDashboard from "./hooks/useDashboard";
 import EmptyState from "./components/EmptyState";
@@ -37,7 +36,7 @@ const DashboardPage: React.FC = () => {
   }
 
   return (
-    <Flex $direction="column" $bg="#f5f6f8" style={{ minHeight: "calc(100vh - 40px)" }}>
+    <Flex $direction="column" $bg="#f5f6f8" style={{ minHeight: "100%" }}>
       <PageSection $py="xl">
         <PageContainer>
           <Flex $flex={1} $width="100%" $justify="center">
@@ -54,8 +53,6 @@ const DashboardPage: React.FC = () => {
           </Flex>
         </PageContainer>
       </PageSection>
-
-      <Footer />
 
       {testIdToDelete !== null && (
         <Modal

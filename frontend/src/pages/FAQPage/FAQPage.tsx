@@ -1,23 +1,24 @@
 import React from "react";
 import { useTheme } from "styled-components";
 import { Box, Flex, Heading, Stack, Text } from "../../design-system/primitives";
-import Footer from "../../components/Footer/Footer";
 import faqImg from "../../assets/faq_nobackground2.png";
 import useDocumentTitle from "../../hooks/useDocumentTitle.ts";
-import { categoriesOrder, faqItems } from "./faqData.ts";
+import { faqItems } from "./faqData.ts";
 import useFaq from "./hooks/useFaq";
 import SearchBar from "./components/SearchBar";
-import FAQCategoryColumn from "./components/FAQCategoryColumn";
+import FAQItemCard from "./components/FAQItemCard";
 import { PageContainer, PageSection } from "../../design-system/patterns";
 import styled from "styled-components";
 
+
 const CardsGrid = styled(Box)`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 24px;
+  align-items: start;
 
   ${({ theme }) => theme.media.down("md")} {
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   }
 
   @media (max-width: 640px) {
@@ -27,7 +28,7 @@ const CardsGrid = styled(Box)`
 
 const FAQPage: React.FC = () => {
   const theme = useTheme();
-  const { search, setSearch, activeId, grouped, handleToggle } = useFaq([...faqItems]);
+  const { search, setSearch, activeId, filteredFaq, handleToggle } = useFaq([...faqItems]);
 
   useDocumentTitle("FAQ | Inquizitor");
 
@@ -35,7 +36,7 @@ const FAQPage: React.FC = () => {
     <Flex
       $direction="column"
       $bg={theme.colors.neutral.silver}
-      style={{ minHeight: "calc(100vh - 40px)" }}
+      style={{ minHeight: "100%" }}
     >
       <Flex $flex={1} $width="100%" $justify="center">
         <PageSection $py="lg">
@@ -58,9 +59,8 @@ const FAQPage: React.FC = () => {
                     Najczęściej zadawane pytania
                   </Heading>
                   <Text $variant="body2" $tone="muted">
-                    Zebraliśmy w jednym miejscu odpowiedzi na pytania dotyczące generowania testów,
-                    edycji, bezpieczeństwa oraz planowanych funkcji. Jeśli czegoś brakuje,
-                    skontaktuj się z nami.
+                    Masz pytania dotyczące generowania testów, edycji lub bezpieczeństwa? 
+                    Wpisz frazę poniżej lub przejrzyj listę.
                   </Text>
                   <SearchBar value={search} onChange={setSearch} />
                 </Stack>
@@ -76,26 +76,25 @@ const FAQPage: React.FC = () => {
               </Box>
 
               <CardsGrid $p="lg" $radius="xl" $bg="#fff" $shadow="md">
-                {categoriesOrder.map((category) => {
-                  const items = grouped[category];
-                  if (!items || items.length === 0) return null;
-                  return (
-                    <FAQCategoryColumn
-                      key={category}
-                      category={category}
-                      items={items}
-                      activeId={activeId}
-                      onToggle={handleToggle}
+                {filteredFaq.length > 0 ? (
+                  filteredFaq.map((item) => (
+                    <FAQItemCard
+                      key={item.id}
+                      item={item}
+                      active={item.id === activeId}
+                      onToggle={() => handleToggle(item.id)}
                     />
-                  );
-                })}
+                  ))
+                ) : (
+                  <Text $variant="body2" $tone="muted" style={{ gridColumn: "1 / -1", textAlign: "center", padding: "20px" }}>
+                    Nie znaleziono pytań pasujących do wyszukiwania "{search}".
+                  </Text>
+                )}
               </CardsGrid>
             </Stack>
           </PageContainer>
         </PageSection>
       </Flex>
-
-      <Footer />
     </Flex>
   );
 };

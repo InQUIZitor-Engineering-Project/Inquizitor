@@ -1,19 +1,29 @@
 import logging
-import traceback
+from collections.abc import Callable
 from functools import lru_cache
 from pathlib import Path
-from typing import Optional
+from typing import Any, cast
 
+import magic
 from fastapi import FastAPI, Request, status
+from fastapi.exceptions import HTTPException as FastAPIHTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from fastapi.exceptions import HTTPException as FastAPIHTTPException
 
-from app.application.services import AuthService, FileService, MaterialService, TestService, UserService, JobService
+from app.api.routers import auth, files, jobs, materials, tests, users
+from app.application.services import (
+    AuthService,
+    FileService,
+    JobService,
+    MaterialService,
+    TestService,
+    UserService,
+)
 from app.application.unit_of_work import SqlAlchemyUnitOfWork
 from app.core.config import Settings, get_settings
 from app.db.session import get_session_factory, init_db
+from app.domain.services import FileStorage
 from app.infrastructure import (
     DefaultOCRService,
     GeminiQuestionGenerator,
@@ -21,19 +31,13 @@ from app.infrastructure import (
     R2FileStorage,
     ResendEmailSender,
     SqlModelFileRepository,
+    SqlModelJobRepository,
     SqlModelMaterialRepository,
     SqlModelTestRepository,
     SqlModelUserRepository,
-    SqlModelJobRepository,
 )
-from app.api.routers import auth, files, materials, tests, users, jobs
 from app.infrastructure.extractors.extract_composite import composite_text_extractor
 from app.middleware import LoggingMiddleware
-
-try:  # pragma: no cover - optional dependency
-    import magic
-except Exception:  # noqa: B902 - best effort fallback if libmagic unavailable
-    magic = None
 
 
 class AppContainer:
@@ -44,7 +48,9 @@ class AppContainer:
         self._question_generator = GeminiQuestionGenerator()
         self._ocr_service = DefaultOCRService()
         self._file_storage = self._create_storage(base_dir=Path("uploads"))
-        self._materials_storage = self._create_storage(base_dir=Path("uploads/materials"))
+        self._materials_storage = self._create_storage(
+            base_dir=Path("uploads/materials")
+        )
         self._exports_storage = self._create_storage(base_dir=Path("uploads/exports"))
         self._session_factory = get_session_factory(settings)
         self._email_sender = self._create_email_sender()
@@ -53,7 +59,7 @@ class AppContainer:
     def settings(self) -> Settings:
         return self._settings
 
-    def provide_db_session(self):
+    def provide_db_session(self) -> Callable[..., Any]:
         from app.db.session import get_session
 
         return get_session
@@ -64,25 +70,25 @@ class AppContainer:
     def provide_ocr_service(self) -> DefaultOCRService:
         return self._ocr_service
 
-    def provide_file_storage(self) -> LocalFileStorage:
+    def provide_file_storage(self) -> FileStorage:
         return self._file_storage
 
-    def provide_export_storage(self) -> LocalFileStorage:
+    def provide_export_storage(self) -> FileStorage:
         return self._exports_storage
 
-    def provide_user_repository(self, session) -> SqlModelUserRepository:
+    def provide_user_repository(self, session: Any) -> SqlModelUserRepository:
         return SqlModelUserRepository(session)
 
-    def provide_test_repository(self, session) -> SqlModelTestRepository:
+    def provide_test_repository(self, session: Any) -> SqlModelTestRepository:
         return SqlModelTestRepository(session)
 
-    def provide_file_repository(self, session) -> SqlModelFileRepository:
+    def provide_file_repository(self, session: Any) -> SqlModelFileRepository:
         return SqlModelFileRepository(session)
 
-    def provide_material_repository(self, session) -> SqlModelMaterialRepository:
+    def provide_material_repository(self, session: Any) -> SqlModelMaterialRepository:
         return SqlModelMaterialRepository(session)
 
-    def provide_job_repository(self, session) -> SqlModelJobRepository:
+    def provide_job_repository(self, session: Any) -> SqlModelJobRepository:
         return SqlModelJobRepository(session)
 
     def provide_unit_of_work(self) -> SqlAlchemyUnitOfWork:
@@ -106,9 +112,7 @@ class AppContainer:
         )
 
     def provide_user_service(self) -> UserService:
-        return UserService(
-            lambda: self.provide_unit_of_work()
-        )
+        return UserService(lambda: self.provide_unit_of_work())
 
     def provide_job_service(self) -> JobService:
         return JobService(lambda: self.provide_unit_of_work())
@@ -124,7 +128,7 @@ class AppContainer:
     def provide_email_sender(self) -> ResendEmailSender:
         return self._email_sender
 
-    def _create_storage(self, base_dir: Path | str):
+    def _create_storage(self, base_dir: Path | str) -> LocalFileStorage | R2FileStorage:
         backend = (self._settings.STORAGE_BACKEND or "local").lower()
         if backend == "r2":
             missing = [
@@ -155,8 +159,10 @@ class AppContainer:
 
     def _create_email_sender(self) -> ResendEmailSender:
         if not self._settings.RESEND_API_KEY or not self._settings.EMAIL_FROM:
-            raise ValueError("RESEND_API_KEY and EMAIL_FROM must be configured for email sending")
-        
+            raise ValueError(
+                "RESEND_API_KEY and EMAIL_FROM must be configured for email sending"
+            )
+
         # Use specific branding logo from assets domain
         logo_url = "https://assets.inquizitor.pl/branding/logo_full.png"
 
@@ -168,16 +174,16 @@ class AppContainer:
         )
 
     @staticmethod
-    def _detect_mime(path: Path) -> Optional[str]:
+    def _detect_mime(path: Path) -> str | None:
         if not magic:
             return None
         try:
-            return magic.from_file(str(path), mime=True)
+            return cast(str | None, magic.from_file(str(path), mime=True))
         except Exception:
             return None
 
 
-@lru_cache()
+@lru_cache
 def get_container() -> AppContainer:
     return AppContainer(settings=get_settings())
 
@@ -185,27 +191,28 @@ def get_container() -> AppContainer:
 def configure_logging(level: str, sql_echo: bool = False) -> None:
     """Konfiguruje logowanie z formatowaniem dla lepszej czytelności."""
     numeric_level = getattr(logging, level.upper(), logging.INFO)
-    
+
     # Format logów z timestampem, poziomem, modułem i wiadomością
     log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     date_format = "%Y-%m-%d %H:%M:%S"
-    
+
     logging.basicConfig(
         level=numeric_level,
         format=log_format,
         datefmt=date_format,
         force=True,  # Nadpisz istniejącą konfigurację
     )
-    
-    # Ustaw poziom dla uvicorn access logs (żeby nie spamowały, bo mamy własne logowanie)
+
+    # Ustaw poziom dla uvicorn access logs (żeby nie spamowały,
+    # bo mamy własne logowanie)
     logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
-    
+
     # SQLAlchemy - pokazuj query tylko jeśli SQL_ECHO jest True
     sqlalchemy_level = logging.INFO if sql_echo else logging.WARNING
     logging.getLogger("sqlalchemy.engine").setLevel(sqlalchemy_level)
 
 
-def create_app(settings_override: Optional[Settings] = None) -> FastAPI:
+def create_app(settings_override: Settings | None = None) -> FastAPI:
     current_settings = settings_override or get_settings()
     configure_logging(current_settings.LOG_LEVEL, sql_echo=current_settings.SQL_ECHO)
 
@@ -216,7 +223,8 @@ def create_app(settings_override: Optional[Settings] = None) -> FastAPI:
         version="0.1.0",
     )
 
-    # Dodaj middleware do logowania requestów (przed CORS, żeby logować wszystkie requesty)
+    # Dodaj middleware do logowania requestów (przed CORS,
+    # żeby logować wszystkie requesty)
     app.add_middleware(LoggingMiddleware)
 
     app.add_middleware(
@@ -229,7 +237,9 @@ def create_app(settings_override: Optional[Settings] = None) -> FastAPI:
 
     # Global exception handler dla wszystkich nieobsłużonych błędów
     @app.exception_handler(Exception)
-    async def global_exception_handler(request: Request, exc: Exception):
+    async def global_exception_handler(
+        request: Request, exc: Exception
+    ) -> JSONResponse:
         """Loguje wszystkie nieobsłużone błędy z pełnym stack trace."""
         logger.error(
             "Unhandled exception: %s",
@@ -239,16 +249,16 @@ def create_app(settings_override: Optional[Settings] = None) -> FastAPI:
                 "path": request.url.path,
                 "method": request.method,
                 "exception_type": type(exc).__name__,
-            }
+            },
         )
-        
+
         # Dla błędów HTTP zwróć odpowiedni status code
         if isinstance(exc, FastAPIHTTPException):
             return JSONResponse(
                 status_code=exc.status_code,
                 content={"detail": exc.detail},
             )
-        
+
         # Dla innych błędów zwróć 500
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -261,7 +271,9 @@ def create_app(settings_override: Optional[Settings] = None) -> FastAPI:
 
     # Handler dla błędów walidacji requestów
     @app.exception_handler(RequestValidationError)
-    async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    async def validation_exception_handler(
+        request: Request, exc: RequestValidationError
+    ) -> JSONResponse:
         """Loguje błędy walidacji."""
         logger.warning(
             "Validation error: %s - Path: %s",
@@ -271,14 +283,18 @@ def create_app(settings_override: Optional[Settings] = None) -> FastAPI:
                 "path": request.url.path,
                 "method": request.method,
                 "validation_errors": exc.errors(),
-            }
+            },
         )
         return JSONResponse(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             content={"detail": exc.errors()},
         )
 
-    container = AppContainer(settings=current_settings) if settings_override else get_container()
+    container = (
+        AppContainer(settings=current_settings)
+        if settings_override
+        else get_container()
+    )
     app.state.container = container
     app.state.settings = current_settings
 
@@ -291,7 +307,7 @@ def create_app(settings_override: Optional[Settings] = None) -> FastAPI:
             logger.info("Skipping auto table creation (AUTO_CREATE_TABLES=False)")
 
     @app.get("/ping")
-    def pong():
+    def pong() -> dict[str, str]:
         return {"msg": "pong"}
 
     app.include_router(auth.router, prefix="/auth", tags=["auth"])
@@ -302,4 +318,3 @@ def create_app(settings_override: Optional[Settings] = None) -> FastAPI:
     app.include_router(jobs.router)
 
     return app
-

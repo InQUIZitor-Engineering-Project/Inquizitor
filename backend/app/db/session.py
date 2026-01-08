@@ -7,7 +7,7 @@ from sqlmodel import Session, SQLModel
 from app.core.config import Settings, get_settings
 
 
-@lru_cache()
+@lru_cache
 def _build_engine(database_url: str, sql_echo: bool):
     return create_engine(
         database_url,
@@ -20,7 +20,7 @@ def get_engine(settings: Settings | None = None):
     return _build_engine(cfg.DATABASE_URL, cfg.SQL_ECHO)
 
 
-@lru_cache()
+@lru_cache
 def _build_session_factory(database_url: str, sql_echo: bool):
     engine = _build_engine(database_url, sql_echo)
     return sessionmaker(

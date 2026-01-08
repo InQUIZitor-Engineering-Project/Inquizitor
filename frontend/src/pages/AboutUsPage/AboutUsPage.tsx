@@ -1,7 +1,6 @@
 import React, { type ReactNode } from "react";
 import { useTheme } from "styled-components";
 import { Box, Flex, Heading, Stack, Text } from "../../design-system/primitives";
-import Footer from "../../components/Footer/Footer";
 import onasImg from "../../assets/onas_nobackground2.png";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { PageContainer, PageSection } from "../../design-system/patterns";
@@ -90,7 +89,7 @@ const AboutUsPage: React.FC = () => {
     <Flex
       $direction="column"
       $bg={theme.colors.neutral.silver}
-      style={{ minHeight: "calc(100vh - 40px)" }}
+      style={{ minHeight: "100%" }}
     >
       <Flex $flex={1} $width="100%" $justify="center" $overflow="hidden">
         <PageSection $py="lg">
@@ -170,7 +169,6 @@ const AboutUsPage: React.FC = () => {
                 </Stack>
               </Box>
 
-              <Footer />
             </Stack>
           </PageContainer>
         </PageSection>

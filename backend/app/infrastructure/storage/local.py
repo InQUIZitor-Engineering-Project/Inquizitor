@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import uuid
-from pathlib import Path
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Iterator
+from pathlib import Path
 
 from app.domain.services import FileStorage
 
@@ -20,6 +20,7 @@ class LocalFileStorage(FileStorage):
         return path
 
     def save(self, *, owner_id: int, filename: str, content: bytes) -> str:
+        _ = owner_id
         extension = Path(filename).suffix.lower()
         unique_name = f"{uuid.uuid4().hex}{extension}"
         stored_path = self._base_dir / unique_name

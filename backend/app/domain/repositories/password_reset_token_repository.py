@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Optional
 
 from app.domain.models.password_reset_token import PasswordResetToken
 
@@ -12,11 +11,11 @@ class PasswordResetTokenRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_by_email(self, email: str) -> Optional[PasswordResetToken]:
+    def get_by_email(self, email: str) -> PasswordResetToken | None:
         raise NotImplementedError
 
     @abstractmethod
-    def get_by_token_hash(self, token_hash: str) -> Optional[PasswordResetToken]:
+    def get_by_token_hash(self, token_hash: str) -> PasswordResetToken | None:
         raise NotImplementedError
 
     @abstractmethod
