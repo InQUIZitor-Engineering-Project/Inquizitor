@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Annotated, cast
+from typing import TYPE_CHECKING, Annotated, Any, cast
 
 from fastapi import Depends, Request
 
@@ -17,10 +17,10 @@ from app.application.services import (
 from app.domain.services import FileStorage
 
 if TYPE_CHECKING:  # pragma: no cover - only for type hints
-    from app.bootstrap import AppContainer
+    from app.bootstrap import Any
 
 
-def get_app_container(request: Request) -> AppContainer:
+def get_app_container(request: Request) -> Any:
     container = getattr(request.app.state, "container", None)
     if container is None:
         from app.bootstrap import (
@@ -28,46 +28,46 @@ def get_app_container(request: Request) -> AppContainer:
         )
 
         container = get_container()
-    return cast("AppContainer", container)
+    return cast("Any", container)
 
 
 def get_auth_service(
-    container: Annotated[AppContainer, Depends(get_app_container)],
+    container: Annotated[Any, Depends(get_app_container)],
 ) -> AuthService:
     return container.provide_auth_service()
 
 
 def get_test_service(
-    container: Annotated[AppContainer, Depends(get_app_container)],
+    container: Annotated[Any, Depends(get_app_container)],
 ) -> TestService:
     return container.provide_test_service()
 
 
 def get_file_service(
-    container: Annotated[AppContainer, Depends(get_app_container)],
+    container: Annotated[Any, Depends(get_app_container)],
 ) -> FileService:
     return container.provide_file_service()
 
 
 def get_material_service(
-    container: Annotated[AppContainer, Depends(get_app_container)],
+    container: Annotated[Any, Depends(get_app_container)],
 ) -> MaterialService:
     return container.provide_material_service()
 
 
 def get_job_service(
-    container: Annotated[AppContainer, Depends(get_app_container)],
+    container: Annotated[Any, Depends(get_app_container)],
 ) -> JobService:
     return container.provide_job_service()
 
 
 def get_export_storage(
-    container: Annotated[AppContainer, Depends(get_app_container)],
+    container: Annotated[Any, Depends(get_app_container)],
 ) -> FileStorage:
     return container.provide_export_storage()
 
 def get_user_service(
-    container: Annotated[AppContainer, Depends(get_app_container)],
+    container: Annotated[Any, Depends(get_app_container)],
 ) -> UserService:
     return container.provide_user_service()
 
