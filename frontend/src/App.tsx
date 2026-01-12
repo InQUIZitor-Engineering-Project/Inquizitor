@@ -131,15 +131,15 @@ const App: React.FC = () => {
               </ProtectedRoute>
             }>
             </Route>
-            <Route
-              path="/profile"
-              element={
-                <ProtectedRoute>
-                  <ProfilePage />
-                </ProtectedRoute>
-              }
-            />
           </Route>
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <ProfilePage />
+              </ProtectedRoute>
+            }
+          />
 
           <Route path="*" element={<FallbackRedirect />} />
         </Routes>

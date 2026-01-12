@@ -50,7 +50,6 @@ class Settings(BaseSettings):
     SQL_ECHO: bool = True
     SENTRY_DSN: str | None = None
     SENTRY_ENV: str = "production"
-    TURNSTILE_SECRET_KEY: str | None = None
 
 
 @lru_cache
