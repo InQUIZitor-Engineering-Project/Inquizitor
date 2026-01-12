@@ -3,6 +3,9 @@ from __future__ import annotations
 from celery import Celery
 
 from app.core.config import get_settings
+from app.core.monitoring import init_sentry
+
+init_sentry()
 
 settings = get_settings()
 

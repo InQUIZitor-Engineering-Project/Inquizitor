@@ -47,6 +47,8 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = "INFO"
     AUTO_CREATE_TABLES: bool = False
     SQL_ECHO: bool = True
+    SENTRY_DSN: str | None = None
+    SENTRY_ENV: str = "production"
 
 
 @lru_cache
