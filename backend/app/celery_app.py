@@ -3,6 +3,9 @@ from __future__ import annotations
 from celery import Celery
 
 from app.core.config import get_settings
+from app.core.monitoring import init_sentry
+
+init_sentry()
 
 settings = get_settings()
 
@@ -10,6 +13,7 @@ celery_app = Celery(
     "inquizitor",
     broker=settings.CELERY_BROKER_URL,
     backend=settings.CELERY_RESULT_BACKEND,
+    include=["app.tasks"]
 )
 
 celery_app.conf.update(

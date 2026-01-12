@@ -19,6 +19,19 @@ class User(SQLModel, table=True):
     tests: list["Test"] = Relationship(back_populates="owner")
     files: list["File"] = Relationship(back_populates="owner")
     materials: list["Material"] = Relationship(back_populates="owner")
+    refresh_tokens: list["RefreshToken"] = Relationship(back_populates="owner")
+
+
+class RefreshToken(SQLModel, table=True):
+    __tablename__ = "refresh_tokens"
+    id: int | None = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", index=True)
+    token_hash: str = Field(index=True, unique=True, max_length=128)
+    expires_at: datetime = Field(index=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
+    revoked_at: datetime | None = Field(default=None)
+
+    owner: User | None = Relationship(back_populates="refresh_tokens")
 
 
 class PendingEmailVerification(SQLModel, table=True):
@@ -28,7 +41,7 @@ class PendingEmailVerification(SQLModel, table=True):
     hashed_password: str
     first_name: str | None = Field(default=None, max_length=50)
     last_name: str | None = Field(default=None, max_length=50)
-    token_hash: str = Field(index=True, max_length=128)
+    token_hash: str = Field(index=True, unique=True, max_length=128)
     expires_at: datetime = Field(index=True)
     created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
 
@@ -36,7 +49,7 @@ class PasswordResetToken(SQLModel, table=True):
     __tablename__ = "password_reset_tokens"
     id: int | None = Field(default=None, primary_key=True)
     email: str = Field(index=True, max_length=100)
-    token_hash: str = Field(index=True, max_length=128)
+    token_hash: str = Field(index=True, unique=True, max_length=128)
     expires_at: datetime = Field(index=True)
     created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
 
@@ -112,6 +125,18 @@ class JobType(str, Enum):
     questions_regeneration = "questions_regeneration"
     questions_conversion = "questions_conversion"
 
+class SupportCategory(str, Enum):
+    general = "general"
+    bug = "bug"
+    feature_request = "feature_request"
+    account = "account"
+    other = "other"
+
+class SupportStatus(str, Enum):
+    new = "new"
+    read = "read"
+    resolved = "resolved"
+
 class Material(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     owner_id: int = Field(foreign_key="user.id", index=True)
@@ -140,3 +165,55 @@ class Job(SQLModel, table=True):
     error: str | None = Field(default=None)
     created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
     updated_at: datetime = Field(default_factory=datetime.utcnow, index=True)
+
+class SystemNotification(SQLModel, table=True):
+    __tablename__ = "system_notifications"
+    
+    id: int | None = Field(default=None, primary_key=True)
+    title: str = Field(max_length=200)
+    message: str 
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    
+    type: str = Field(default="info", max_length=20) 
+    recipient_id: int | None = Field(default=None, foreign_key="user.id", nullable=True)
+
+class UserReadNotification(SQLModel, table=True):
+    __tablename__ = "user_read_notifications"
+    
+    user_id: int = Field(foreign_key="user.id", primary_key=True)
+    notification_id: int = Field(
+        foreign_key="system_notifications.id", primary_key=True
+    )
+    read_at: datetime = Field(default_factory=datetime.utcnow)
+
+class SupportTicket(SQLModel, table=True):
+    __tablename__ = "support_tickets"
+    id: int | None = Field(default=None, primary_key=True)
+    user_id: int | None = Field(
+        default=None, foreign_key="user.id", index=True, nullable=True
+    )
+    email: str = Field(index=True, max_length=100)
+    first_name: str | None = Field(default=None, max_length=50)
+    last_name: str | None = Field(default=None, max_length=50)
+    category: SupportCategory = Field(
+        sa_column=Column(
+            "category",
+            SAEnum(SupportCategory),
+            index=True,
+            default=SupportCategory.general,
+        )
+    )
+    subject: str = Field(max_length=200)
+    message: str
+    status: SupportStatus = Field(
+        sa_column=Column(
+            "status",
+            SAEnum(SupportStatus),
+            index=True,
+            default=SupportStatus.new,
+        )
+    )
+    created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
+    updated_at: datetime = Field(default_factory=datetime.utcnow, index=True)
+
+    user: User | None = Relationship()

@@ -13,27 +13,35 @@ from .mappers import (
     pending_verification_to_row,
     question_to_domain,
     question_to_row,
+    refresh_token_to_domain,
+    refresh_token_to_row,
     test_to_domain,
     test_to_row,
     user_to_domain,
     user_to_row,
 )
+from .notification_repository import SqlModelNotificationRepository
 from .repositories import (
     SqlModelFileRepository,
     SqlModelJobRepository,
     SqlModelMaterialRepository,
     SqlModelPasswordResetTokenRepository,
     SqlModelPendingVerificationRepository,
+    SqlModelRefreshTokenRepository,
     SqlModelTestRepository,
     SqlModelUserRepository,
 )
+from .support_repository import SqlModelSupportRepository
 
 __all__ = [
     "SqlModelFileRepository",
     "SqlModelJobRepository",
     "SqlModelMaterialRepository",
+    "SqlModelNotificationRepository",
     "SqlModelPasswordResetTokenRepository",
     "SqlModelPendingVerificationRepository",
+    "SqlModelRefreshTokenRepository",
+    "SqlModelSupportRepository",
     "SqlModelTestRepository",
     "SqlModelUserRepository",
     "file_to_domain",
@@ -48,9 +56,10 @@ __all__ = [
     "pending_verification_to_row",
     "question_to_domain",
     "question_to_row",
+    "refresh_token_to_domain",
+    "refresh_token_to_row",
     "test_to_domain",
     "test_to_row",
     "user_to_domain",
     "user_to_row",
 ]
-

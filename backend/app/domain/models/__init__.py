@@ -5,6 +5,7 @@ from .material import Material
 from .password_reset_token import PasswordResetToken
 from .pending_verification import PendingVerification
 from .question import Question
+from .refresh_token import RefreshToken
 from .test import Test
 from .user import User
 
@@ -19,7 +20,7 @@ __all__ = [
     "ProcessingStatus",
     "Question",
     "QuestionDifficulty",
+    "RefreshToken",
     "Test",
     "User",
 ]
-

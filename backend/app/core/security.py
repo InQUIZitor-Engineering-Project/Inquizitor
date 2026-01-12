@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timedelta
 from typing import Annotated, Any, cast
 
@@ -10,6 +11,8 @@ from sqlmodel import Session, select
 from app.core.config import get_settings
 from app.db.models import User
 from app.db.session import get_session
+
+logger = logging.getLogger(__name__)
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -50,7 +53,7 @@ def decode_access_token(token: str) -> dict[str, Any]:
 
 # OAuth2 + User retrieval
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
-
+oauth2_scheme_optional = OAuth2PasswordBearer(tokenUrl="/auth/login", auto_error=False)
 
 
 def get_current_user(
@@ -74,4 +77,22 @@ def get_current_user(
         raise credentials_exception
 
     return cast(User, user)
+
+
+def get_optional_current_user(
+    token: Annotated[str | None, Depends(oauth2_scheme_optional)],
+    db: Annotated[Session, Depends(get_session)],
+) -> User | None:
+    if not token:
+        return None
+    try:
+        payload = decode_access_token(token)
+        email: str | None = payload.get("sub") if payload else None
+        if email is None:
+            return None
+        stmt = select(User).where(User.email == email)
+        user = db.exec(cast(Any, stmt)).first()
+        return cast(User, user)
+    except Exception:
+        return None
 

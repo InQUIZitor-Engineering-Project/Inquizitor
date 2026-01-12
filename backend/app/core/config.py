@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     SECRET_KEY: str
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     GEMINI_API_KEY: str
     CELERY_BROKER_URL: str = "redis://redis:6379/0"
     CELERY_RESULT_BACKEND: str = "redis://redis:6379/1"
@@ -33,7 +34,7 @@ class Settings(BaseSettings):
     FRONTEND_BASE_URL: str | None = None
     EMAIL_VERIFICATION_EXP_MIN: int = 60
     GUNICORN_WORKERS: int = 4
-    GUNICORN_TIMEOUT: int = 120
+    GUNICORN_TIMEOUT: int = 90
     BACKEND_CORS_ORIGINS: list[str] = Field(
         default_factory=lambda: [
             "http://localhost:5173",
@@ -47,6 +48,11 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = "INFO"
     AUTO_CREATE_TABLES: bool = False
     SQL_ECHO: bool = True
+    SENTRY_DSN: str | None = None
+    SENTRY_ENV: str = "production"
+
+    TURNSTILE_SITE_KEY: str | None = None
+    TURNSTILE_SECRET_KEY: str | None = None
 
 
 @lru_cache

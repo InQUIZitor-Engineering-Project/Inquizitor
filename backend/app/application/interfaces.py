@@ -8,8 +8,11 @@ from app.domain.repositories import (
     FileRepository,
     JobRepository,
     MaterialRepository,
+    NotificationRepository,
     PasswordResetTokenRepository,
     PendingVerificationRepository,
+    RefreshTokenRepository,
+    SupportRepository,
     TestRepository,
     UserRepository,
 )
@@ -34,6 +37,10 @@ class UnitOfWork(Protocol):
         ...
 
     @property
+    def notifications(self) -> NotificationRepository:
+        ...
+
+    @property
     def jobs(self) -> JobRepository:
         ...
 
@@ -43,6 +50,14 @@ class UnitOfWork(Protocol):
 
     @property
     def password_reset_tokens(self) -> PasswordResetTokenRepository:
+        ...
+
+    @property
+    def support_tickets(self) -> SupportRepository:
+        ...
+
+    @property
+    def refresh_tokens(self) -> RefreshTokenRepository:
         ...
 
     def __enter__(self) -> UnitOfWork:

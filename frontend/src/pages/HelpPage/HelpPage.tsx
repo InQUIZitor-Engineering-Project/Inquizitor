@@ -2,13 +2,14 @@ import React from "react";
 import { useTheme } from "styled-components";
 import { Box, Flex, Heading, Stack, Text } from "../../design-system/primitives";
 import faqImg from "../../assets/faq_nobackground2.png";
-import useDocumentTitle from "../../hooks/useDocumentTitle.ts";
-import { faqItems } from "./faqData.ts";
+import useDocumentTitle from "../../hooks/useDocumentTitle";
+import { faqItems } from "./faqData";
 import useFaq from "./hooks/useFaq";
 import SearchBar from "./components/SearchBar";
 import FAQItemCard from "./components/FAQItemCard";
+import ContactForm from "./components/ContactForm";
 import { PageContainer, PageSection } from "../../design-system/patterns";
-import styled from "styled-components";
+import styled, { type DefaultTheme } from "styled-components";
 
 
 const CardsGrid = styled(Box)`
@@ -26,11 +27,11 @@ const CardsGrid = styled(Box)`
   }
 `;
 
-const FAQPage: React.FC = () => {
-  const theme = useTheme();
+const HelpPage: React.FC = () => {
+  const theme = useTheme() as DefaultTheme;
   const { search, setSearch, activeId, filteredFaq, handleToggle } = useFaq([...faqItems]);
 
-  useDocumentTitle("FAQ | Inquizitor");
+  useDocumentTitle("Pomoc | Inquizitor");
 
   return (
     <Flex
@@ -91,6 +92,8 @@ const FAQPage: React.FC = () => {
                   </Text>
                 )}
               </CardsGrid>
+
+              <ContactForm />
             </Stack>
           </PageContainer>
         </PageSection>
@@ -99,4 +102,4 @@ const FAQPage: React.FC = () => {
   );
 };
 
-export default FAQPage;
+export default HelpPage;

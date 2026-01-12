@@ -7,7 +7,7 @@ import { useAuth } from "../../hooks/useAuth";
 const VerifyEmailPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loginWithToken } = useAuth();
 
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
   const [message, setMessage] = useState<string>("Trwa weryfikacja adresu e-mail...");
@@ -26,11 +26,19 @@ const VerifyEmailPage: React.FC = () => {
 
     const run = async () => {
       try {
-        await verifyEmail(token, false);
-        navigate("/login?verified=success", {
-          replace: true,
-          state: { verifiedMessage: "Konto zostało utworzone i potwierdzone. Możesz się zalogować." },
-        });
+        const response = await verifyEmail(token, false);
+        
+        // Auto-login after successful verification
+        if (response.access_token && response.refresh_token) {
+            await loginWithToken(response.access_token, response.refresh_token);
+            navigate("/dashboard", { replace: true });
+        } else {
+            // Fallback for older flow or if tokens missing
+            navigate("/login?verified=success", {
+            replace: true,
+            state: { verifiedMessage: "Konto zostało utworzone i potwierdzone. Możesz się zalogować." },
+            });
+        }
       } catch (err: any) {
         navigate("/login?verified=error", {
           replace: true,
@@ -39,7 +47,7 @@ const VerifyEmailPage: React.FC = () => {
       }
     };
     run();
-  }, [navigate, searchParams]);
+  }, [navigate, searchParams, loginWithToken]);
 
   const handleGoHome = () => {
     navigate(user ? "/dashboard" : "/login", { replace: true });

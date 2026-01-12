@@ -11,7 +11,10 @@ from app.application.services import (
     FileService,
     JobService,
     MaterialService,
+    NotificationService,
+    SupportService,
     TestService,
+    TurnstileService,
     UserService,
 )
 from app.domain.services import FileStorage
@@ -61,6 +64,18 @@ def get_job_service(
     return container.provide_job_service()
 
 
+def get_notification_service(
+    container: Annotated[Any, Depends(get_app_container)],
+) -> NotificationService:
+    return container.provide_notification_service()
+
+
+def get_support_service(
+    container: Annotated[Any, Depends(get_app_container)],
+) -> SupportService:
+    return container.provide_support_service()
+
+
 def get_export_storage(
     container: Annotated[Any, Depends(get_app_container)],
 ) -> FileStorage:
@@ -73,6 +88,12 @@ def get_user_service(
     return container.provide_user_service()
 
 
+def get_turnstile_service(
+    container: Annotated[Any, Depends(get_app_container)],
+) -> TurnstileService:
+    return container.provide_turnstile_service()
+
+
 __all__ = [
     "get_app_container",
     "get_auth_service",
@@ -80,6 +101,9 @@ __all__ = [
     "get_file_service",
     "get_job_service",
     "get_material_service",
+    "get_notification_service",
+    "get_support_service",
     "get_test_service",
+    "get_turnstile_service",
     "get_user_service",
 ]

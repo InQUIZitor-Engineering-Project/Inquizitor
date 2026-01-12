@@ -13,4 +13,6 @@ export type { ModalProps, ModalVariant } from "./Modal";
 export { SelectableItem } from "./Modal";
 export { default as BottomSheet } from "./BottomSheet";
 export type { BottomSheetProps } from "./BottomSheet";
+export { default as CustomSelect } from "./CustomSelect";
+export type { CustomSelectProps, SelectOption } from "./CustomSelect";
 export { PageContainer, PageSection } from "./Container";

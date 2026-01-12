@@ -10,8 +10,11 @@ from app.domain.repositories import (
     FileRepository,
     JobRepository,
     MaterialRepository,
+    NotificationRepository,
     PasswordResetTokenRepository,
     PendingVerificationRepository,
+    RefreshTokenRepository,
+    SupportRepository,
     TestRepository,
     UserRepository,
 )
@@ -19,8 +22,11 @@ from app.infrastructure.persistence.sqlmodel import (
     SqlModelFileRepository,
     SqlModelJobRepository,
     SqlModelMaterialRepository,
+    SqlModelNotificationRepository,
     SqlModelPasswordResetTokenRepository,
     SqlModelPendingVerificationRepository,
+    SqlModelRefreshTokenRepository,
+    SqlModelSupportRepository,
     SqlModelTestRepository,
     SqlModelUserRepository,
 )
@@ -34,9 +40,12 @@ class SqlAlchemyUnitOfWork(AbstractContextManager["SqlAlchemyUnitOfWork"]):
         self._tests: TestRepository | None = None
         self._files: FileRepository | None = None
         self._materials: MaterialRepository | None = None
+        self._notifications: NotificationRepository | None = None
         self._jobs: JobRepository | None = None
         self._pending_verifications: PendingVerificationRepository | None = None
         self._password_reset_tokens: PasswordResetTokenRepository | None = None
+        self._support_tickets: SupportRepository | None = None
+        self._refresh_tokens: RefreshTokenRepository | None = None
 
     @property
     def users(self) -> UserRepository:
@@ -63,6 +72,12 @@ class SqlAlchemyUnitOfWork(AbstractContextManager["SqlAlchemyUnitOfWork"]):
         return self._materials
 
     @property
+    def notifications(self) -> NotificationRepository:
+        if self._notifications is None:
+            raise RuntimeError("UnitOfWork not initialized")
+        return self._notifications
+
+    @property
     def jobs(self) -> JobRepository:
         if self._jobs is None:
             raise RuntimeError("UnitOfWork not initialized")
@@ -80,6 +95,18 @@ class SqlAlchemyUnitOfWork(AbstractContextManager["SqlAlchemyUnitOfWork"]):
             raise RuntimeError("UnitOfWork not initialized")
         return self._password_reset_tokens
 
+    @property
+    def support_tickets(self) -> SupportRepository:
+        if self._support_tickets is None:
+            raise RuntimeError("UnitOfWork not initialized")
+        return self._support_tickets
+
+    @property
+    def refresh_tokens(self) -> RefreshTokenRepository:
+        if self._refresh_tokens is None:
+            raise RuntimeError("UnitOfWork not initialized")
+        return self._refresh_tokens
+
     def __enter__(self) -> SqlAlchemyUnitOfWork:
         self.session = self._session_factory()
         self.session.begin()
@@ -87,6 +114,7 @@ class SqlAlchemyUnitOfWork(AbstractContextManager["SqlAlchemyUnitOfWork"]):
         self._tests = SqlModelTestRepository(self.session)
         self._files = SqlModelFileRepository(self.session)
         self._materials = SqlModelMaterialRepository(self.session)
+        self._notifications = SqlModelNotificationRepository(self.session)
         self._jobs = SqlModelJobRepository(self.session)
         self._pending_verifications = SqlModelPendingVerificationRepository(
             self.session
@@ -94,6 +122,8 @@ class SqlAlchemyUnitOfWork(AbstractContextManager["SqlAlchemyUnitOfWork"]):
         self._password_reset_tokens = SqlModelPasswordResetTokenRepository(
             self.session
         )
+        self._support_tickets = SqlModelSupportRepository(self.session)
+        self._refresh_tokens = SqlModelRefreshTokenRepository(self.session)
         return self
 
     def __exit__(
@@ -123,4 +153,3 @@ class SqlAlchemyUnitOfWork(AbstractContextManager["SqlAlchemyUnitOfWork"]):
 
 
 __all__ = ["SqlAlchemyUnitOfWork"]
-

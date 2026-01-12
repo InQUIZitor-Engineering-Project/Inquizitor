@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { Flex, Stack, Box } from "../../design-system/primitives";
+import { Flex, Stack} from "../../design-system/primitives";
 import { useLoader } from "../../components/Loader/GlobalLoader";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import ProfileHeader from "./components/ProfileHeader";
 import AccountInfoCard from "./components/AccountInfoCard";
 import StatsCard from "./components/StatsCard";
+import NotificationsCard from "./components/NotificationsCard";
 import PasswordCard from "./components/PasswordCard";
 import profileIllustration from "../../assets/profile.png";
 import { PageContainer, PageSection } from "../../design-system/patterns";
@@ -19,7 +20,6 @@ interface UserProfile {
   created_at: string;
 }
 
-// Dostosowane do tego, co REALNIE zwraca backend
 interface UserStatistics {
   total_tests: number;
   total_questions: number;
@@ -27,7 +27,6 @@ interface UserStatistics {
   avg_questions_per_test: number;
   last_test_created_at: string | null;
 
-  // opcjonalnie (na przyszłość, jeśli dodasz na backendzie)
   total_closed_questions?: number;
   total_open_questions?: number;
   total_easy_questions?: number;
@@ -148,8 +147,6 @@ const ProfilePage: React.FC = () => {
     }
   };
 
-  // --- Helpery do statystyk ---
-
   useDocumentTitle("Profil | Inquizitor");
 
   const pageContent = (
@@ -174,7 +171,8 @@ const ProfilePage: React.FC = () => {
               <StatsCard stats={stats} />
             </Stack>
 
-            <Box style={{ flex: "1 1 320px", minWidth: 300 }}>
+            <Stack $gap="lg" style={{ flex: "1 1 320px", minWidth: "min(320px, 100%)" }}>
+              <NotificationsCard />
               <PasswordCard
                 oldPassword={oldPassword}
                 newPassword={newPassword}
@@ -186,7 +184,7 @@ const ProfilePage: React.FC = () => {
                 error={passwordError}
                 success={passwordSuccess}
               />
-            </Box>
+            </Stack>
           </Flex>
         </Stack>
       </PageContainer>
