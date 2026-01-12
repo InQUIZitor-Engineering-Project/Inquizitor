@@ -48,6 +48,9 @@ class Settings(BaseSettings):
     AUTO_CREATE_TABLES: bool = False
     SQL_ECHO: bool = True
 
+    TURNSTILE_SITE_KEY: str | None = None
+    TURNSTILE_SECRET_KEY: str | None = None
+
 
 @lru_cache
 def get_settings() -> Settings:

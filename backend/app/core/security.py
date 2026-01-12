@@ -1,3 +1,8 @@
+import logging
+import httpx
+
+logger = logging.getLogger(__name__)
+
 from datetime import datetime, timedelta
 from typing import Annotated, Any, cast
 
@@ -74,4 +79,37 @@ def get_current_user(
         raise credentials_exception
 
     return cast(User, user)
+
+
+async def verify_turnstile_token(token: str | None) -> bool:
+    """
+    Verifies the Cloudflare Turnstile token.
+    """
+    settings = get_settings()
+
+    # If secret key is not set, we assume Turnstile is disabled (e.g. in dev)
+    if not settings.TURNSTILE_SECRET_KEY:
+        return True
+
+    if not token:
+        logger.warning("Turnstile verification failed: No token provided")
+        return False
+
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.post(
+                "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+                data={
+                    "secret": settings.TURNSTILE_SECRET_KEY,
+                    "response": token,
+                },
+            )
+            result = response.json()
+            success = result.get("success", False)
+            if not success:
+                logger.error(f"Turnstile verification failed. Error codes: {result.get('error-codes')}")
+            return success
+        except Exception as e:
+            logger.error(f"Turnstile verification error: {str(e)}")
+            return False
 

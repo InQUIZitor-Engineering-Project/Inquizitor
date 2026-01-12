@@ -5,6 +5,7 @@ export interface UserCreate {
   last_name: string;
   email: string;
   password: string;
+  turnstile_token?: string | null;
 }
 
 export interface UserRead {
@@ -111,11 +112,15 @@ export async function verifyEmail(token: string, redirect: boolean = false): Pro
 
 export async function loginUser(
   email: string,
-  password: string
+  password: string,
+  turnstileToken?: string | null
 ): Promise<Token> {
   const form = new URLSearchParams();
   form.append("username", email);
   form.append("password", password);
+  if (turnstileToken) {
+    form.append("cf-turnstile-response", turnstileToken);
+  }
 
   const res = await apiRequest("/auth/login", {
     method: "POST",
