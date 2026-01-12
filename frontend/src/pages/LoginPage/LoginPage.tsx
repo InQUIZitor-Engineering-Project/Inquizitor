@@ -1,6 +1,7 @@
 import React, { useEffect, useState, type FormEvent } from "react";
 import { Link, useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import styled, { useTheme } from "styled-components";
+import { Turnstile } from "@marsidev/react-turnstile";
 import { Stack, Heading, Text, Input, Button, Checkbox } from "../../design-system/primitives";
 import AlertBar from "../../design-system/patterns/AlertBar";
 import { useAuth } from "../../hooks/useAuth";
@@ -28,6 +29,7 @@ const LoginPage: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [infoMessage, setInfoMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
 
   useDocumentTitle("Zaloguj się | Inquizitor");
 
@@ -48,9 +50,15 @@ const LoginPage: React.FC = () => {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setErrorMessage("");
+
+    if (!turnstileToken && import.meta.env.VITE_TURNSTILE_SITE_KEY) {
+      setErrorMessage("Proszę poczekać na weryfikację Turnstile.");
+      return;
+    }
+
     setLoading(true);
     try {
-      await login(email, password);
+      await login(email, password, turnstileToken);
       navigate("/dashboard");
     } catch (err: any) {
       setErrorMessage(err?.message || "Nie udało się zalogować.");
@@ -60,6 +68,7 @@ const LoginPage: React.FC = () => {
   };
 
   return (
+    <>
     <AuthLayout
       illustrationSrc={loginIllustration}
       illustrationAlt="Login Illustration"
@@ -146,6 +155,12 @@ const LoginPage: React.FC = () => {
         </Stack>
       }
     />
+    <Turnstile
+      siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
+      onSuccess={(token) => setTurnstileToken(token)}
+      options={{ size: 'invisible' }}
+    />
+    </>
   );
 };
 

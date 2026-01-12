@@ -5,7 +5,7 @@ import { useLoader } from "../components/Loader/GlobalLoader";
 
 interface AuthContextType {
   user: UserRead | null;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, turnstileToken?: string | null) => Promise<void>;
   loginWithToken: (accessToken: string, refreshToken: string) => Promise<void>;
   logout: () => void;
   loading: boolean;
@@ -50,10 +50,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
   }, [startLoading, stopLoading]);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string, turnstileToken?: string | null) => {
 
     await withLoader(async () => {
-      const tokenData: Token = await loginUser(email, password);
+      const tokenData: Token = await loginUser(email, password, turnstileToken);
       localStorage.setItem("access_token", tokenData.access_token);
       localStorage.setItem("refresh_token", tokenData.refresh_token);
       await fetchAndSetUser(tokenData.access_token);

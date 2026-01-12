@@ -1,6 +1,7 @@
 import React, { useState, useEffect, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import styled, { useTheme } from "styled-components";
+import { Turnstile } from "@marsidev/react-turnstile";
 import { Stack, Heading, Text, Input, Button, Checkbox, Flex } from "../../design-system/primitives";
 import AlertBar from "../../design-system/patterns/AlertBar";
 import { registerUser } from "../../services/auth";
@@ -32,6 +33,7 @@ const RegisterPage: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
 
   const [touched, setTouched] = useState({
     email: false,
@@ -64,6 +66,11 @@ const RegisterPage: React.FC = () => {
 
     if (!isFormValid) return;
 
+    if (!turnstileToken && import.meta.env.VITE_TURNSTILE_SITE_KEY) {
+      setErrorMessage("Proszę poczekać na weryfikację Turnstile.");
+      return;
+    }
+
     setLoading(true);
     try {
       setSuccessMessage("");
@@ -72,6 +79,7 @@ const RegisterPage: React.FC = () => {
         last_name: lastName,    
         email,
         password,
+        turnstile_token: turnstileToken,
       });
       setSuccessMessage("Sprawdź swoją skrzynkę e-mail, wysłaliśmy link aktywacyjny.");
     } catch (err: any) {
@@ -283,6 +291,12 @@ const RegisterPage: React.FC = () => {
             )}
           </Stack>
         }
+      />
+
+      <Turnstile
+        siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
+        onSuccess={(token) => setTurnstileToken(token)}
+        options={{ size: 'invisible' }}
       />
 
       <Modal

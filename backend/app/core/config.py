@@ -51,6 +51,9 @@ class Settings(BaseSettings):
     SENTRY_DSN: str | None = None
     SENTRY_ENV: str = "production"
 
+    TURNSTILE_SITE_KEY: str | None = None
+    TURNSTILE_SECRET_KEY: str | None = None
+
 
 @lru_cache
 def get_settings() -> Settings:
