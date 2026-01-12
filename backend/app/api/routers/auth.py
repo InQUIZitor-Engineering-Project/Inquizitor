@@ -55,7 +55,8 @@ async def login(
     auth_service: Annotated[AuthService, Depends(get_auth_service)],
 ) -> Token:
     form = await request.form()
-    turnstile_token = form.get("cf-turnstile-response") or form.get("turnstile_token")
+    token_value = form.get("cf-turnstile-response") or form.get("turnstile_token")
+    turnstile_token = str(token_value) if token_value else None
 
     if not await verify_turnstile_token(turnstile_token):
         raise HTTPException(

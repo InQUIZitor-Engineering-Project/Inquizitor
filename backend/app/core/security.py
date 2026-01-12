@@ -1,11 +1,8 @@
 import logging
-import httpx
-
-logger = logging.getLogger(__name__)
-
 from datetime import datetime, timedelta
 from typing import Annotated, Any, cast
 
+import httpx
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
@@ -15,6 +12,8 @@ from sqlmodel import Session, select
 from app.core.config import get_settings
 from app.db.models import User
 from app.db.session import get_session
+
+logger = logging.getLogger(__name__)
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -107,9 +106,10 @@ async def verify_turnstile_token(token: str | None) -> bool:
             result = response.json()
             success = result.get("success", False)
             if not success:
-                logger.error(f"Turnstile verification failed. Error codes: {result.get('error-codes')}")
+                errors = result.get("error-codes")
+                logger.error(f"Turnstile verification failed: {errors}")
             return success
         except Exception as e:
-            logger.error(f"Turnstile verification error: {str(e)}")
+            logger.error(f"Turnstile verification error: {e!s}")
             return False
 
