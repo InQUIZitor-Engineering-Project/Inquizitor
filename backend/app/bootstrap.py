@@ -22,6 +22,7 @@ from app.application.services import (
 )
 from app.application.unit_of_work import SqlAlchemyUnitOfWork
 from app.core.config import Settings, get_settings
+from app.core.monitoring import init_sentry
 from app.db.session import get_session_factory, init_db
 from app.domain.services import FileStorage
 from app.infrastructure import (
@@ -38,6 +39,7 @@ from app.infrastructure import (
 )
 from app.infrastructure.extractors.extract_composite import composite_text_extractor
 from app.middleware import LoggingMiddleware
+from app.middleware.sentry import SentryUserContextMiddleware
 
 
 class AppContainer:
@@ -215,16 +217,7 @@ def configure_logging(level: str, sql_echo: bool = False) -> None:
 def create_app(settings_override: Settings | None = None) -> FastAPI:
     current_settings = settings_override or get_settings()
 
-    if current_settings.SENTRY_DSN:
-        import sentry_sdk
-
-        sentry_sdk.init(
-            dsn=current_settings.SENTRY_DSN,
-            environment=current_settings.SENTRY_ENV,
-            send_default_pii=True,
-            traces_sample_rate=1.0,
-            profiles_sample_rate=1.0,
-        )
+    init_sentry()
 
     configure_logging(current_settings.LOG_LEVEL, sql_echo=current_settings.SQL_ECHO)
 
@@ -238,6 +231,7 @@ def create_app(settings_override: Settings | None = None) -> FastAPI:
     # Dodaj middleware do logowania requestów (przed CORS,
     # żeby logować wszystkie requesty)
     app.add_middleware(LoggingMiddleware)
+    app.add_middleware(SentryUserContextMiddleware)
 
     app.add_middleware(
         CORSMiddleware,
