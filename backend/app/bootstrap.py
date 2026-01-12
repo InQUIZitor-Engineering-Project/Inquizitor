@@ -14,7 +14,7 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
-from app.api.routers import auth, files, jobs, materials, tests, users
+from app.api.routers import auth, files, jobs, materials, tests, users, notifications
 from app.application.services import (
     AuthService,
     FileService,
@@ -330,6 +330,7 @@ def create_app(settings_override: Settings | None = None) -> FastAPI:
     app.include_router(users.router, prefix="/users", tags=["users"])
     app.include_router(files.router, prefix="/files", tags=["files"])
     app.include_router(tests.router, prefix="/tests", tags=["tests"])
+    app.include_router(notifications.router, prefix="/notifications", tags=["notifications"])
     app.include_router(materials.router)
     app.include_router(jobs.router)
 

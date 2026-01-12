@@ -9,6 +9,9 @@ interface AuthContextType {
   loginWithToken: (token: string) => Promise<void>;
   logout: () => void;
   loading: boolean;
+
+  unreadNotificationsCount: number;
+  refreshNotificationsCount: () => void;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -17,6 +20,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<UserRead | null>(null);
   const [loading, setLoading] = useState(true);
   const { startLoading, stopLoading, withLoader } = useLoader(); 
+  const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
+
+  const fetchUnreadCount = async (token: string) => {
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/notifications/me/unread-count`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setUnreadNotificationsCount(data.count);
+      }
+    } catch (e) {
+      console.error("Failed to fetch notifications count", e);
+    }
+  };
 
   useEffect(() => {
     const token = localStorage.getItem("access_token");
@@ -30,7 +48,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (!res.ok) throw new Error();
           return res.json();
         })
-        .then((user: UserRead) => setUser(user))
+        .then((user: UserRead) => {
+          setUser(user)
+          fetchUnreadCount(token);
+        })
         .catch(() => {
           localStorage.removeItem("access_token");
           setUser(null);
@@ -61,6 +82,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!res.ok) throw new Error("Failed to fetch user");
     const user = await res.json();
     setUser(user);
+    await fetchUnreadCount(token);
   };
 
   const loginWithToken = async (token: string) => {
@@ -75,8 +97,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(null);
   };
 
+  const refreshNotificationsCount = () => {
+    const token = localStorage.getItem("access_token");
+    if (token) fetchUnreadCount(token);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, loginWithToken, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, loginWithToken, logout, loading, unreadNotificationsCount, refreshNotificationsCount }}>
       {children}
     </AuthContext.Provider>
   );
