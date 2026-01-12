@@ -1,6 +1,7 @@
 import React, { createContext, useState, useEffect } from "react";
 import { loginUser } from "../services/auth";
 import type { Token, UserRead } from "../services/auth";
+import { apiRequest } from "../services/api";
 import { useLoader } from "../components/Loader/GlobalLoader";
 
 interface AuthContextType {
@@ -23,19 +24,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (token) {
       startLoading();
       
-      fetch(`${import.meta.env.VITE_API_URL}/users/me`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-        .then((res) => {
-          if (!res.ok) throw new Error();
-          return res.json();
-        })
-        .then((user: UserRead) => setUser(user))
+      fetchAndSetUser()
         .catch(() => {
-          // Note: Token refresh logic is handled in api.ts interceptor/wrapper
-          // If we are here, it means even refresh failed or token is invalid
-          // But we don't want to aggressively logout here if interceptor is working
-          // However, for initial load, if /me fails, we probably should clear
+          // If refresh failed or token is invalid, apiRequest already redirects
+          // but we clean up state here just in case
           localStorage.removeItem("access_token");
           localStorage.removeItem("refresh_token");
           setUser(null);
@@ -56,14 +48,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const tokenData: Token = await loginUser(email, password, turnstileToken);
       localStorage.setItem("access_token", tokenData.access_token);
       localStorage.setItem("refresh_token", tokenData.refresh_token);
-      await fetchAndSetUser(tokenData.access_token);
+      await fetchAndSetUser();
     });
   };
 
-  const fetchAndSetUser = async (token: string) => {
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/users/me`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+  const fetchAndSetUser = async () => {
+    const res = await apiRequest("/users/me");
     if (!res.ok) throw new Error("Failed to fetch user");
     const user = await res.json();
     setUser(user);
@@ -73,7 +63,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await withLoader(async () => {
       localStorage.setItem("access_token", accessToken);
       localStorage.setItem("refresh_token", refreshToken);
-      await fetchAndSetUser(accessToken);
+      await fetchAndSetUser();
     });
   };
 
