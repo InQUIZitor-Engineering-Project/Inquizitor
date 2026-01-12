@@ -12,6 +12,7 @@ from app.application.services import (
     JobService,
     MaterialService,
     TestService,
+    TurnstileService,
     UserService,
 )
 from app.domain.services import FileStorage
@@ -73,6 +74,12 @@ def get_user_service(
     return container.provide_user_service()
 
 
+def get_turnstile_service(
+    container: Annotated[Any, Depends(get_app_container)],
+) -> TurnstileService:
+    return container.provide_turnstile_service()
+
+
 __all__ = [
     "get_app_container",
     "get_auth_service",
@@ -81,5 +88,6 @@ __all__ = [
     "get_job_service",
     "get_material_service",
     "get_test_service",
+    "get_turnstile_service",
     "get_user_service",
 ]
