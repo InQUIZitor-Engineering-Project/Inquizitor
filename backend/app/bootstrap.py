@@ -29,6 +29,7 @@ from app.application.services import (
     FileService,
     JobService,
     MaterialService,
+    NotificationService,
     SupportService,
     TestService,
     TurnstileService,
@@ -142,6 +143,9 @@ class AppContainer:
 
     def provide_job_service(self) -> JobService:
         return JobService(lambda: self.provide_unit_of_work())
+
+    def provide_notification_service(self) -> NotificationService:
+        return NotificationService(lambda: self.provide_unit_of_work())
 
     def provide_support_service(self) -> SupportService:
         return SupportService(lambda: self.provide_unit_of_work())

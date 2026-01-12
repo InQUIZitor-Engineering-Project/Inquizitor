@@ -10,6 +10,7 @@ from app.domain.repositories import (
     FileRepository,
     JobRepository,
     MaterialRepository,
+    NotificationRepository,
     PasswordResetTokenRepository,
     PendingVerificationRepository,
     RefreshTokenRepository,
@@ -21,6 +22,7 @@ from app.infrastructure.persistence.sqlmodel import (
     SqlModelFileRepository,
     SqlModelJobRepository,
     SqlModelMaterialRepository,
+    SqlModelNotificationRepository,
     SqlModelPasswordResetTokenRepository,
     SqlModelPendingVerificationRepository,
     SqlModelRefreshTokenRepository,
@@ -38,6 +40,7 @@ class SqlAlchemyUnitOfWork(AbstractContextManager["SqlAlchemyUnitOfWork"]):
         self._tests: TestRepository | None = None
         self._files: FileRepository | None = None
         self._materials: MaterialRepository | None = None
+        self._notifications: NotificationRepository | None = None
         self._jobs: JobRepository | None = None
         self._pending_verifications: PendingVerificationRepository | None = None
         self._password_reset_tokens: PasswordResetTokenRepository | None = None
@@ -67,6 +70,12 @@ class SqlAlchemyUnitOfWork(AbstractContextManager["SqlAlchemyUnitOfWork"]):
         if self._materials is None:
             raise RuntimeError("UnitOfWork not initialized")
         return self._materials
+
+    @property
+    def notifications(self) -> NotificationRepository:
+        if self._notifications is None:
+            raise RuntimeError("UnitOfWork not initialized")
+        return self._notifications
 
     @property
     def jobs(self) -> JobRepository:
@@ -105,6 +114,7 @@ class SqlAlchemyUnitOfWork(AbstractContextManager["SqlAlchemyUnitOfWork"]):
         self._tests = SqlModelTestRepository(self.session)
         self._files = SqlModelFileRepository(self.session)
         self._materials = SqlModelMaterialRepository(self.session)
+        self._notifications = SqlModelNotificationRepository(self.session)
         self._jobs = SqlModelJobRepository(self.session)
         self._pending_verifications = SqlModelPendingVerificationRepository(
             self.session

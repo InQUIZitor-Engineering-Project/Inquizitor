@@ -30,12 +30,14 @@ from .repositories import (
     SqlModelTestRepository,
     SqlModelUserRepository,
 )
+from .notification_repository import SqlModelNotificationRepository
 from .support_repository import SqlModelSupportRepository
 
 __all__ = [
     "SqlModelFileRepository",
     "SqlModelJobRepository",
     "SqlModelMaterialRepository",
+    "SqlModelNotificationRepository",
     "SqlModelPasswordResetTokenRepository",
     "SqlModelPendingVerificationRepository",
     "SqlModelRefreshTokenRepository",
