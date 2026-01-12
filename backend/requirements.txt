@@ -97,3 +97,4 @@ mypy
 types-psycopg2
 types-python-jose
 types-passlib
+slowapi

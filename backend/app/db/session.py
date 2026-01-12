@@ -12,6 +12,9 @@ def _build_engine(database_url: str, sql_echo: bool):
     return create_engine(
         database_url,
         echo=sql_echo,
+        pool_size=20,
+        max_overflow=20,
+        pool_pre_ping=True,
     )
 
 

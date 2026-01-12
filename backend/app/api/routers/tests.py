@@ -1,6 +1,6 @@
 from typing import Annotated, cast
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 
 from app.api.dependencies import get_job_service, get_test_service
 from app.api.schemas.jobs import JobEnqueueResponse
@@ -19,6 +19,7 @@ from app.api.schemas.tests import (
     TestTitleUpdate,
 )
 from app.application.services import JobService, TestService
+from app.core.limiter import limiter
 from app.core.security import get_current_user
 from app.db.models import User
 from app.domain.models.enums import JobType
@@ -38,7 +39,9 @@ router = APIRouter()
     response_model=JobEnqueueResponse,
     status_code=status.HTTP_202_ACCEPTED,
 )
+@limiter.limit("10/minute")
 def generate_test(
+    request: Request,
     req: TestGenerateRequest,
     current_user: Annotated[User, Depends(get_current_user)],
     job_service: Annotated[JobService, Depends(get_job_service)],
@@ -215,7 +218,9 @@ def bulk_delete_questions(
 @router.post(
     "/{test_id}/questions/bulk/regenerate", response_model=JobEnqueueResponse
 )
+@limiter.limit("10/minute")
 def bulk_regenerate_questions(
+    request: Request,
     test_id: int,
     payload: BulkRegenerateQuestionsRequest,
     current_user: Annotated[User, Depends(get_current_user)],
@@ -246,7 +251,9 @@ def bulk_regenerate_questions(
 
 
 @router.post("/{test_id}/questions/bulk/convert", response_model=JobEnqueueResponse)
+@limiter.limit("10/minute")
 def bulk_convert_questions(
+    request: Request,
     test_id: int,
     payload: BulkConvertQuestionsRequest,
     current_user: Annotated[User, Depends(get_current_user)],
@@ -277,7 +284,9 @@ def bulk_convert_questions(
 
 
 @router.get("/{test_id}/export/pdf", response_model=JobEnqueueResponse)
+@limiter.limit("10/minute")
 def export_pdf(
+    request: Request,
     test_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
     test_service: Annotated[TestService, Depends(get_test_service)],
@@ -301,7 +310,9 @@ def export_pdf(
 
 
 @router.post("/{test_id}/export/pdf/custom", response_model=JobEnqueueResponse)
+@limiter.limit("10/minute")
 def export_custom_pdf(
+    request: Request,
     test_id: int,
     config: PdfExportConfig,
     current_user: Annotated[User, Depends(get_current_user)],

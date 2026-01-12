@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 
 from app.api.dependencies import get_auth_service
@@ -14,6 +14,7 @@ from app.api.schemas.auth import (
 from app.api.schemas.users import UserCreate
 from app.application.services import AuthService
 from app.application.services.auth_service import normalize_frontend_base_url
+from app.core.limiter import limiter
 
 router = APIRouter()
 
@@ -23,7 +24,9 @@ router = APIRouter()
     response_model=RegistrationRequested,
     status_code=status.HTTP_202_ACCEPTED,
 )
+@limiter.limit("10/minute")
 def register(
+    request: Request,
     user_in: UserCreate,
     auth_service: Annotated[AuthService, Depends(get_auth_service)],
 ) -> RegistrationRequested:
@@ -38,7 +41,9 @@ def register(
 
 
 @router.post("/login", response_model=Token)
+@limiter.limit("5/minute")
 def login(
+    request: Request,
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     auth_service: Annotated[AuthService, Depends(get_auth_service)],
 ) -> Token:
@@ -90,7 +95,9 @@ def verify_email(
 
 
 @router.post("/password-reset/request", status_code=status.HTTP_202_ACCEPTED)
+@limiter.limit("3/minute")
 def request_password_reset(
+    request: Request,
     payload: PasswordResetRequest,
     auth_service: Annotated[AuthService, Depends(get_auth_service)],
 ) -> dict[str, str]:
