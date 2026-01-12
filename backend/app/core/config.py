@@ -33,7 +33,7 @@ class Settings(BaseSettings):
     FRONTEND_BASE_URL: str | None = None
     EMAIL_VERIFICATION_EXP_MIN: int = 60
     GUNICORN_WORKERS: int = 4
-    GUNICORN_TIMEOUT: int = 120
+    GUNICORN_TIMEOUT: int = 90
     BACKEND_CORS_ORIGINS: list[str] = Field(
         default_factory=lambda: [
             "http://localhost:5173",
