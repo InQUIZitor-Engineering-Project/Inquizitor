@@ -1,8 +1,8 @@
 """add support tickets table
 
-Revision ID: afbde25cbc4b
-Revises: ea7b26c224c2
-Create Date: 2026-01-12 21:18:03.725909
+Revision ID: 821085b4eb98
+Revises: 7e43928a137a
+Create Date: 2026-01-12 22:17:07.146165
 
 """
 from alembic import op
@@ -11,8 +11,8 @@ import sqlmodel
 
 
 # revision identifiers, used by Alembic.
-revision = 'afbde25cbc4b'
-down_revision = 'ea7b26c224c2'
+revision = '821085b4eb98'
+down_revision = '7e43928a137a'
 branch_labels = None
 depends_on = None
 
