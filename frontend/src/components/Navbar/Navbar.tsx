@@ -109,8 +109,8 @@ const Navbar: React.FC = () => {
               Jak to działa?
             </StyledLink>
 
-            <StyledLink to="/faq" onClick={triggerQuickLoader}>
-              FAQ
+            <StyledLink to="/pomoc" onClick={triggerQuickLoader}>
+              Pomoc
             </StyledLink>
           </NavLinks>
 
@@ -190,8 +190,8 @@ const Navbar: React.FC = () => {
               Jak to działa?
             </StyledLink>
 
-            <StyledLink to="/faq" onClick={triggerQuickLoader}>
-              FAQ
+            <StyledLink to="/pomoc" onClick={triggerQuickLoader}>
+              Pomoc
             </StyledLink>
           </NavLinks>
 

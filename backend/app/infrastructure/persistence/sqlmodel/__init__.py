@@ -27,6 +27,7 @@ from .repositories import (
     SqlModelTestRepository,
     SqlModelUserRepository,
 )
+from .support_repository import SqlModelSupportRepository
 
 __all__ = [
     "SqlModelFileRepository",
@@ -34,6 +35,7 @@ __all__ = [
     "SqlModelMaterialRepository",
     "SqlModelPasswordResetTokenRepository",
     "SqlModelPendingVerificationRepository",
+    "SqlModelSupportRepository",
     "SqlModelTestRepository",
     "SqlModelUserRepository",
     "file_to_domain",

@@ -112,6 +112,18 @@ class JobType(str, Enum):
     questions_regeneration = "questions_regeneration"
     questions_conversion = "questions_conversion"
 
+class SupportCategory(str, Enum):
+    general = "general"
+    bug = "bug"
+    feature_request = "feature_request"
+    account = "account"
+    other = "other"
+
+class SupportStatus(str, Enum):
+    new = "new"
+    read = "read"
+    resolved = "resolved"
+
 class Material(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     owner_id: int = Field(foreign_key="user.id", index=True)
@@ -140,3 +152,35 @@ class Job(SQLModel, table=True):
     error: str | None = Field(default=None)
     created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
     updated_at: datetime = Field(default_factory=datetime.utcnow, index=True)
+
+class SupportTicket(SQLModel, table=True):
+    __tablename__ = "support_tickets"
+    id: int | None = Field(default=None, primary_key=True)
+    user_id: int | None = Field(
+        default=None, foreign_key="user.id", index=True, nullable=True
+    )
+    email: str = Field(index=True, max_length=100)
+    first_name: str | None = Field(default=None, max_length=50)
+    last_name: str | None = Field(default=None, max_length=50)
+    category: SupportCategory = Field(
+        sa_column=Column(
+            "category",
+            SAEnum(SupportCategory),
+            index=True,
+            default=SupportCategory.general,
+        )
+    )
+    subject: str = Field(max_length=200)
+    message: str
+    status: SupportStatus = Field(
+        sa_column=Column(
+            "status",
+            SAEnum(SupportStatus),
+            index=True,
+            default=SupportStatus.new,
+        )
+    )
+    created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
+    updated_at: datetime = Field(default_factory=datetime.utcnow, index=True)
+
+    user: User | None = Relationship()

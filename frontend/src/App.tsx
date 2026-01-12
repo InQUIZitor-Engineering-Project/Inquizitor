@@ -12,7 +12,7 @@ import DashboardPage from "./pages/DashboardPage/DashboardPage";
 import ProfilePage from "./pages/ProfilePage/ProfilePage";
 import TestDetailPage from "./pages/TestDetailPage/TestDetailPage";
 import AboutUsPage from './pages/AboutUsPage/AboutUsPage';
-import FAQPage from './pages/FAQPage/FAQPage';
+import HelpPage from './pages/HelpPage/HelpPage';
 import CreateTestSelectionPage from "./pages/CreateTestSelectionPage/CreateTestSelectionPage";
 import CreateTestAIPage from "./pages/CreateTestAIPage/CreateTestAIPage";
 import CreateManualTestPage from "./pages/CreateManualTestPage/CreateManualTestPage";
@@ -56,7 +56,7 @@ const App: React.FC = () => {
           <Route element={<PublicLayout />}>
             <Route path="/" element={<HomePage />} />
             <Route path="/about" element={<AboutUsPage />} />
-            <Route path="/faq" element={<FAQPage />} />
+            <Route path="/pomoc" element={<HelpPage />} />
             <Route 
               path="/register" 
               element={

@@ -20,5 +20,21 @@ class EmailSender(Protocol):
         Should raise an exception on failure.
         """
 
+    def send_support_ticket_notification(
+        self,
+        *,
+        to_email: str,
+        ticket_id: int,
+        user_email: str,
+        category: str,
+        subject: str,
+        message: str,
+        first_name: str | None = None,
+        last_name: str | None = None,
+    ) -> None:
+        """
+        Send a notification email to the support team about a new ticket.
+        """
+
 
 __all__ = ["EmailSender"]
