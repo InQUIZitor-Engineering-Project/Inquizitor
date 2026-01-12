@@ -99,3 +99,4 @@ types-python-jose
 types-passlib
 sentry-sdk[fastapi,celery,sqlalchemy]
 slowapi
+sqladmin[sqlalchemy]
