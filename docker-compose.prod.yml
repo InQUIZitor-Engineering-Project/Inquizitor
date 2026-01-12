@@ -89,7 +89,7 @@ services:
   tunnel:
     image: cloudflare/cloudflared:latest
     restart: unless-stopped
-    command: tunnel run
+    command: tunnel --protocol http2 run
     environment:
       - TUNNEL_TOKEN=${TUNNEL_TOKEN:?TUNNEL_TOKEN not set}
     networks:
