@@ -1,11 +1,12 @@
-from typing import Annotated, List
 from datetime import datetime
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlmodel import Session, select, func, or_  # Ważny import or_
 from pydantic import BaseModel
+from sqlmodel import Session, col, desc, func, or_, select  # Ważny import or_
 
 from app.core.security import get_current_user
-from app.db.models import User, SystemNotification, UserReadNotification
+from app.db.models import SystemNotification, User, UserReadNotification
 from app.db.session import get_session
 
 router = APIRouter()
@@ -21,7 +22,7 @@ class NotificationOut(BaseModel):
 class UnreadCount(BaseModel):
     count: int
 
-@router.get("/me/list", response_model=List[NotificationOut])
+@router.get("/me/list", response_model=list[NotificationOut])
 def get_my_notifications(
     current_user: Annotated[User, Depends(get_current_user)],
     session: Annotated[Session, Depends(get_session)],
@@ -33,10 +34,10 @@ def get_my_notifications(
     
     query = select(SystemNotification).where(
         or_(
-            SystemNotification.recipient_id == None, 
+            col(SystemNotification.recipient_id).is_(None),
             SystemNotification.recipient_id == current_user.id
         )
-    ).order_by(SystemNotification.created_at.desc())
+    ).order_by(desc(SystemNotification.created_at))
     
     notifications = session.exec(query).all()
 
@@ -65,7 +66,7 @@ def get_unread_count(
 ):
     total_query = select(func.count(SystemNotification.id)).where(
         or_(
-            SystemNotification.recipient_id == None,
+            col(SystemNotification.recipient_id).is_(None),
             SystemNotification.recipient_id == current_user.id
         )
     )
@@ -89,14 +90,17 @@ def mark_as_read(
         select(SystemNotification).where(
             SystemNotification.id == notification_id,
             or_(
-                SystemNotification.recipient_id == None,
+                col(SystemNotification.recipient_id).is_(None),
                 SystemNotification.recipient_id == current_user.id
             )
         )
     ).first()
 
     if not notification:
-        raise HTTPException(status_code=404, detail="Powiadomienie nie istnieje lub brak dostępu")
+        raise HTTPException(
+            status_code=404,
+            detail="Powiadomienie nie istnieje lub brak dostępu"
+        )
 
     existing = session.exec(
         select(UserReadNotification)

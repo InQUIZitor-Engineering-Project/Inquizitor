@@ -1,8 +1,8 @@
-"""Add notification table
+"""add notification table
 
-Revision ID: 738274b3e516
-Revises: ea7b26c224c2
-Create Date: 2026-01-12 21:47:18.579666
+Revision ID: 13f5e4ea00e2
+Revises: 821085b4eb98
+Create Date: 2026-01-12 22:33:23.962571
 
 """
 from alembic import op
@@ -11,8 +11,8 @@ import sqlmodel
 
 
 # revision identifiers, used by Alembic.
-revision = '738274b3e516'
-down_revision = 'ea7b26c224c2'
+revision = '13f5e4ea00e2'
+down_revision = '821085b4eb98'
 branch_labels = None
 depends_on = None
 

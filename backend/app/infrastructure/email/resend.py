@@ -87,5 +87,36 @@ class ResendEmailSender(EmailSender):
         }
         self._request(payload)
 
+    def send_support_ticket_notification(
+        self,
+        *,
+        to_email: str,
+        ticket_id: int,
+        user_email: str,
+        category: str,
+        subject: str,
+        message: str,
+        first_name: str | None = None,
+        last_name: str | None = None,
+    ) -> None:
+        email_subject = f"[Support #{ticket_id}] {subject}"
+        html = self._render_template(
+            "support_notification.html",
+            ticket_id=ticket_id,
+            user_email=user_email,
+            category=category,
+            subject=subject,
+            message=message,
+            first_name=first_name,
+            last_name=last_name,
+        )
+        payload = {
+            "from": self._sender,
+            "to": [to_email],
+            "subject": email_subject,
+            "html": html,
+        }
+        self._request(payload)
+
 
 __all__ = ["ResendEmailSender"]

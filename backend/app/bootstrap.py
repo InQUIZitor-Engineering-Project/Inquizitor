@@ -14,12 +14,22 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
-from app.api.routers import auth, files, jobs, materials, tests, users, notifications
+from app.api.routers import (
+    auth,
+    files,
+    jobs,
+    materials,
+    notifications,
+    support,
+    tests,
+    users,
+)
 from app.application.services import (
     AuthService,
     FileService,
     JobService,
     MaterialService,
+    SupportService,
     TestService,
     TurnstileService,
     UserService,
@@ -132,6 +142,9 @@ class AppContainer:
 
     def provide_job_service(self) -> JobService:
         return JobService(lambda: self.provide_unit_of_work())
+
+    def provide_support_service(self) -> SupportService:
+        return SupportService(lambda: self.provide_unit_of_work())
 
     def provide_material_service(self) -> MaterialService:
         return MaterialService(
@@ -337,7 +350,10 @@ def create_app(settings_override: Settings | None = None) -> FastAPI:
     app.include_router(users.router, prefix="/users", tags=["users"])
     app.include_router(files.router, prefix="/files", tags=["files"])
     app.include_router(tests.router, prefix="/tests", tags=["tests"])
-    app.include_router(notifications.router, prefix="/notifications", tags=["notifications"])
+    app.include_router(
+        notifications.router, prefix="/notifications", tags=["notifications"]
+    )
+    app.include_router(support.router, prefix="/support", tags=["support"])
     app.include_router(materials.router)
     app.include_router(jobs.router)
 
