@@ -149,7 +149,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
               >
                 {option.icon && <Box $mr="xs" style={{ display: 'flex', alignItems: 'center' }}>{option.icon}</Box>}
                 <Text 
-                  $weight={option.value === value ? 600 : 400}
+                  $weight={option.value === value ? ("medium" as const) : ("regular" as const)}
                   style={{ fontSize: "14px", lineHeight: "1.4" }}
                 >
                   {option.label}

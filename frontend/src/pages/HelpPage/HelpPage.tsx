@@ -9,7 +9,7 @@ import SearchBar from "./components/SearchBar";
 import FAQItemCard from "./components/FAQItemCard";
 import ContactForm from "./components/ContactForm";
 import { PageContainer, PageSection } from "../../design-system/patterns";
-import styled from "styled-components";
+import styled, { type DefaultTheme } from "styled-components";
 
 
 const CardsGrid = styled(Box)`
@@ -28,7 +28,7 @@ const CardsGrid = styled(Box)`
 `;
 
 const HelpPage: React.FC = () => {
-  const theme = useTheme();
+  const theme = useTheme() as DefaultTheme;
   const { search, setSearch, activeId, filteredFaq, handleToggle } = useFaq([...faqItems]);
 
   useDocumentTitle("Pomoc | Inquizitor");

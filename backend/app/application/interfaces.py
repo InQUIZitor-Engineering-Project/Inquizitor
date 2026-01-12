@@ -10,8 +10,8 @@ from app.domain.repositories import (
     MaterialRepository,
     PasswordResetTokenRepository,
     PendingVerificationRepository,
-    SupportRepository,
     RefreshTokenRepository,
+    SupportRepository,
     TestRepository,
     UserRepository,
 )

@@ -12,8 +12,8 @@ from app.domain.repositories import (
     MaterialRepository,
     PasswordResetTokenRepository,
     PendingVerificationRepository,
-    SupportRepository,
     RefreshTokenRepository,
+    SupportRepository,
     TestRepository,
     UserRepository,
 )
@@ -23,8 +23,8 @@ from app.infrastructure.persistence.sqlmodel import (
     SqlModelMaterialRepository,
     SqlModelPasswordResetTokenRepository,
     SqlModelPendingVerificationRepository,
-    SqlModelSupportRepository,
     SqlModelRefreshTokenRepository,
+    SqlModelSupportRepository,
     SqlModelTestRepository,
     SqlModelUserRepository,
 )
