@@ -20,6 +20,7 @@ from .mappers import (
     user_to_domain,
     user_to_row,
 )
+from .notification_repository import SqlModelNotificationRepository
 from .repositories import (
     SqlModelFileRepository,
     SqlModelJobRepository,
@@ -36,6 +37,7 @@ __all__ = [
     "SqlModelFileRepository",
     "SqlModelJobRepository",
     "SqlModelMaterialRepository",
+    "SqlModelNotificationRepository",
     "SqlModelPasswordResetTokenRepository",
     "SqlModelPendingVerificationRepository",
     "SqlModelRefreshTokenRepository",

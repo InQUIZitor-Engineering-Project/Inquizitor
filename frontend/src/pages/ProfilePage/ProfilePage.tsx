@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { Flex, Stack, Box } from "../../design-system/primitives";
+import { Flex, Stack} from "../../design-system/primitives";
 import { useLoader } from "../../components/Loader/GlobalLoader";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import ProfileHeader from "./components/ProfileHeader";
 import AccountInfoCard from "./components/AccountInfoCard";
 import StatsCard from "./components/StatsCard";
+import NotificationsCard from "./components/NotificationsCard";
 import PasswordCard from "./components/PasswordCard";
 import profileIllustration from "../../assets/profile.png";
 import { PageContainer, PageSection } from "../../design-system/patterns";
@@ -170,7 +171,8 @@ const ProfilePage: React.FC = () => {
               <StatsCard stats={stats} />
             </Stack>
 
-            <Box style={{ flex: "1 1 320px", minWidth: 300 }}>
+            <Stack $gap="lg" style={{ flex: "1 1 320px", minWidth: "min(320px, 100%)" }}>
+              <NotificationsCard />
               <PasswordCard
                 oldPassword={oldPassword}
                 newPassword={newPassword}
@@ -182,7 +184,7 @@ const ProfilePage: React.FC = () => {
                 error={passwordError}
                 success={passwordSuccess}
               />
-            </Box>
+            </Stack>
           </Flex>
         </Stack>
       </PageContainer>

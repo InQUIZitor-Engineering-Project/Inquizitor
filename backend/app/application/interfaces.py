@@ -8,6 +8,7 @@ from app.domain.repositories import (
     FileRepository,
     JobRepository,
     MaterialRepository,
+    NotificationRepository,
     PasswordResetTokenRepository,
     PendingVerificationRepository,
     RefreshTokenRepository,
@@ -33,6 +34,10 @@ class UnitOfWork(Protocol):
 
     @property
     def materials(self) -> MaterialRepository:
+        ...
+
+    @property
+    def notifications(self) -> NotificationRepository:
         ...
 
     @property

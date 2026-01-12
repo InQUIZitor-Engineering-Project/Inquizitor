@@ -12,6 +12,8 @@ import {
   RegisterButton,
   SidebarToggleButton,
   DesktopBar,
+  RelativeContainer,
+  NotificationBadge,
 } from "./Navbar.styles";
 import { Logo, LogosWrapper } from "../../styles/common";
 import { useAuth } from "../../hooks/useAuth";
@@ -24,8 +26,7 @@ import { PageContainer } from "../../design-system/patterns";
 import { Flex } from "../../design-system/primitives";
 
 const Navbar: React.FC = () => {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const { user, logout, unreadNotificationsCount } = useAuth();  const navigate = useNavigate();
   const location = useLocation();
   const { startLoading, stopLoading, withLoader } = useLoader();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -121,7 +122,14 @@ const Navbar: React.FC = () => {
                   <SidebarToggleButton onClick={toggleSidebarDrawer}>Testy</SidebarToggleButton>
                 )}
                 <RegisterButton as="button" onClick={() => handleNavClick("/profile")}>
-                  {user.first_name} →
+                      <RelativeContainer>
+                        {user.first_name} →
+                        {unreadNotificationsCount > 0 && (
+                          <NotificationBadge>
+                            {unreadNotificationsCount > 9 ? "9+" : unreadNotificationsCount}
+                          </NotificationBadge>
+                        )}
+                      </RelativeContainer>
                 </RegisterButton>
                 <LoginLink as="button" onClick={handleLogout}>
                   Wyloguj
@@ -199,7 +207,12 @@ const Navbar: React.FC = () => {
             {user ? (
               <>
                 <RegisterButton as="button" onClick={() => handleNavClick("/profile")}>
-                  {user.first_name} →
+                    {user.first_name} →
+                    {unreadNotificationsCount > 0 && (
+                      <NotificationBadge>
+                        {unreadNotificationsCount > 9 ? "9+" : unreadNotificationsCount}
+                      </NotificationBadge>
+                    )}
                 </RegisterButton>
                 <LoginLink as="button" onClick={handleLogout}>
                   Wyloguj

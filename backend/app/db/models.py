@@ -166,6 +166,26 @@ class Job(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
     updated_at: datetime = Field(default_factory=datetime.utcnow, index=True)
 
+class SystemNotification(SQLModel, table=True):
+    __tablename__ = "system_notifications"
+    
+    id: int | None = Field(default=None, primary_key=True)
+    title: str = Field(max_length=200)
+    message: str 
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    
+    type: str = Field(default="info", max_length=20) 
+    recipient_id: int | None = Field(default=None, foreign_key="user.id", nullable=True)
+
+class UserReadNotification(SQLModel, table=True):
+    __tablename__ = "user_read_notifications"
+    
+    user_id: int = Field(foreign_key="user.id", primary_key=True)
+    notification_id: int = Field(
+        foreign_key="system_notifications.id", primary_key=True
+    )
+    read_at: datetime = Field(default_factory=datetime.utcnow)
+
 class SupportTicket(SQLModel, table=True):
     __tablename__ = "support_tickets"
     id: int | None = Field(default=None, primary_key=True)

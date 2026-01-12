@@ -229,8 +229,56 @@ export const RegisterButton = styled.a`
   transition: background-color 0.2s, box-shadow 0.2s;
   white-space: nowrap;
 
+  position: relative;
+  overflow: visible;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
   &:hover {
     background-color: ${({ theme }) => theme.colors.shade.s1};
     box-shadow: ${({ theme }) => theme.shadows["4px"]};
   }
+`;
+
+export const NotificationBadge = styled.span`
+  position: absolute;
+  background-color: #ff4d4f;
+  color: white;
+  border-radius: 10px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid white;
+  font-weight: bold;
+  z-index: 10;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+
+  top: 0;
+  right: 0;
+  transform: translate(150%, -100%);
+
+  @media (max-width: 768px) {
+    top: 50%;
+    right: 12px;
+    transform: translateY(-50%);
+    border: 1px solid white;
+  }
+`;
+
+export const RelativeContainer = styled.div`
+  position: relative;
+  
+  display: flex; 
+  align-items: center;
+  justify-content: center;
+  
+  width: auto; 
+  flex-grow: 0;
+  flex-shrink: 0;
+  line-height: 1;
 `;
