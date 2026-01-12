@@ -1,8 +1,11 @@
 from __future__ import annotations
+
 from typing import TYPE_CHECKING
+
 from sqlmodel import Session, col, desc, func, or_, select
-from app.domain.repositories.notification_repository import NotificationRepository
+
 from app.db.models import SystemNotification, UserReadNotification
+from app.domain.repositories.notification_repository import NotificationRepository
 
 if TYPE_CHECKING:
     pass
@@ -43,7 +46,9 @@ class SqlModelNotificationRepository(NotificationRepository):
         ).all()
         return set(read_ids)
 
-    def get_notification_by_id_and_user(self, notification_id: int, user_id: int) -> SystemNotification | None:
+    def get_notification_by_id_and_user(
+        self, notification_id: int, user_id: int
+    ) -> SystemNotification | None:
         query = select(SystemNotification).where(
             SystemNotification.id == notification_id,
             or_(
@@ -53,7 +58,9 @@ class SqlModelNotificationRepository(NotificationRepository):
         )
         return self._session.exec(query).first()
 
-    def get_read_record(self, user_id: int, notification_id: int) -> UserReadNotification | None:
+    def get_read_record(
+        self, user_id: int, notification_id: int
+    ) -> UserReadNotification | None:
         query = select(UserReadNotification).where(
             UserReadNotification.user_id == user_id,
             UserReadNotification.notification_id == notification_id

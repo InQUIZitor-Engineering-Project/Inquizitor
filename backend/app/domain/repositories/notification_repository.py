@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
@@ -22,12 +23,16 @@ class NotificationRepository(ABC):
         ...
 
     @abstractmethod
-    def get_notification_by_id_and_user(self, notification_id: int, user_id: int) -> SystemNotification | None:
+    def get_notification_by_id_and_user(
+        self, notification_id: int, user_id: int
+    ) -> SystemNotification | None:
         """Get a specific notification if the user has access to it."""
         ...
 
     @abstractmethod
-    def get_read_record(self, user_id: int, notification_id: int) -> UserReadNotification | None:
+    def get_read_record(
+        self, user_id: int, notification_id: int
+    ) -> UserReadNotification | None:
         """Get a read record for a specific user and notification."""
         ...
 

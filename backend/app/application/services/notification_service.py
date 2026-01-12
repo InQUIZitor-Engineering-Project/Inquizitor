@@ -1,11 +1,13 @@
 from __future__ import annotations
+
 from collections.abc import Callable
 from typing import TYPE_CHECKING
+
 from app.db.models import UserReadNotification
 
 if TYPE_CHECKING:
-    from app.application.interfaces import UnitOfWork
     from app.api.schemas.notifications import NotificationOut, UnreadCount
+    from app.application.interfaces import UnitOfWork
 
 class NotificationService:
     def __init__(self, uow_factory: Callable[[], UnitOfWork]) -> None:
@@ -37,7 +39,9 @@ class NotificationService:
 
     def mark_as_read(self, user_id: int, notification_id: int) -> None:
         with self._uow_factory() as uow:
-            notification = uow.notifications.get_notification_by_id_and_user(notification_id, user_id)
+            notification = uow.notifications.get_notification_by_id_and_user(
+                notification_id, user_id
+            )
             if not notification:
                 return # Or raise a specific domain exception
 
