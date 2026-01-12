@@ -6,6 +6,16 @@ from app.core.config import get_settings
 
 settings = get_settings()
 
+if settings.SENTRY_DSN:
+    import sentry_sdk
+
+    sentry_sdk.init(
+        dsn=settings.SENTRY_DSN,
+        environment=settings.SENTRY_ENV,
+        traces_sample_rate=1.0,
+        profiles_sample_rate=1.0,
+    )
+
 celery_app = Celery(
     "inquizitor",
     broker=settings.CELERY_BROKER_URL,

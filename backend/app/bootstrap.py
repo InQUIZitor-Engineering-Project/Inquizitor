@@ -214,6 +214,18 @@ def configure_logging(level: str, sql_echo: bool = False) -> None:
 
 def create_app(settings_override: Settings | None = None) -> FastAPI:
     current_settings = settings_override or get_settings()
+
+    if current_settings.SENTRY_DSN:
+        import sentry_sdk
+
+        sentry_sdk.init(
+            dsn=current_settings.SENTRY_DSN,
+            environment=current_settings.SENTRY_ENV,
+            send_default_pii=True,
+            traces_sample_rate=1.0,
+            profiles_sample_rate=1.0,
+        )
+
     configure_logging(current_settings.LOG_LEVEL, sql_echo=current_settings.SQL_ECHO)
 
     logger = logging.getLogger(__name__)

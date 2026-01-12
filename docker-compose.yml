@@ -42,6 +42,8 @@ services:
       - EMAIL_FROM=${EMAIL_FROM:-}
       - FRONTEND_BASE_URL=${FRONTEND_BASE_URL:-http://localhost:5173}
       - EMAIL_VERIFICATION_EXP_MIN=${EMAIL_VERIFICATION_EXP_MIN:-60}
+      - SENTRY_DSN=${SENTRY_DSN:-}
+      - SENTRY_ENV=${SENTRY_ENV:-local}
     env_file:
       - ./.env
     volumes:
@@ -102,6 +104,8 @@ services:
       - EMAIL_FROM=${EMAIL_FROM:-}
       - FRONTEND_BASE_URL=${FRONTEND_BASE_URL:-http://localhost:5173}
       - EMAIL_VERIFICATION_EXP_MIN=${EMAIL_VERIFICATION_EXP_MIN:-60}
+      - SENTRY_DSN=${SENTRY_DSN:-}
+      - SENTRY_ENV=${SENTRY_ENV:-local}
     env_file:
       - ./.env
     volumes:

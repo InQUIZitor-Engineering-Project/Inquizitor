@@ -9,46 +9,18 @@ logger = logging.getLogger(__name__)
 
 
 class LoggingMiddleware(BaseHTTPMiddleware):
-    """Middleware do logowania wszystkich requestów HTTP."""
+    """
+    Middleware logging ONLY errors.
+    Success logs are removed to reduce synchronous I/O overhead.
+    Use Sentry for tracing and monitoring.
+    """
 
     async def dispatch(
         self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
     ) -> Response:
         start_time = time.time()
-        
-        # Loguj request
-        logger.info(
-            "→ %s %s",
-            request.method,
-            request.url.path,
-            extra={
-                "method": request.method,
-                "path": request.url.path,
-                "query_params": str(request.query_params),
-                "client": request.client.host if request.client else None,
-            }
-        )
-        
         try:
-            response = await call_next(request)
-            process_time = time.time() - start_time
-            
-            # Loguj response
-            logger.info(
-                "← %s %s - Status: %d - Time: %.3fs",
-                request.method,
-                request.url.path,
-                response.status_code,
-                process_time,
-                extra={
-                    "method": request.method,
-                    "path": request.url.path,
-                    "status_code": response.status_code,
-                    "process_time": process_time,
-                }
-            )
-            
-            return response
+            return await call_next(request)
         except Exception as exc:
             process_time = time.time() - start_time
             logger.error(
@@ -63,6 +35,6 @@ class LoggingMiddleware(BaseHTTPMiddleware):
                     "path": request.url.path,
                     "error": str(exc),
                     "process_time": process_time,
-                }
+                },
             )
             raise
