@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { generateTest } from "../../../services/test";
-import { uploadMaterial, type MaterialUploadResponse, type MaterialUploadEnqueueResponse } from "../../../services/materials";
+import { uploadMaterial, lookupFile, getMaterialByFile, type MaterialUploadResponse, type MaterialUploadEnqueueResponse } from "../../../services/materials";
 import { useLoader } from "../../../components/Loader/GlobalLoader";
 import useDocumentTitle from "../../../hooks/useDocumentTitle";
 import { useJobPolling } from "../../../hooks/useJobPolling";
@@ -151,10 +151,28 @@ const useGenerateTestForm = (): UseGenerateTestFormResult => {
     setMaterialUploading(true);
     resetMaterialPolling();
     try {
-      const enqueue: MaterialUploadEnqueueResponse = await uploadMaterial(file);
+      const lookupResult = await lookupFile(file);
+      let enqueue: MaterialUploadEnqueueResponse;
+      
+      if (lookupResult.exists && lookupResult.file_id) {
+        enqueue = await getMaterialByFile(lookupResult.file_id);
+      } else {
+        enqueue = await uploadMaterial(file);
+      }
+      
       setMaterialData(enqueue.material);
       setGenError(null);
-      startMaterialPolling(enqueue.job_id);
+      
+      // If material is already processed and has extracted text, set it immediately
+      if (enqueue.material.processing_status === "done" && enqueue.material.extracted_text) {
+        setSourceContent(enqueue.material.extracted_text);
+        setMaterialUploading(false);
+      } else if (enqueue.job_id > 0) {
+        // Material is still processing, start polling
+        startMaterialPolling(enqueue.job_id);
+      } else {
+        setMaterialUploading(false);
+      }
     } catch (error: any) {
       setMaterialData(null);
       setMaterialError(error.message || "Nie udało się wgrać materiału.");

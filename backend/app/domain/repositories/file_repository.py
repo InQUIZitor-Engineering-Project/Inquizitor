@@ -16,6 +16,10 @@ class FileRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    def get_by_lookup(self, owner_id: int, content_hash: str) -> File | None:
+        raise NotImplementedError
+
+    @abstractmethod
     def list_for_user(self, user_id: int) -> Iterable[File]:
         raise NotImplementedError
 

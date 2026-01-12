@@ -28,6 +28,45 @@ router = APIRouter(prefix="/materials", tags=["materials"])
 _ALLOWED_EXTENSIONS = [".pdf", ".docx", ".txt", ".md", ".png", ".jpg", ".jpeg"]
 
 
+@router.get("/by-file/{file_id}", response_model=MaterialUploadEnqueueResponse)
+def get_material_by_file(
+    file_id: int,
+    current_user: Annotated[User, Depends(get_current_user)],
+    material_service: Annotated[MaterialService, Depends(get_material_service)],
+    job_service: Annotated[JobService, Depends(get_job_service)],
+) -> MaterialUploadEnqueueResponse:
+    """Get existing material for a file. If file exists, material should already exist."""
+    if current_user.id is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="User ID is missing"
+        )
+
+    try:
+        material = material_service.get_material_from_file(
+            owner_id=current_user.id,
+            file_id=file_id,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    # Create a job only if material status is pending (needs processing)
+    job_id: int | None = None
+    if material.processing_status == "pending":
+        job = job_service.create_job(
+            owner_id=current_user.id,
+            job_type=JobType.MATERIAL_PROCESSING,
+            payload={"material_id": material.id},
+        )
+        job_id = job.id
+        process_material_task.delay(job.id, current_user.id, material.id)
+
+    return MaterialUploadEnqueueResponse(
+        job_id=job_id or 0,
+        status=material.processing_status,
+        material=material,
+    )
+
+
 @router.post("/upload", response_model=MaterialUploadEnqueueResponse)
 def upload_material(
     uploaded_file: Annotated[UploadFile, File(...)],

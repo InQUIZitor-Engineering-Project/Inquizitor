@@ -136,6 +136,15 @@ class SqlModelFileRepository(FileRepository):
         db_file = self._session.get(db_models.File, file_id)
         return mappers.file_to_domain(db_file) if db_file else None
 
+    def get_by_lookup(self, owner_id: int, content_hash: str) -> File | None:
+        """Finds a file by its content hash for the given owner."""
+        stmt = select(db_models.File).where(
+            db_models.File.owner_id == owner_id,
+            db_models.File.content_hash == content_hash
+        )
+        db_file = cast(Any, self._session).exec(stmt).first()
+        return mappers.file_to_domain(db_file) if db_file else None
+
     def list_for_user(self, user_id: int) -> Iterable[File]:
         stmt = select(db_models.File).where(db_models.File.owner_id == user_id)
         rows = cast(Any, self._session).exec(stmt).all()

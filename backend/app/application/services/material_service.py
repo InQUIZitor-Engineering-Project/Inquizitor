@@ -61,6 +61,7 @@ class MaterialService:
             filename=filename,
             stored_path=Path(stored_path_str),
             uploaded_at=datetime.utcnow(),
+            content_hash=checksum,
         )
 
         with self._uow_factory() as uow:
@@ -81,6 +82,29 @@ class MaterialService:
             material_record = uow.materials.add(material)
 
         return dto.to_material_out(material_record)
+
+    def get_material_from_file(
+        self,
+        *,
+        owner_id: int,
+        file_id: int,
+    ) -> MaterialOut:
+        """Get existing material for a file. If file exists, material should already exist."""
+        with self._uow_factory() as uow:
+            # Get the file record first to verify ownership
+            file_record = uow.files.get(file_id)
+            if not file_record or file_record.owner_id != owner_id:
+                raise ValueError("File not found or does not belong to user")
+
+            # Get material for this file
+            material = uow.materials.get_by_file_id(file_id)
+            if not material:
+                raise ValueError("Material not found for this file")
+            
+            if material.owner_id != owner_id:
+                raise ValueError("Material does not belong to user")
+
+            return dto.to_material_out(material)
 
     def list_materials(self, *, owner_id: int) -> list[MaterialOut]:
         with self._uow_factory() as uow:

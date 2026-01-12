@@ -2,7 +2,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional
 
-from sqlalchemy import Column, ForeignKey, Integer
+from sqlalchemy import Column, ForeignKey, Integer, UniqueConstraint
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Field, Relationship, SQLModel
@@ -80,8 +80,13 @@ class Question(SQLModel, table=True):
     test: Test | None = Relationship(back_populates="questions")
 
 class File(SQLModel, table=True):
+    __table_args__ = (
+        UniqueConstraint("owner_id", "content_hash", name="unique_user_file_content"),
+    )
+
     id: int | None = Field(default=None, primary_key=True)
     owner_id: int = Field(foreign_key="user.id", index=True)
+    content_hash: str = Field(index=True, max_length=64)
     filename: str
     filepath: str
     uploaded_at: datetime = Field(default_factory=datetime.utcnow)

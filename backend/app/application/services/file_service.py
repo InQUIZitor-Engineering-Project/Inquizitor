@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import hashlib
 from collections.abc import Callable, Iterable, Sequence
 from datetime import datetime
 from pathlib import Path
 
 from app.api.schemas.tests import FileUploadResponse
+from app.api.schemas.files import FileExistsResponse
 from app.application.interfaces import FileStorage, UnitOfWork
 from app.domain.models import File as FileDomain
 
@@ -33,6 +35,9 @@ class FileService:
         if allowed_extensions and extension not in allowed_extensions:
             raise ValueError("Unsupported file extension")
 
+        # Calculate content hash
+        content_hash = hashlib.sha256(content).hexdigest()
+
         stored_path = self._storage.save(
             owner_id=owner_id,
             filename=filename,
@@ -45,6 +50,7 @@ class FileService:
             filename=filename,
             stored_path=Path(stored_path),
             uploaded_at=datetime.utcnow(),
+            content_hash=content_hash,
         )
 
         with self._uow_factory() as uow:
@@ -54,6 +60,25 @@ class FileService:
             file_id=created_file.id,
             filename=created_file.filename,
         )
+
+    def lookup_file_by_hash(
+        self,
+        *,
+        owner_id: int,
+        content_hash: str,
+    ) -> FileExistsResponse:
+        """Look up a file by its content hash for the current user."""
+        with self._uow_factory() as uow:
+            existing_file = uow.files.get_by_lookup(owner_id, content_hash)
+        
+        if existing_file:
+            return FileExistsResponse(
+                exists=True,
+                file_id=existing_file.id,
+                filename=existing_file.filename,
+            )
+        
+        return FileExistsResponse(exists=False)
 
     def list_files(self, *, owner_id: int) -> Iterable[FileDomain]:
         with self._uow_factory() as uow:
