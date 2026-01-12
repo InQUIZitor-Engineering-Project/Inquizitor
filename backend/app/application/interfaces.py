@@ -11,6 +11,7 @@ from app.domain.repositories import (
     PasswordResetTokenRepository,
     PendingVerificationRepository,
     SupportRepository,
+    RefreshTokenRepository,
     TestRepository,
     UserRepository,
 )
@@ -48,6 +49,10 @@ class UnitOfWork(Protocol):
 
     @property
     def support_tickets(self) -> SupportRepository:
+        ...
+
+    @property
+    def refresh_tokens(self) -> RefreshTokenRepository:
         ...
 
     def __enter__(self) -> UnitOfWork:

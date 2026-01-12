@@ -12,6 +12,7 @@ from app.domain.models import (
     PasswordResetToken,
     PendingVerification,
     Question,
+    RefreshToken,
     Test,
     User,
 )
@@ -46,24 +47,6 @@ def user_to_row(user: User) -> db_models.User:
 
 
 def question_to_domain(row: db_models.Question) -> Question:
-    choices = row.choices or []
-    correct_choices = row.correct_choices or []
-    
-    # Self-healing logic for corrupted DB data (e.g. from LLM mismatch)
-    if row.is_closed:
-        # 1. Clean whitespace
-        choices = [str(c).strip() for c in choices if str(c).strip()]
-        correct_choices = [str(c).strip() for c in correct_choices if str(c).strip()]
-        
-        # 2. Ensure consistency
-        if choices:
-            valid_correct = [c for c in correct_choices if c in choices]
-            if not valid_correct:
-                valid_correct = [choices[0]]
-            correct_choices = valid_correct
-        elif correct_choices:
-            choices = correct_choices[:]
-
     choices = row.choices or []
     correct_choices = row.correct_choices or []
     
@@ -281,16 +264,45 @@ def password_reset_token_to_domain(
     )
 
 
+def refresh_token_to_domain(row: db_models.RefreshToken) -> RefreshToken:
+    return RefreshToken(
+        id=row.id,
+        user_id=row.user_id,
+        token_hash=row.token_hash,
+        expires_at=row.expires_at,
+        created_at=row.created_at,
+        revoked_at=row.revoked_at,
+    )
+
+
+def refresh_token_to_row(token: RefreshToken) -> db_models.RefreshToken:
+    return db_models.RefreshToken(
+        id=token.id,
+        user_id=token.user_id,
+        token_hash=token.token_hash,
+        expires_at=token.expires_at,
+        created_at=token.created_at,
+        revoked_at=token.revoked_at,
+    )
+
+
 __all__ = [
     "file_to_domain",
     "file_to_row",
+    "job_to_domain",
+    "job_to_row",
     "material_to_domain",
     "material_to_row",
+    "password_reset_token_to_domain",
+    "password_reset_token_to_row",
+    "pending_verification_to_domain",
+    "pending_verification_to_row",
     "question_to_domain",
     "question_to_row",
+    "refresh_token_to_domain",
+    "refresh_token_to_row",
     "test_to_domain",
     "test_to_row",
     "user_to_domain",
     "user_to_row",
 ]
-

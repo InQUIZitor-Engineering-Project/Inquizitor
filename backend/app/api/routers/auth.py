@@ -2,6 +2,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
+from pydantic import BaseModel
 
 from app.api.dependencies import get_auth_service, get_turnstile_service
 from app.api.schemas.auth import (
@@ -17,6 +18,10 @@ from app.application.services.auth_service import normalize_frontend_base_url
 from app.core.limiter import limiter
 
 router = APIRouter()
+
+
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str
 
 
 @router.post(
@@ -80,6 +85,21 @@ async def login(
     return auth_service.issue_token(user)
 
 
+@router.post("/refresh", response_model=Token)
+def refresh_token(
+    payload: RefreshTokenRequest,
+    auth_service: Annotated[AuthService, Depends(get_auth_service)],
+) -> Token:
+    try:
+        return auth_service.refresh_access_token(payload.refresh_token)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not refresh token",
+            headers={"WWW-Authenticate": "Bearer"},
+        ) from exc
+
+
 @router.get("/verify-email", response_model=VerificationResponse)
 def verify_email(
     token: str,
@@ -99,9 +119,11 @@ def verify_email(
                     redirect_url = (
                         f"{base.rstrip('/')}/verify-email/success"
                         f"?token={token_obj.access_token}"
+                        f"&refresh_token={token_obj.refresh_token}"
                     )
         return VerificationResponse(
             access_token=token_obj.access_token,
+            refresh_token=token_obj.refresh_token,
             token_type=token_obj.token_type,
             redirect_url=redirect_url,
         )
@@ -147,4 +169,3 @@ def reset_password(
 
 
 __all__ = ["router"]
-

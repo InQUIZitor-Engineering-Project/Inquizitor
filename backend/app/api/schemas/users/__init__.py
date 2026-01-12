@@ -11,8 +11,8 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str
-    first_name: str
-    last_name: str
+    first_name: str | None = None
+    last_name: str | None = None
     turnstile_token: str | None = None
 
     @field_validator("password")
@@ -31,8 +31,8 @@ class UserCreate(UserBase):
 
 class UserRead(UserBase):
     id: int
-    first_name: str
-    last_name: str
+    first_name: str | None = None
+    last_name: str | None = None
     created_at: datetime
 
     class Config:
