@@ -11,6 +11,7 @@ from app.domain.repositories import (
     PasswordResetTokenRepository,
     PendingVerificationRepository,
     RefreshTokenRepository,
+    SupportRepository,
     TestRepository,
     UserRepository,
 )
@@ -44,6 +45,10 @@ class UnitOfWork(Protocol):
 
     @property
     def password_reset_tokens(self) -> PasswordResetTokenRepository:
+        ...
+
+    @property
+    def support_tickets(self) -> SupportRepository:
         ...
 
     @property
