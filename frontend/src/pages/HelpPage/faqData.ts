@@ -44,7 +44,7 @@ export const faqItems = [
     category: "Generowanie testów",
     question: "Czy mogę mieszać pytania otwarte i zamknięte?",
     answer:
-      "Tak. Przy generowaniu podaj liczbę pytań otwartych oraz łączną liczbę zamkniętych. System wygeneruje test mieszany i poprawnie wyświetli oba typy na stronie szczegółów.",
+      "Tak. Przy generowaniu podaj liczbę pytań otwartych oraz łączną liczbę zamkniętych. System wygeneruje test mieszany i wyświetli oba typy na stronie szczegółów.",
     tag: "mieszane",
   },
   {
@@ -118,21 +118,21 @@ export const faqItems = [
     answer: "Tak. Twoje dane logowania są haszowane i przechowywane w bezpiecznej bazie danych.",
     tag: "bezpieczeństwo",
   },
-  {
+{
     id: 17,
-    category: "Bezpieczeństwo",
-    question: "Czy da się ukryć hasło w podglądzie żądań (DevTools)?",
+    category: "Konto i logowanie",
+    question: "Czy korzystanie z Inquizitora jest płatne?",
     answer:
-      "Nie, przeglądarka lokalnie widzi wysyłane dane. Jednak transmisja jest szyfrowana (HTTPS), a my nigdy nie logujemy haseł w formie jawnej po stronie serwera.",
-    tag: "hasło-devtools",
+      "Nie, aplikacja jest w pełni darmowa. Wszystkie funkcje – w tym generowanie testów z użyciem AI, OCR oraz eksport do PDF – są dostępne dla każdego zarejestrowanego użytkownika bez żadnych opłat.",
+    tag: "koszty",
   },
   {
     id: 14,
     category: "Nawigacja",
-    question: "Nie widzę nowego testu w sidebarze - co zrobić?",
+    question: "Nie widzę nowego testu w pasku bocznym - co zrobić?",
     answer:
-      "Sidebar odświeża się automatycznie po utworzeniu/edycji. Jeśli nadal go nie widać, przejdź na panel główny lub odśwież stronę przeglądarki.",
-    tag: "sidebar",
+      "Pasek boczny odświeża się automatycznie po utworzeniu/edycji. Jeśli nadal go nie widać, przejdź na panel główny lub odśwież stronę przeglądarki.",
+    tag: "pasek boczny",
   },
   {
     id: 16,
@@ -155,7 +155,7 @@ export const faqItems = [
     category: "Generowanie testów",
     question: "Czy wygenerowane pytania są zawsze poprawne merytorycznie?",
     answer:
-      "Korzystamy z zaawansowanych modeli językowych, które są bardzo skuteczne, ale mogą sporadycznie popełniać błędy (tzw. halucynacje). Zalecamy, abyś jako nauczyciel zawsze przejrzał i zweryfikował test przed udostępnieniem go uczniom.",
+      "Korzystamy z zaawansowanych modeli językowych, które są bardzo skuteczne, ale mogą sporadycznie popełniać błędy. Zalecamy, abyś zawsze przejrzał i zweryfikował test przed udostępnieniem go dalej.",
     tag: "weryfikacja",
   },
   {
