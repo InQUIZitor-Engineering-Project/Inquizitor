@@ -378,7 +378,7 @@ class SqlModelRefreshTokenRepository(RefreshTokenRepository):
     def revoke_all_for_user(self, user_id: int) -> None:
         stmt = select(db_models.RefreshToken).where(
             db_models.RefreshToken.user_id == user_id,
-            db_models.RefreshToken.revoked_at.is_(None),
+            db_models.RefreshToken.revoked_at == None,  # noqa: E711
         )
         tokens = cast(Any, self._session).exec(stmt).all()
         now = datetime.utcnow()
