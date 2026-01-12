@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timedelta
 from typing import Annotated, Any, cast
 
@@ -10,6 +11,8 @@ from sqlmodel import Session, select
 from app.core.config import get_settings
 from app.db.models import User
 from app.db.session import get_session
+
+logger = logging.getLogger(__name__)
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 

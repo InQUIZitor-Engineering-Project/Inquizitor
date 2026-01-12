@@ -19,6 +19,19 @@ class User(SQLModel, table=True):
     tests: list["Test"] = Relationship(back_populates="owner")
     files: list["File"] = Relationship(back_populates="owner")
     materials: list["Material"] = Relationship(back_populates="owner")
+    refresh_tokens: list["RefreshToken"] = Relationship(back_populates="owner")
+
+
+class RefreshToken(SQLModel, table=True):
+    __tablename__ = "refresh_tokens"
+    id: int | None = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", index=True)
+    token_hash: str = Field(index=True, unique=True, max_length=128)
+    expires_at: datetime = Field(index=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
+    revoked_at: datetime | None = Field(default=None)
+
+    owner: User | None = Relationship(back_populates="refresh_tokens")
 
 
 class PendingEmailVerification(SQLModel, table=True):
@@ -28,7 +41,7 @@ class PendingEmailVerification(SQLModel, table=True):
     hashed_password: str
     first_name: str | None = Field(default=None, max_length=50)
     last_name: str | None = Field(default=None, max_length=50)
-    token_hash: str = Field(index=True, max_length=128)
+    token_hash: str = Field(index=True, unique=True, max_length=128)
     expires_at: datetime = Field(index=True)
     created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
 
@@ -36,7 +49,7 @@ class PasswordResetToken(SQLModel, table=True):
     __tablename__ = "password_reset_tokens"
     id: int | None = Field(default=None, primary_key=True)
     email: str = Field(index=True, max_length=100)
-    token_hash: str = Field(index=True, max_length=128)
+    token_hash: str = Field(index=True, unique=True, max_length=128)
     expires_at: datetime = Field(index=True)
     created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
 

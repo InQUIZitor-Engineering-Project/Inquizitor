@@ -13,6 +13,8 @@ from .mappers import (
     pending_verification_to_row,
     question_to_domain,
     question_to_row,
+    refresh_token_to_domain,
+    refresh_token_to_row,
     test_to_domain,
     test_to_row,
     user_to_domain,
@@ -24,6 +26,7 @@ from .repositories import (
     SqlModelMaterialRepository,
     SqlModelPasswordResetTokenRepository,
     SqlModelPendingVerificationRepository,
+    SqlModelRefreshTokenRepository,
     SqlModelTestRepository,
     SqlModelUserRepository,
 )
@@ -34,6 +37,7 @@ __all__ = [
     "SqlModelMaterialRepository",
     "SqlModelPasswordResetTokenRepository",
     "SqlModelPendingVerificationRepository",
+    "SqlModelRefreshTokenRepository",
     "SqlModelTestRepository",
     "SqlModelUserRepository",
     "file_to_domain",
@@ -48,9 +52,10 @@ __all__ = [
     "pending_verification_to_row",
     "question_to_domain",
     "question_to_row",
+    "refresh_token_to_domain",
+    "refresh_token_to_row",
     "test_to_domain",
     "test_to_row",
     "user_to_domain",
     "user_to_row",
 ]
-

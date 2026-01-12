@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     SECRET_KEY: str
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     GEMINI_API_KEY: str
     CELERY_BROKER_URL: str = "redis://redis:6379/0"
     CELERY_RESULT_BACKEND: str = "redis://redis:6379/1"
@@ -49,6 +50,9 @@ class Settings(BaseSettings):
     SQL_ECHO: bool = True
     SENTRY_DSN: str | None = None
     SENTRY_ENV: str = "production"
+
+    TURNSTILE_SITE_KEY: str | None = None
+    TURNSTILE_SECRET_KEY: str | None = None
 
 
 @lru_cache

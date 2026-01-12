@@ -15,6 +15,7 @@ from app.domain.models import (
     PasswordResetToken,
     PendingVerification,
     Question,
+    RefreshToken,
     Test,
     User,
 )
@@ -24,6 +25,7 @@ from app.domain.repositories import (
     MaterialRepository,
     PasswordResetTokenRepository,
     PendingVerificationRepository,
+    RefreshTokenRepository,
     TestRepository,
     UserRepository,
 )
@@ -341,13 +343,67 @@ class SqlModelPasswordResetTokenRepository(PasswordResetTokenRepository):
             self._session.commit()
 
 
+class SqlModelRefreshTokenRepository(RefreshTokenRepository):
+    def __init__(self, session: Session):
+        self._session = session
+
+    def add(self, token: RefreshToken) -> RefreshToken:
+        db_token = mappers.refresh_token_to_row(token)
+        self._session.add(db_token)
+        self._session.commit()
+        self._session.refresh(db_token)
+        return mappers.refresh_token_to_domain(db_token)
+
+    def update(self, token: RefreshToken) -> RefreshToken:
+        db_token = self._session.get(db_models.RefreshToken, token.id)
+        if not db_token:
+            raise ValueError(f"RefreshToken {token.id} not found")
+
+        db_token.revoked_at = token.revoked_at
+        db_token.expires_at = token.expires_at
+        db_token.token_hash = token.token_hash
+
+        self._session.add(db_token)
+        self._session.commit()
+        self._session.refresh(db_token)
+        return mappers.refresh_token_to_domain(db_token)
+
+    def get_by_token_hash(self, token_hash: str) -> RefreshToken | None:
+        stmt = select(db_models.RefreshToken).where(
+            db_models.RefreshToken.token_hash == token_hash
+        )
+        row = cast(Any, self._session).exec(stmt).first()
+        return mappers.refresh_token_to_domain(row) if row else None
+
+    def revoke_all_for_user(self, user_id: int) -> None:
+        stmt = select(db_models.RefreshToken).where(
+            db_models.RefreshToken.user_id == user_id,
+            db_models.RefreshToken.revoked_at == None,  # noqa: E711
+        )
+        tokens = cast(Any, self._session).exec(stmt).all()
+        now = datetime.utcnow()
+        for token in tokens:
+            token.revoked_at = now
+            self._session.add(token)
+        self._session.commit()
+
+    def remove_expired(self) -> None:
+        stmt = select(db_models.RefreshToken).where(
+            db_models.RefreshToken.expires_at < datetime.utcnow()
+        )
+        expired_tokens = cast(Any, self._session).exec(stmt).all()
+        for token in expired_tokens:
+            self._session.delete(token)
+        self._session.commit()
+
+
 __all__ = [
     "SqlModelFileRepository",
     "SqlModelJobRepository",
     "SqlModelMaterialRepository",
     "SqlModelPasswordResetTokenRepository",
     "SqlModelPendingVerificationRepository",
+    "SqlModelRefreshTokenRepository",
     "SqlModelTestRepository",
     "SqlModelUserRepository",
 ]
-
