@@ -17,7 +17,12 @@ from app.core.security import (
     get_password_hash,
     verify_password,
 )
-from app.domain.models import PasswordResetToken, PendingVerification, User
+from app.domain.models import (
+    PasswordResetToken,
+    PendingVerification,
+    RefreshToken,
+    User,
+)
 
 
 def normalize_frontend_base_url(url: str | None) -> str:
@@ -126,16 +131,82 @@ class AuthService:
                 raise ValueError("Niepoprawny e-mail lub hasło")
             return user
 
+    def _create_refresh_token(self, user_id: int, uow: UnitOfWork) -> str:
+        settings = get_settings()
+        raw_token = secrets.token_urlsafe(32)
+        token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
+        expires_at = datetime.utcnow() + timedelta(
+            days=settings.REFRESH_TOKEN_EXPIRE_DAYS
+        )
+
+        refresh_token = RefreshToken(
+            id=None,
+            user_id=user_id,
+            token_hash=token_hash,
+            expires_at=expires_at,
+            created_at=datetime.utcnow(),
+        )
+        uow.refresh_tokens.add(refresh_token)
+        return raw_token
+
     def issue_token(self, user: User) -> Token:
-        """Generates an access token for the given user."""
+        """Generates access and refresh tokens for the given user."""
 
         settings = get_settings()
         expires_delta = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-        token = self._token_issuer(
-            data={"sub": user.email},
-            expires_delta=expires_delta,
+        
+        with self._uow_factory() as uow:
+            # Generate Access Token
+            access_token = self._token_issuer(
+                data={"sub": user.email},
+                expires_delta=expires_delta,
+            )
+            
+            # Generate Refresh Token
+            if user.id is None:
+                raise ValueError("Cannot issue tokens for unsaved user")
+            refresh_token_str = self._create_refresh_token(user.id, uow)
+
+        return Token(
+            access_token=access_token,
+            refresh_token=refresh_token_str,
+            token_type="bearer"
         )
-        return Token(access_token=token, token_type="bearer")
+
+    def refresh_access_token(self, refresh_token: str) -> Token:
+        """Validates refresh token and issues a new pair of tokens."""
+        token_hash = hashlib.sha256(refresh_token.encode()).hexdigest()
+        
+        with self._uow_factory() as uow:
+            stored_token = uow.refresh_tokens.get_by_token_hash(token_hash)
+            
+            if not stored_token or not stored_token.is_valid:
+                raise ValueError("Invalid or expired refresh token")
+
+            user = uow.users.get(stored_token.user_id)
+            if not user:
+                raise ValueError("User not found")
+
+            # Revoke the used refresh token (Rotation)
+            stored_token.revoke()
+            uow.refresh_tokens.add(stored_token)  # Update state
+
+            # Create new tokens
+            settings = get_settings()
+            expires_delta = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+            new_access_token = self._token_issuer(
+                data={"sub": user.email},
+                expires_delta=expires_delta,
+            )
+            if user.id is None:
+                raise ValueError("User ID missing during refresh")
+            new_refresh_token_str = self._create_refresh_token(user.id, uow)
+
+        return Token(
+            access_token=new_access_token,
+            refresh_token=new_refresh_token_str,
+            token_type="bearer"
+        )
 
     def verify_and_create_user(self, *, token: str) -> Token:
         settings = get_settings()
@@ -161,13 +232,22 @@ class AuthService:
             )
             created = uow.users.add(user)
             uow.pending_verifications.delete_by_email(pending.email)
+            
+            # Create tokens for the new user
+            expires_delta = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+            access_token = self._token_issuer(
+                data={"sub": created.email},
+                expires_delta=expires_delta,
+            )
+            if created.id is None:
+                raise ValueError("User ID missing after creation")
+            refresh_token_str = self._create_refresh_token(created.id, uow)
 
-        expires_delta = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-        token_str = self._token_issuer(
-            data={"sub": created.email},
-            expires_delta=expires_delta,
+        return Token(
+            access_token=access_token,
+            refresh_token=refresh_token_str,
+            token_type="bearer"
         )
-        return Token(access_token=token_str, token_type="bearer")
 
     def request_password_reset(self, email: str) -> None:
         """Generates a password reset token and enqueues the email."""
@@ -226,7 +306,10 @@ class AuthService:
             user.hashed_password = hashed_password
             uow.users.update(user)
             uow.password_reset_tokens.delete_by_email(reset_token.email)
+            
+            # Optionally revoke all refresh tokens for security
+            if user.id is not None:
+                uow.refresh_tokens.revoke_all_for_user(user.id)
 
 
 __all__ = ["AuthService"]
-

@@ -12,6 +12,7 @@ from app.domain.repositories import (
     MaterialRepository,
     PasswordResetTokenRepository,
     PendingVerificationRepository,
+    RefreshTokenRepository,
     TestRepository,
     UserRepository,
 )
@@ -21,6 +22,7 @@ from app.infrastructure.persistence.sqlmodel import (
     SqlModelMaterialRepository,
     SqlModelPasswordResetTokenRepository,
     SqlModelPendingVerificationRepository,
+    SqlModelRefreshTokenRepository,
     SqlModelTestRepository,
     SqlModelUserRepository,
 )
@@ -37,6 +39,7 @@ class SqlAlchemyUnitOfWork(AbstractContextManager["SqlAlchemyUnitOfWork"]):
         self._jobs: JobRepository | None = None
         self._pending_verifications: PendingVerificationRepository | None = None
         self._password_reset_tokens: PasswordResetTokenRepository | None = None
+        self._refresh_tokens: RefreshTokenRepository | None = None
 
     @property
     def users(self) -> UserRepository:
@@ -80,6 +83,12 @@ class SqlAlchemyUnitOfWork(AbstractContextManager["SqlAlchemyUnitOfWork"]):
             raise RuntimeError("UnitOfWork not initialized")
         return self._password_reset_tokens
 
+    @property
+    def refresh_tokens(self) -> RefreshTokenRepository:
+        if self._refresh_tokens is None:
+            raise RuntimeError("UnitOfWork not initialized")
+        return self._refresh_tokens
+
     def __enter__(self) -> SqlAlchemyUnitOfWork:
         self.session = self._session_factory()
         self.session.begin()
@@ -94,6 +103,7 @@ class SqlAlchemyUnitOfWork(AbstractContextManager["SqlAlchemyUnitOfWork"]):
         self._password_reset_tokens = SqlModelPasswordResetTokenRepository(
             self.session
         )
+        self._refresh_tokens = SqlModelRefreshTokenRepository(self.session)
         return self
 
     def __exit__(
@@ -123,4 +133,3 @@ class SqlAlchemyUnitOfWork(AbstractContextManager["SqlAlchemyUnitOfWork"]):
 
 
 __all__ = ["SqlAlchemyUnitOfWork"]
-

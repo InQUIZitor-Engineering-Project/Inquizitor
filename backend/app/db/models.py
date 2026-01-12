@@ -19,6 +19,19 @@ class User(SQLModel, table=True):
     tests: list["Test"] = Relationship(back_populates="owner")
     files: list["File"] = Relationship(back_populates="owner")
     materials: list["Material"] = Relationship(back_populates="owner")
+    refresh_tokens: list["RefreshToken"] = Relationship(back_populates="owner")
+
+
+class RefreshToken(SQLModel, table=True):
+    __tablename__ = "refresh_tokens"
+    id: int | None = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", index=True)
+    token_hash: str = Field(index=True, max_length=128)
+    expires_at: datetime = Field(index=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
+    revoked_at: datetime | None = Field(default=None)
+
+    owner: User | None = Relationship(back_populates="refresh_tokens")
 
 
 class PendingEmailVerification(SQLModel, table=True):

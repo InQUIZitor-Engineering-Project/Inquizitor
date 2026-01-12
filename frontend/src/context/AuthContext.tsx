@@ -6,7 +6,7 @@ import { useLoader } from "../components/Loader/GlobalLoader";
 interface AuthContextType {
   user: UserRead | null;
   login: (email: string, password: string) => Promise<void>;
-  loginWithToken: (token: string) => Promise<void>;
+  loginWithToken: (accessToken: string, refreshToken: string) => Promise<void>;
   logout: () => void;
   loading: boolean;
 }
@@ -32,7 +32,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         })
         .then((user: UserRead) => setUser(user))
         .catch(() => {
+          // Note: Token refresh logic is handled in api.ts interceptor/wrapper
+          // If we are here, it means even refresh failed or token is invalid
+          // But we don't want to aggressively logout here if interceptor is working
+          // However, for initial load, if /me fails, we probably should clear
           localStorage.removeItem("access_token");
+          localStorage.removeItem("refresh_token");
           setUser(null);
         })
         .finally(() => {
@@ -50,6 +55,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await withLoader(async () => {
       const tokenData: Token = await loginUser(email, password);
       localStorage.setItem("access_token", tokenData.access_token);
+      localStorage.setItem("refresh_token", tokenData.refresh_token);
       await fetchAndSetUser(tokenData.access_token);
     });
   };
@@ -63,15 +69,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(user);
   };
 
-  const loginWithToken = async (token: string) => {
+  const loginWithToken = async (accessToken: string, refreshToken: string) => {
     await withLoader(async () => {
-      localStorage.setItem("access_token", token);
-      await fetchAndSetUser(token);
+      localStorage.setItem("access_token", accessToken);
+      localStorage.setItem("refresh_token", refreshToken);
+      await fetchAndSetUser(accessToken);
     });
   };
 
   const logout = () => {
     localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh_token");
     setUser(null);
   };
 
