@@ -25,8 +25,8 @@ from app.application.services import (
 )
 from app.application.unit_of_work import SqlAlchemyUnitOfWork
 from app.core.config import Settings, get_settings
-from app.core.monitoring import init_sentry
 from app.core.limiter import limiter
+from app.core.monitoring import init_sentry
 from app.db.session import get_session_factory, init_db
 from app.domain.services import FileStorage
 from app.infrastructure import (

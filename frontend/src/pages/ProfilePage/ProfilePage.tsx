@@ -19,7 +19,6 @@ interface UserProfile {
   created_at: string;
 }
 
-// Dostosowane do tego, co REALNIE zwraca backend
 interface UserStatistics {
   total_tests: number;
   total_questions: number;
@@ -27,7 +26,6 @@ interface UserStatistics {
   avg_questions_per_test: number;
   last_test_created_at: string | null;
 
-  // opcjonalnie (na przyszłość, jeśli dodasz na backendzie)
   total_closed_questions?: number;
   total_open_questions?: number;
   total_easy_questions?: number;
@@ -147,8 +145,6 @@ const ProfilePage: React.FC = () => {
       setPasswordError(err.message || "Wystąpił błąd podczas zmiany hasła.");
     }
   };
-
-  // --- Helpery do statystyk ---
 
   useDocumentTitle("Profil | Inquizitor");
 
