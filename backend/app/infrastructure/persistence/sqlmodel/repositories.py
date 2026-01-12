@@ -354,6 +354,20 @@ class SqlModelRefreshTokenRepository(RefreshTokenRepository):
         self._session.refresh(db_token)
         return mappers.refresh_token_to_domain(db_token)
 
+    def update(self, token: RefreshToken) -> RefreshToken:
+        db_token = self._session.get(db_models.RefreshToken, token.id)
+        if not db_token:
+            raise ValueError(f"RefreshToken {token.id} not found")
+
+        db_token.revoked_at = token.revoked_at
+        db_token.expires_at = token.expires_at
+        db_token.token_hash = token.token_hash
+
+        self._session.add(db_token)
+        self._session.commit()
+        self._session.refresh(db_token)
+        return mappers.refresh_token_to_domain(db_token)
+
     def get_by_token_hash(self, token_hash: str) -> RefreshToken | None:
         stmt = select(db_models.RefreshToken).where(
             db_models.RefreshToken.token_hash == token_hash
@@ -364,7 +378,7 @@ class SqlModelRefreshTokenRepository(RefreshTokenRepository):
     def revoke_all_for_user(self, user_id: int) -> None:
         stmt = select(db_models.RefreshToken).where(
             db_models.RefreshToken.user_id == user_id,
-            db_models.RefreshToken.revoked_at == None,  # noqa: E711
+            db_models.RefreshToken.revoked_at.is_(None),
         )
         tokens = cast(Any, self._session).exec(stmt).all()
         now = datetime.utcnow()

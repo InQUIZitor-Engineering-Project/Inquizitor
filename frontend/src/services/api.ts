@@ -43,7 +43,7 @@ const processQueue = (error: any) => {
       prom.reject(error);
     } else {
       // Retry request with new token
-      apiRequest(prom.endpoint, prom.options)
+      apiRequest(prom.endpoint, prom.options, true)
         .then(prom.resolve)
         .catch(prom.reject);
     }
@@ -92,7 +92,21 @@ async function handleUnauthorized(endpoint: string, response: Response, options:
     });
 
     if (!refreshResponse.ok) {
-        throw new Error("Refresh failed");
+      let errorBodyText: string | undefined;
+      try {
+        errorBodyText = await refreshResponse.text();
+      } catch {
+        errorBodyText = undefined;
+      }
+      const messageParts = [
+        `Błąd odświeżania sesji`,
+        `status=${refreshResponse.status}`,
+        `opis=${refreshResponse.statusText || "brak"}`,
+      ];
+      if (errorBodyText) {
+        messageParts.push(`szczegóły=${errorBodyText}`);
+      }
+      throw new Error(messageParts.join(" | "));
     }
 
     const data = await refreshResponse.json();
@@ -101,8 +115,8 @@ async function handleUnauthorized(endpoint: string, response: Response, options:
 
     processQueue(null);
     
-    // Retry original request
-    return apiRequest(endpoint, options);
+    // Retry original request with isRetry = true
+    return apiRequest(endpoint, options, true);
   } catch (error) {
     processQueue(error);
     // Refresh failed - logout
@@ -118,7 +132,7 @@ async function handleUnauthorized(endpoint: string, response: Response, options:
   }
 }
 
-export async function apiRequest(endpoint: string, options: RequestInit = {}): Promise<Response> {
+export async function apiRequest(endpoint: string, options: RequestInit = {}, isRetry = false): Promise<Response> {
   const url = `${API_BASE}${endpoint}`;
   const isFormData = options.body instanceof FormData;
 
@@ -131,7 +145,7 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}): P
 
   const response = await fetch(url, config);
 
-  if (response.status === 401) {
+  if (response.status === 401 && !isRetry) {
     return handleUnauthorized(endpoint, response, options);
   }
 

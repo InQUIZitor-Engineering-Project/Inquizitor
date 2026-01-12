@@ -1,5 +1,7 @@
 from pydantic import BaseModel
 
+from app.api.schemas.users import UserCreate, UserRead
+
 from .verification import (
     PasswordResetConfirm,
     PasswordResetRequest,
@@ -16,21 +18,6 @@ class Token(BaseModel):
 class TokenPayload(BaseModel):
     sub: str | None = None
     exp: int | None = None
-
-
-class UserCreate(BaseModel):
-    email: str
-    password: str
-    first_name: str | None = None
-    last_name: str | None = None
-
-
-class UserRead(BaseModel):
-    id: int
-    email: str
-    first_name: str | None = None
-    last_name: str | None = None
-    created_at: str
 
 
 class RegistrationRequested(BaseModel):

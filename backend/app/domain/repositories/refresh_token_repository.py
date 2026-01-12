@@ -11,6 +11,10 @@ class RefreshTokenRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    def update(self, token: RefreshToken) -> RefreshToken:
+        raise NotImplementedError
+
+    @abstractmethod
     def get_by_token_hash(self, token_hash: str) -> RefreshToken | None:
         raise NotImplementedError
 

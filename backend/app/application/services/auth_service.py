@@ -189,7 +189,7 @@ class AuthService:
 
             # Revoke the used refresh token (Rotation)
             stored_token.revoke()
-            uow.refresh_tokens.add(stored_token)  # Update state
+            uow.refresh_tokens.update(stored_token)  # Update state
 
             # Create new tokens
             settings = get_settings()
