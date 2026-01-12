@@ -20,7 +20,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile.prod
-    command: gunicorn app.main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000 --timeout 120
+    command: gunicorn app.main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000 --timeout 90
     working_dir: /app
     environment:
       - DATABASE_URL=postgresql+psycopg2://${POSTGRES_USER:?POSTGRES_USER not set}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD not set}@${POSTGRES_HOST:-db}:${POSTGRES_PORT:-5432}/${POSTGRES_DB:?POSTGRES_DB not set}
@@ -40,6 +40,8 @@ services:
       - EMAIL_FROM=${EMAIL_FROM:-}
       - FRONTEND_BASE_URL=${FRONTEND_BASE_URL:-}
       - EMAIL_VERIFICATION_EXP_MIN=${EMAIL_VERIFICATION_EXP_MIN:-60}
+      - SENTRY_DSN=${SENTRY_DSN:-}
+      - SENTRY_ENV=${SENTRY_ENV:-production}
     env_file:
       - .env
     depends_on:
@@ -53,6 +55,8 @@ services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
+    volumes:
+      - redis_data:/data
 
   celery-worker:
     build:
@@ -78,6 +82,8 @@ services:
       - FRONTEND_BASE_URL=${FRONTEND_BASE_URL:-}
       - EMAIL_VERIFICATION_EXP_MIN=${EMAIL_VERIFICATION_EXP_MIN:-60}
       - OMP_THREAD_LIMIT=1
+      - SENTRY_DSN=${SENTRY_DSN:-}
+      - SENTRY_ENV=${SENTRY_ENV:-production}
     env_file:
       - .env
     depends_on:
@@ -89,7 +95,7 @@ services:
   tunnel:
     image: cloudflare/cloudflared:latest
     restart: unless-stopped
-    command: tunnel run
+    command: tunnel --protocol http2 run
     environment:
       - TUNNEL_TOKEN=${TUNNEL_TOKEN:?TUNNEL_TOKEN not set}
     networks:
@@ -97,6 +103,7 @@ services:
 
 volumes:
   pgdata:
+  redis_data:
 
 networks:
   default:

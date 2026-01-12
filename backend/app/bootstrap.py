@@ -10,6 +10,9 @@ from fastapi.exceptions import HTTPException as FastAPIHTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 
 from app.api.routers import auth, files, jobs, materials, tests, users
 from app.application.services import (
@@ -18,10 +21,13 @@ from app.application.services import (
     JobService,
     MaterialService,
     TestService,
+    TurnstileService,
     UserService,
 )
 from app.application.unit_of_work import SqlAlchemyUnitOfWork
 from app.core.config import Settings, get_settings
+from app.core.limiter import limiter
+from app.core.monitoring import init_sentry
 from app.db.session import get_session_factory, init_db
 from app.domain.services import FileStorage
 from app.infrastructure import (
@@ -38,6 +44,7 @@ from app.infrastructure import (
 )
 from app.infrastructure.extractors.extract_composite import composite_text_extractor
 from app.middleware import LoggingMiddleware
+from app.middleware.sentry import SentryUserContextMiddleware
 
 
 class AppContainer:
@@ -47,6 +54,9 @@ class AppContainer:
         self._settings = settings
         self._question_generator = GeminiQuestionGenerator()
         self._ocr_service = DefaultOCRService()
+        self._turnstile_service = TurnstileService(
+            secret_key=settings.TURNSTILE_SECRET_KEY
+        )
         self._file_storage = self._create_storage(base_dir=Path("uploads"))
         self._materials_storage = self._create_storage(
             base_dir=Path("uploads/materials")
@@ -59,6 +69,9 @@ class AppContainer:
     def settings(self) -> Settings:
         return self._settings
 
+    def provide_limiter(self) -> Limiter:
+        return limiter
+
     def provide_db_session(self) -> Callable[..., Any]:
         from app.db.session import get_session
 
@@ -69,6 +82,9 @@ class AppContainer:
 
     def provide_ocr_service(self) -> DefaultOCRService:
         return self._ocr_service
+
+    def provide_turnstile_service(self) -> TurnstileService:
+        return self._turnstile_service
 
     def provide_file_storage(self) -> FileStorage:
         return self._file_storage
@@ -214,6 +230,9 @@ def configure_logging(level: str, sql_echo: bool = False) -> None:
 
 def create_app(settings_override: Settings | None = None) -> FastAPI:
     current_settings = settings_override or get_settings()
+
+    init_sentry()
+
     configure_logging(current_settings.LOG_LEVEL, sql_echo=current_settings.SQL_ECHO)
 
     logger = logging.getLogger(__name__)
@@ -226,6 +245,7 @@ def create_app(settings_override: Settings | None = None) -> FastAPI:
     # Dodaj middleware do logowania requestów (przed CORS,
     # żeby logować wszystkie requesty)
     app.add_middleware(LoggingMiddleware)
+    app.add_middleware(SentryUserContextMiddleware)
 
     app.add_middleware(
         CORSMiddleware,
@@ -297,6 +317,9 @@ def create_app(settings_override: Settings | None = None) -> FastAPI:
     )
     app.state.container = container
     app.state.settings = current_settings
+    app.state.limiter = container.provide_limiter()
+    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+    app.add_middleware(SlowAPIMiddleware)
 
     @app.on_event("startup")
     def on_startup() -> None:

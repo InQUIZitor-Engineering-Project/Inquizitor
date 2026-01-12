@@ -33,7 +33,7 @@ class Settings(BaseSettings):
     FRONTEND_BASE_URL: str | None = None
     EMAIL_VERIFICATION_EXP_MIN: int = 60
     GUNICORN_WORKERS: int = 4
-    GUNICORN_TIMEOUT: int = 120
+    GUNICORN_TIMEOUT: int = 90
     BACKEND_CORS_ORIGINS: list[str] = Field(
         default_factory=lambda: [
             "http://localhost:5173",
@@ -47,6 +47,11 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = "INFO"
     AUTO_CREATE_TABLES: bool = False
     SQL_ECHO: bool = True
+    SENTRY_DSN: str | None = None
+    SENTRY_ENV: str = "production"
+
+    TURNSTILE_SITE_KEY: str | None = None
+    TURNSTILE_SECRET_KEY: str | None = None
 
 
 @lru_cache

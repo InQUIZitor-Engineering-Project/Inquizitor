@@ -6,6 +6,7 @@ from fastapi import (
     Depends,
     File,
     HTTPException,
+    Request,
     Response,
     UploadFile,
     status,
@@ -18,6 +19,7 @@ from app.api.schemas.materials import (
     MaterialUploadEnqueueResponse,
 )
 from app.application.services import JobService, MaterialService
+from app.core.limiter import limiter
 from app.core.security import get_current_user
 from app.db.models import User
 from app.domain.models.enums import JobType
@@ -68,7 +70,9 @@ def get_material_by_file(
 
 
 @router.post("/upload", response_model=MaterialUploadEnqueueResponse)
+@limiter.limit("10/minute")
 def upload_material(
+    request: Request,
     uploaded_file: Annotated[UploadFile, File(...)],
     current_user: Annotated[User, Depends(get_current_user)],
     material_service: Annotated[MaterialService, Depends(get_material_service)],

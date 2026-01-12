@@ -7,6 +7,7 @@ from fastapi import (
     File,
     HTTPException,
     Query,
+    Request,
     Response,
     UploadFile,
     status,
@@ -17,6 +18,7 @@ from app.api.dependencies import get_export_storage, get_file_service
 from app.api.schemas.tests import FileUploadResponse
 from app.api.schemas.files import FileExistsResponse
 from app.application.services import FileService
+from app.core.limiter import limiter
 from app.core.security import get_current_user
 from app.db.models import User
 from app.domain.services import FileStorage
@@ -50,7 +52,9 @@ def lookup_file(
 
 
 @router.post("/upload-file", response_model=FileUploadResponse)
+@limiter.limit("20/minute")
 def upload_file(
+    request: Request,
     uploaded_file: Annotated[UploadFile, File(...)],
     current_user: Annotated[User, Depends(get_current_user)],
     file_service: Annotated[FileService, Depends(get_file_service)],
