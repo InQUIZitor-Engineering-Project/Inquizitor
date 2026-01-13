@@ -11,6 +11,7 @@ class MaterialOut(BaseModel):
     filename: str
     mime_type: str | None = None
     size_bytes: int | None = None
+    page_count: int | None = None
     checksum: str | None = None
     processing_status: str
     created_at: datetime

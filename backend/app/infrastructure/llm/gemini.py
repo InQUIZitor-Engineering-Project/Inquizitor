@@ -178,7 +178,7 @@ class GeminiQuestionGenerator(QuestionGenerator):
 
     def generate(
         self, *, source_text: str, params: GenerateParams
-    ) -> tuple[str | None, list[Question]]:
+    ) -> tuple[str | None, list[Question], dict[str, Any]]:
         prompt = _build_prompt(source_text, params)
         generation_config = types.GenerateContentConfig(
             response_mime_type="application/json",
@@ -192,9 +192,8 @@ class GeminiQuestionGenerator(QuestionGenerator):
                 config=cast(Any, generation_config),
             )
         except Exception as exc:
+            # ... existing error handling ...
             message = str(exc)
-            # Map quota/rate errors to ValueError so they surface to the user
-            # and don't look like 500s
             is_quota = (
                 "RESOURCE_EXHAUSTED" in message
                 or "quota" in message.lower()
@@ -206,6 +205,15 @@ class GeminiQuestionGenerator(QuestionGenerator):
                     "Spróbuj ponownie za chwilę."
                 ) from exc
             raise RuntimeError(f"Gemini request failed: {exc}") from exc
+
+        # Extract usage metadata
+        usage = {}
+        if response.usage_metadata:
+            usage = {
+                "prompt_tokens": response.usage_metadata.prompt_token_count,
+                "candidates_tokens": response.usage_metadata.candidates_token_count,
+                "total_tokens": response.usage_metadata.total_token_count,
+            }
 
         raw_output = (response.text or "").strip()
 
@@ -262,7 +270,7 @@ class GeminiQuestionGenerator(QuestionGenerator):
 
         questions = selected
 
-        return validated.title, questions
+        return validated.title, questions, usage
 
     @staticmethod
     def _parse_and_validate(raw: str) -> LLMResponse:

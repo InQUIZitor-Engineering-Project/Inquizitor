@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import logging
+import time
 from typing import Any
 
 from app.celery_app import celery_app
 from app.domain.models.enums import JobStatus
+from app.infrastructure.monitoring.posthog_client import analytics
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +27,7 @@ def process_material_task(
     self: Any, job_id: int, owner_id: int, material_id: int
 ) -> int:
     _ = self
+    start_time = time.time()
     material_service, job_service = _get_services()
 
     try:
@@ -62,6 +65,31 @@ def process_material_task(
                 "filename": material.filename,
             },
         )
+        
+        duration_sec = time.time() - start_time
+        analytics.capture(
+            user_id=owner_id,
+            event="material_processing_completed",
+            properties={
+                "material_id": material.id,
+                "job_id": job_id,
+                "duration_sec": duration_sec,
+                "status": "success",
+                "mime_type": material.mime_type,
+                "size_mb": (
+                    round(material.size_bytes / (1024 * 1024), 2)
+                    if material.size_bytes
+                    else 0
+                ),
+                "page_count": material.page_count,
+                "char_count": len(material.extracted_text)
+                if material.extracted_text
+                else 0,
+            }
+        )
+
+        analytics.flush()
+
         return material.id
     except Exception as exc:
         logger.exception("Material processing job %s failed: %s", job_id, exc)

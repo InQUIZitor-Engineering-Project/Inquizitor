@@ -95,6 +95,7 @@ def to_material_out(material: Material) -> MaterialOut:
         filename=material.file.filename,
         mime_type=material.mime_type,
         size_bytes=material.size_bytes,
+        page_count=material.page_count,
         checksum=material.checksum,
         processing_status=material.status.value,
         created_at=material.file.uploaded_at,

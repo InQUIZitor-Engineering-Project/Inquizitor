@@ -53,6 +53,16 @@ class MaterialService:
             size_bytes = local.stat().st_size if local.exists() else len(content)
             mime_type = self._detect_mime(local)
 
+            page_count = None
+            if mime_type == "application/pdf" or local.suffix.lower() == ".pdf":
+                try:
+                    from pypdf import PdfReader
+
+                    reader = PdfReader(local)
+                    page_count = len(reader.pages)
+                except Exception:
+                    pass
+
         checksum = hashlib.sha256(content).hexdigest()
 
         file_domain = FileDomain(
@@ -72,6 +82,7 @@ class MaterialService:
                 file=file_record,
                 mime_type=mime_type,
                 size_bytes=size_bytes,
+                page_count=page_count,
                 checksum=checksum,
                 status=ProcessingStatus.PENDING,
                 extracted_text=None,
@@ -172,6 +183,15 @@ class MaterialService:
                 mime_type = self._detect_mime(local)
                 material.mime_type = mime_type
                 material.size_bytes = local.stat().st_size if local.exists() else None
+
+                # Detect page count for PDFs
+                if mime_type == "application/pdf" or local.suffix.lower() == ".pdf":
+                    try:
+                        from pypdf import PdfReader
+                        reader = PdfReader(local)
+                        material.page_count = len(reader.pages)
+                    except Exception:
+                        material.page_count = None
 
                 try:
                     raw_text = self._text_extractor(local, mime_type)
