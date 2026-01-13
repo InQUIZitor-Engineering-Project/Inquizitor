@@ -23,9 +23,8 @@ from app.domain.models import (
     RefreshToken,
     User,
 )
-
-
 from app.infrastructure.monitoring.posthog_client import analytics
+
 
 def normalize_frontend_base_url(url: str | None) -> str:
     """
