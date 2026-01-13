@@ -49,7 +49,7 @@ const QuestionsSection: React.FC<QuestionsSectionProps> = ({
   stateFlags,
 }) => {
   const renderChoiceList = (question: QuestionOut) => (
-    <Stack $gap="sm">
+    <Stack $gap="sm" className="ph-no-capture">
       {(question.choices || []).map((choice, ci) => {
         const isCorrect = (question.correct_choices || []).includes(choice);
         return (
@@ -77,7 +77,7 @@ const QuestionsSection: React.FC<QuestionsSectionProps> = ({
   );
 
   const renderOpenAnswerPlaceholder = () => (
-    <Box $border="1px dashed #ccc" $radius="md" $bg="#fff" $p="sm" $height="80px">
+    <Box $border="1px dashed #ccc" $radius="md" $bg="#fff" $p="sm" $height="80px" className="ph-no-capture">
       <Text $variant="body4" $tone="muted" style={{ fontStyle: "italic" }}>
         Odpowiedź otwarta…
       </Text>

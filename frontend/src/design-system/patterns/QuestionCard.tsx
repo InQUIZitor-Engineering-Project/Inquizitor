@@ -9,6 +9,7 @@ export interface QuestionCardProps {
   actions?: React.ReactNode;
   children?: React.ReactNode;
   style?: React.CSSProperties;
+  className?: string;
 }
 
 const HeaderRow = styled(Flex)`
@@ -36,9 +37,9 @@ export const IndexChip = styled.span`
   border: 1px solid #dbeafe;
 `;
 
-const QuestionCard: React.FC<QuestionCardProps> = ({ index, title, meta, actions, children, style }) => {
+const QuestionCard: React.FC<QuestionCardProps> = ({ index, title, meta, actions, children, style, className }) => {
   return (
-    <Card $p="lg" $shadow="md" $variant="elevated" style={style}>
+    <Card $p="lg" $shadow="md" $variant="elevated" style={style} className={className}>
       <Stack $gap="md">
         <HeaderRow>
           <TitleRow>
