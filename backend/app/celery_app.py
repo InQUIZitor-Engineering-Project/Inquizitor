@@ -27,4 +27,7 @@ celery_app.conf.update(
 # Autodiscover tasks under app.tasks.* (pass the app package, not app.tasks)
 celery_app.autodiscover_tasks(["app"])
 
+# Import signal handlers after celery_app is initialized to avoid circular imports
+from app.infrastructure.monitoring import handlers as _handlers  # noqa: E402, F401
+
 __all__ = ["celery_app"]

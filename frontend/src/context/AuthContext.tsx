@@ -1,4 +1,5 @@
 import React, { createContext, useState, useEffect } from "react";
+import posthog from "posthog-js";
 import { loginUser } from "../services/auth";
 import type { Token, UserRead } from "../services/auth";
 import { apiRequest } from "../services/api";
@@ -74,6 +75,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const user = await res.json();
     setUser(user);
     
+    // Identify user in PostHog
+    posthog.identify(user.id.toString(), {
+      email: user.email,
+      name: `${user.firstName} ${user.lastName}`
+    });
+    
     const token = localStorage.getItem("access_token");
     if (token) await fetchUnreadCount(token);
   };
@@ -90,6 +97,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
     setUser(null);
+    posthog.reset();
   };
 
   const refreshNotificationsCount = () => {

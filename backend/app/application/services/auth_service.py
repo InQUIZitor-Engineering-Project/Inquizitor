@@ -23,6 +23,7 @@ from app.domain.models import (
     RefreshToken,
     User,
 )
+from app.infrastructure.monitoring.posthog_client import analytics
 
 
 def normalize_frontend_base_url(url: str | None) -> str:
@@ -100,6 +101,17 @@ class AuthService:
                 created_at=datetime.utcnow(),
             )
             uow.pending_verifications.upsert(pending_entry)
+
+        analytics.capture(
+            user_id=payload.email,
+            event="user_registration_requested",
+            properties={
+                "email": payload.email,
+                "first_name": payload.first_name,
+                "last_name": payload.last_name,
+            }
+        )
+        analytics.flush()
 
         from app.tasks.email import (
             send_verification_email_task,  # local import to avoid cycles
@@ -233,6 +245,19 @@ class AuthService:
             created = uow.users.add(user)
             uow.pending_verifications.delete_by_email(pending.email)
             
+            # Track sign up
+            analytics.capture(
+                user_id=created.email,
+                event="user_signed_up",
+                properties={
+                    "user_id": created.id,
+                    "email": created.email,
+                    "first_name": created.first_name,
+                    "last_name": created.last_name,
+                }
+            )
+            analytics.flush()
+
             # Create tokens for the new user
             expires_delta = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
             access_token = self._token_issuer(

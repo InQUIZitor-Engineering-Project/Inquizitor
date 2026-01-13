@@ -23,6 +23,7 @@ from app.core.limiter import limiter
 from app.core.security import get_current_user
 from app.db.models import User
 from app.domain.models.enums import JobType
+from app.infrastructure.monitoring.posthog_client import analytics
 from app.tasks.materials import process_material_task
 
 router = APIRouter(prefix="/materials", tags=["materials"])
@@ -64,6 +65,24 @@ def upload_material(
         job_type=JobType.MATERIAL_PROCESSING,
         payload={"material_id": material.id},
     )
+    
+    analytics.capture(
+        user_id=current_user.id,
+        event="material_processing_started",
+        properties={
+            "material_id": material.id,
+            "filename": material.filename,
+            "job_id": job.id,
+            "mime_type": material.mime_type,
+            "size_mb": (
+                round(material.size_bytes / (1024 * 1024), 2)
+                if material.size_bytes
+                else 0
+            ),
+            "page_count": material.page_count,
+        }
+    )
+
     process_material_task.delay(job.id, current_user.id, material.id)
 
     return MaterialUploadEnqueueResponse(

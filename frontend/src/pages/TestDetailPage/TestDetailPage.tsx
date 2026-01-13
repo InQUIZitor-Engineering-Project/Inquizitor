@@ -130,6 +130,7 @@ const TestDetailPage: React.FC = () => {
               onChange={(e) => actions.setRegenerationInstruction(e.target.value)}
               $fullWidth
               $minHeight="100px"
+              className="ph-no-capture"
             />
           </Stack>
         </Stack>

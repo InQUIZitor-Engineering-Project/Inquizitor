@@ -82,6 +82,7 @@ const SourceSection: React.FC<SourceSectionProps> = ({
             value={sourceContent}
             onChange={(e) => onSourceContentChange(e.target.value)}
             placeholder="Wklej treść materiału, notatki z zajęć, fragment podręcznika lub tekst, na podstawie którego chcesz wygenerować test..."
+            className="ph-no-capture"
           />
         </FormField>
       )}

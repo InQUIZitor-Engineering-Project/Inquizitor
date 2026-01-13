@@ -68,6 +68,7 @@ const QuestionEditor: React.FC<QuestionEditorProps> = ({
         value={draft.text || ""}
         onChange={(e) => onTextChange(e.target.value)}
         placeholder="Wpisz treść pytania…"
+        className="ph-no-capture"
       />
 
       <Divider />
