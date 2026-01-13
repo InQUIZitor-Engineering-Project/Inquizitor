@@ -13,7 +13,9 @@ from fastapi.responses import JSONResponse
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
+from sqladmin import Admin
 
+from app.api.admin import setup_admin_views
 from app.api.routers import (
     auth,
     files,
@@ -39,7 +41,7 @@ from app.application.unit_of_work import SqlAlchemyUnitOfWork
 from app.core.config import Settings, get_settings
 from app.core.limiter import limiter
 from app.core.monitoring import init_sentry
-from app.db.session import get_session_factory, init_db
+from app.db.session import get_engine, get_session_factory, init_db
 from app.domain.services import FileStorage
 from app.infrastructure import (
     DefaultOCRService,
@@ -360,5 +362,10 @@ def create_app(settings_override: Settings | None = None) -> FastAPI:
     app.include_router(support.router, prefix="/support", tags=["support"])
     app.include_router(materials.router)
     app.include_router(jobs.router)
+
+    # Initialize SQLAdmin
+    engine = get_engine(current_settings)
+    admin = Admin(app, engine, base_url="/admin")
+    setup_admin_views(admin)
 
     return app

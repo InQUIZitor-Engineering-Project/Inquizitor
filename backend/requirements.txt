@@ -100,3 +100,4 @@ types-passlib
 sentry-sdk[fastapi,celery,sqlalchemy]
 slowapi
 posthog
+sqladmin[sqlalchemy]
