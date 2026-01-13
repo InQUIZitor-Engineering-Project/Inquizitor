@@ -6,6 +6,7 @@ import json
 import logging
 import random
 import re
+import time
 import unicodedata
 from collections.abc import Callable
 from pathlib import Path
@@ -48,6 +49,7 @@ from app.infrastructure.exporting import (
 from app.infrastructure.extractors.extract_composite import composite_text_extractor
 from app.infrastructure.llm.gemini import GeminiQuestionGenerator
 from app.infrastructure.llm.prompts import PromptBuilder
+from app.infrastructure.monitoring.posthog_client import analytics
 
 logger = logging.getLogger(__name__)
 
@@ -338,13 +340,31 @@ class TestService:
                 raise ValueError("Either text or file_id must be provided")
 
             try:
-                llm_title, questions = self._question_generator.generate(
+                llm_title, questions, usage = self._question_generator.generate(
                     source_text=source_text,
                     params=request,
                 )
             except ValueError as exc:
+                analytics.capture(
+                    user_id=owner_id,
+                    event="test_generation_failed",
+                    properties={
+                        "error_type": "ValueError",
+                        "error_message": str(exc),
+                        "source": "file" if request.file_id else "text"
+                    }
+                )
                 raise HTTPException(status_code=400, detail=str(exc)) from exc
             except Exception as exc:
+                analytics.capture(
+                    user_id=owner_id,
+                    event="test_generation_failed",
+                    properties={
+                        "error_type": type(exc).__name__,
+                        "error_message": str(exc),
+                        "source": "file" if request.file_id else "text"
+                    }
+                )
                 raise HTTPException(
                     status_code=500, detail=f"LLM error: {exc}"
                 ) from exc
@@ -372,6 +392,18 @@ class TestService:
                 test_id=persisted_test.id,
                 owner_id=owner_id,
                 question_count=len(questions),
+            )
+            
+            analytics.capture(
+                user_id=owner_id,
+                event="test_generated",
+                properties={
+                    "test_id": persisted_test.id,
+                    "question_count": len(questions),
+                    "title": final_title,
+                    "source": "file" if request.file_id else "text",
+                    **usage
+                }
             )
 
             return TestGenerateResponse(
@@ -415,6 +447,7 @@ class TestService:
     def export_test_pdf(
         self, *, owner_id: int, test_id: int, show_answers: bool = False
     ) -> tuple[bytes, str]:
+        start_time = time.time()
         detail = self.get_test_detail(owner_id=owner_id, test_id=test_id)
         questions_payload = [
             {
@@ -437,7 +470,22 @@ class TestService:
         filename = self._build_export_filename(
             detail.title, detail.test_id, suffix="pdf"
         )
-        return self._compile_tex_to_pdf(tex), filename
+        pdf_bytes = self._compile_tex_to_pdf(tex)
+        
+        duration_sec = time.time() - start_time
+        analytics.capture(
+            user_id=owner_id,
+            event="test_pdf_exported",
+            properties={
+                "test_id": test_id,
+                "is_custom": False,
+                "show_answers": show_answers,
+                "duration_sec": duration_sec,
+                "question_count": len(questions_payload)
+            }
+        )
+        
+        return pdf_bytes, filename
 
     def export_test_xml(self, *, owner_id: int, test_id: int) -> tuple[bytes, str]:
         detail = self.get_test_detail(owner_id=owner_id, test_id=test_id)
@@ -472,13 +520,35 @@ class TestService:
         Export a test to a customized PDF using PdfExportConfig and the
         advanced LaTeX template.
         """
+        start_time = time.time()
         detail = self.get_test_detail(owner_id=owner_id, test_id=test_id)
         context = self._prepare_pdf_context(detail, config)
         tex = self._render_custom_test_to_tex(context)
         filename = self._build_export_filename(
             detail.title, detail.test_id, suffix="pdf"
         )
-        return self._compile_tex_to_pdf(tex), filename
+        pdf_bytes = self._compile_tex_to_pdf(tex)
+        
+        duration_sec = time.time() - start_time
+        analytics.capture(
+            user_id=owner_id,
+            event="test_pdf_exported",
+            properties={
+                "test_id": test_id,
+                "is_custom": (
+                    config.generate_variants or config.variant_mode != "shuffle"
+                ),
+                "duration_sec": duration_sec,
+                "question_count": len(detail.questions),
+                "config": (
+                    config.model_dump()
+                    if hasattr(config, "model_dump")
+                    else str(config)
+                ),
+            }
+        )
+        
+        return pdf_bytes, filename
 
     @staticmethod
     def _build_question_payload(q: QuestionOut) -> dict[str, Any]:
@@ -585,6 +655,18 @@ class TestService:
 
             session.add(question_row)
             session.flush()
+
+            analytics.capture(
+                user_id=owner_id,
+                event="question_manually_edited",
+                properties={
+                    "test_id": test_id,
+                    "question_id": question_id,
+                    "fields_changed": list(data.keys()),
+                    "is_closed": question_row.is_closed,
+                    "difficulty": question_row.difficulty
+                }
+            )
 
             return QuestionOut(
                 id=question_row.id,
@@ -722,6 +804,17 @@ class TestService:
                     updated_count += 1
 
             session.flush()
+            
+            analytics.capture(
+                user_id=owner_id,
+                event="bulk_questions_regenerated",
+                properties={
+                    "test_id": test_id,
+                    "count": updated_count,
+                    "instruction": payload.instruction
+                }
+            )
+            
             return updated_count
 
     def bulk_convert_questions(
@@ -804,6 +897,17 @@ class TestService:
                             updated_count += 1
 
                     session.flush()
+                    
+                    analytics.capture(
+                        user_id=owner_id,
+                        event="bulk_questions_converted",
+                        properties={
+                            "test_id": test_id,
+                            "count": updated_count,
+                            "target_type": "open"
+                        }
+                    )
+                    
                     return updated_count
                 except Exception as exc:
                     logger.error("Failed to convert questions to open via LLM: %s", exc)
@@ -878,6 +982,17 @@ class TestService:
                         updated_count += 1
 
                 session.flush()
+                
+                analytics.capture(
+                    user_id=owner_id,
+                    event="bulk_questions_converted",
+                    properties={
+                        "test_id": test_id,
+                        "count": updated_count,
+                        "target_type": "closed"
+                    }
+                )
+                
                 return updated_count
             except Exception as exc:
                 logger.error("Failed to convert questions to closed via LLM: %s", exc)

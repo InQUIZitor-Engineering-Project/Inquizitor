@@ -16,6 +16,7 @@ class Material:
     mime_type: str | None
     size_bytes: int | None
     checksum: str | None
+    page_count: int | None = None
     status: ProcessingStatus = ProcessingStatus.PENDING
     extracted_text: str | None = None
     processing_error: str | None = None

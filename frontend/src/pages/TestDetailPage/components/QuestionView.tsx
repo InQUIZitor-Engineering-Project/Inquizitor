@@ -41,6 +41,7 @@ const QuestionView: React.FC<QuestionViewProps> = ({
 }) => {
   return (
     <QuestionCard
+      className="ph-no-capture"
       index={
         <Flex $gap="sm" $align="center">
           {onSelect && (
@@ -54,7 +55,7 @@ const QuestionView: React.FC<QuestionViewProps> = ({
         </Flex>
       }
       title={
-        <Text $variant="body2" $weight="medium">
+        <Text $variant="body2" $weight="medium" className="ph-no-capture">
           <MathText text={question.text} />
         </Text>
       }

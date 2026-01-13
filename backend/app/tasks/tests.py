@@ -11,6 +11,7 @@ from app.api.schemas.tests import (
 )
 from app.celery_app import celery_app
 from app.domain.models.enums import JobStatus
+from app.infrastructure.monitoring.posthog_client import analytics
 
 logger = logging.getLogger(__name__)
 
@@ -52,6 +53,7 @@ def generate_test_task(
                 "num_questions": response.num_questions,
             },
         )
+        analytics.flush()
         return response.test_id
     except Exception as exc:
         logger.exception("Job %s failed: %s", job_id, exc)
@@ -95,6 +97,7 @@ def export_test_pdf_task(
                 "test_id": test_id,
             },
         )
+        analytics.flush()
         return stored_path
     except Exception as exc:
         logger.exception("PDF export job %s failed: %s", job_id, exc)
@@ -141,6 +144,7 @@ def export_custom_test_pdf_task(
                 "test_id": test_id,
             },
         )
+        analytics.flush()
         return stored_path
     except Exception as exc:
         logger.exception("Custom PDF export job %s failed: %s", job_id, exc)
@@ -176,6 +180,7 @@ def bulk_regenerate_questions_task(
             status=JobStatus.DONE,
             result={"num_regenerated": num_regenerated, "test_id": test_id},
         )
+        analytics.flush()
         return num_regenerated
     except Exception as exc:
         logger.exception("Bulk regeneration job %s failed: %s", job_id, exc)
@@ -211,6 +216,7 @@ def bulk_convert_questions_task(
             status=JobStatus.DONE,
             result={"num_converted": num_converted, "test_id": test_id},
         )
+        analytics.flush()
         return num_converted
     except Exception as exc:
         logger.exception("Bulk conversion job %s failed: %s", job_id, exc)
