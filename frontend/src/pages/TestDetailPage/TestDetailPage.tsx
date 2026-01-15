@@ -84,11 +84,14 @@ const TestDetailPage: React.FC = () => {
                 onToggle={() => actions.setPdfConfigOpen(!state.pdfConfigOpen)}
                 onChange={(updater) => actions.setPdfConfig((cfg) => updater(cfg))}
                 onReset={actions.resetPdfConfig}
+                onValidityChange={actions.setPdfConfigValid}
               />
 
               <DownloadActions 
                 onDownloadPdf={actions.handleDownloadCustomPdf}
                 onDownloadXml={actions.downloadXml}
+                pdfDisabled={!state.pdfConfigValid}
+                pdfDisabledReason="Ustaw poprawną wysokość pola odpowiedzi (1–10 cm), aby pobrać PDF."
               />
 
             </Stack>

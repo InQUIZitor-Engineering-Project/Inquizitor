@@ -22,6 +22,7 @@ type UseTestDetailResult = {
     titleDraft: string;
     pdfConfig: PdfExportConfig;
     pdfConfigOpen: boolean;
+    pdfConfigValid: boolean;
     testIdToDelete: number | null;
     questionIdToDelete: number | null;
     isRegenerateModalOpen: boolean;
@@ -94,6 +95,7 @@ type UseTestDetailResult = {
     setPdfConfigOpen: (next: boolean) => void;
     setPdfConfig: (updater: (cfg: PdfExportConfig) => PdfExportConfig) => void;
     resetPdfConfig: () => void;
+    setPdfConfigValid: (valid: boolean) => void;
     handleDownloadCustomPdf: () => Promise<void>;
     downloadXml: () => Promise<void>;
   };
@@ -110,6 +112,8 @@ const useTestDetail = (): UseTestDetailResult => {
   } = useQuestionDraft();
   const { state: titleState, actions: titleActions } = useTitleEdit();
   const { state: pdfState, actions: pdfActions } = usePdfConfig();
+
+  const [pdfConfigValid, setPdfConfigValid] = useState(true);
 
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const clearSelection = () => setSelectedIds([]);
@@ -142,7 +146,8 @@ const useTestDetail = (): UseTestDetailResult => {
   const { testId } = useParams<{ testId: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const testIdNum = Number(testId);
-  useDocumentTitle("Test | Inquizitor");
+  const pageTitle = data?.title ? `${data.title} | Inquizitor` : "Test | Inquizitor";
+  useDocumentTitle(pageTitle);
 
   useEffect(() => {
     if (searchParams.get("isAdding") === "true" && data && !draftState.isAdding) {
@@ -309,6 +314,10 @@ const useTestDetail = (): UseTestDetailResult => {
 
   const handleDownloadCustomPdf = async () => {
     if (!data?.test_id) return;
+    if (!pdfConfigValid) {
+      alert("Ustaw poprawną wysokość pola odpowiedzi (1–10 cm), aby pobrać PDF.");
+      return;
+    }
     await pdfActions.downloadCustomPdf(data.test_id);
   };
 
@@ -347,6 +356,7 @@ const useTestDetail = (): UseTestDetailResult => {
       titleDraft: titleState.titleDraft,
       pdfConfig: pdfState.pdfConfig,
       pdfConfigOpen: pdfState.pdfConfigOpen,
+      pdfConfigValid,
       testIdToDelete,
       questionIdToDelete,
       isRegenerateModalOpen,
@@ -419,6 +429,7 @@ const useTestDetail = (): UseTestDetailResult => {
       setPdfConfigOpen: pdfActions.setPdfConfigOpen,
       setPdfConfig: pdfActions.updatePdfConfig,
       resetPdfConfig: pdfActions.resetPdfConfig,
+      setPdfConfigValid,
       handleDownloadCustomPdf,
       downloadXml,
     },

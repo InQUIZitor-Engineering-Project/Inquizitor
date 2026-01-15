@@ -83,18 +83,24 @@ const DifficultyCard: React.FC<DifficultyCardProps> = ({
             value={easyCount}
             onChange={onChangeEasy}
             disabled={difficultyLocked}
+            min={0}
+            max={Math.max(0, totalAll - (mediumCount + hardCount))}
           />
           <CounterControl
             label="Średnie"
             value={mediumCount}
             onChange={onChangeMedium}
             disabled={difficultyLocked}
+            min={0}
+            max={Math.max(0, totalAll - (easyCount + hardCount))}
           />
           <CounterControl
             label="Trudne"
             value={hardCount}
             onChange={onChangeHard}
             disabled={difficultyLocked}
+            min={0}
+            max={Math.max(0, totalAll - (easyCount + mediumCount))}
           />
         </CountersGrid>
 

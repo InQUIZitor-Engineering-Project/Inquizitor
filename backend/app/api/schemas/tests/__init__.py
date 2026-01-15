@@ -7,6 +7,8 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 
 ClosedType = Literal["true_false", "single_choice", "multi_choice"]
 
+MAX_QUESTIONS_TOTAL = 30
+
 class ClosedBreakdown(BaseModel):
     true_false: int = 0
     single_choice: int = 0
@@ -17,6 +19,8 @@ class ClosedBreakdown(BaseModel):
         for k, v in self.model_dump().items():
             if v < 0:
                 raise ValueError(f"{k} must be >= 0")
+            if v > MAX_QUESTIONS_TOTAL:
+                raise ValueError(f"{k} must be <= {MAX_QUESTIONS_TOTAL}")
         return self
 
     def total(self) -> int:
@@ -51,9 +55,20 @@ class GenerateParams(BaseModel):
     def check_counts(self):
         if self.num_open < 0:
             raise ValueError("num_open must be >= 0")
+        if self.num_open > MAX_QUESTIONS_TOTAL:
+            raise ValueError(f"num_open must be <= {MAX_QUESTIONS_TOTAL}")
+
+        for field in ("easy", "medium", "hard"):
+            value = getattr(self, field)
+            if value < 0:
+                raise ValueError(f"{field} must be >= 0")
+            if value > MAX_QUESTIONS_TOTAL:
+                raise ValueError(f"{field} must be <= {MAX_QUESTIONS_TOTAL}")
 
         total = self.easy + self.medium + self.hard
         expected = self.closed.total() + self.num_open
+        if expected > MAX_QUESTIONS_TOTAL:
+            raise ValueError(f"Total questions must be <= {MAX_QUESTIONS_TOTAL}")
         if total != expected:
             raise ValueError(
                 "The sum of easy, medium, and hard must equal "
@@ -204,8 +219,8 @@ class PdfExportConfig(BaseModel):
 
     @model_validator(mode="after")
     def validate_numeric(self) -> "PdfExportConfig":
-        if self.space_height_cm <= 0:
-            raise ValueError("space_height_cm must be > 0")
+        if self.space_height_cm < 1 or self.space_height_cm > 10:
+            raise ValueError("space_height_cm must be between 1 and 10")
         return self
 
 __all__ = [

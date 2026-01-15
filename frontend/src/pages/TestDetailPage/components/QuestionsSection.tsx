@@ -5,6 +5,7 @@ import QuestionView from "./QuestionView";
 import QuestionEditor from "./QuestionEditor";
 import type { QuestionOut } from "../../../services/test";
 import { MathText } from "../../../components/MathText/MathText";
+import { MAX_QUESTIONS_TOTAL } from "../../CreateTestAIPage/constants";
 
 export interface QuestionsSectionProps {
   questions: QuestionOut[];
@@ -48,6 +49,7 @@ const QuestionsSection: React.FC<QuestionsSectionProps> = ({
   actions,
   stateFlags,
 }) => {
+  const canAdd = questions.length < MAX_QUESTIONS_TOTAL;
   const renderChoiceList = (question: QuestionOut) => (
     <Stack $gap="sm" className="ph-no-capture">
       {(question.choices || []).map((choice, ci) => {
@@ -174,7 +176,7 @@ const QuestionsSection: React.FC<QuestionsSectionProps> = ({
         </QuestionCard>
       )}
 
-      {!isAdding && (
+      {!isAdding && canAdd && (
         <Flex $justify="center" $mt="md">
           <Button $variant="info" $size="lg" onClick={actions.startAdd}>
             + Dodaj pytanie

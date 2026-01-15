@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import styled from "styled-components";
-import { Box, Flex, Divider, Select, Input, Checkbox, Button } from "../../../design-system/primitives";
-import { CollapsibleSection, FormField } from "../../../design-system/patterns";
+import { Box, Flex, Divider, Input, Checkbox, Button } from "../../../design-system/primitives";
+import { CollapsibleSection, FormField, CustomSelect } from "../../../design-system/patterns";
 import type { PdfExportConfig } from "../../../services/test";
 
 const ConfigGrid = styled(Box)`
@@ -37,6 +37,7 @@ export interface PdfConfigSectionProps {
   onToggle: () => void;
   onChange: (updater: (cfg: PdfExportConfig) => PdfExportConfig) => void;
   onReset: () => void;
+  onValidityChange?: (isValid: boolean) => void;
 }
 
 const PdfConfigSection: React.FC<PdfConfigSectionProps> = ({
@@ -45,7 +46,11 @@ const PdfConfigSection: React.FC<PdfConfigSectionProps> = ({
   onToggle,
   onChange,
   onReset,
+  onValidityChange,
 }) => {
+  const MIN_SPACE_HEIGHT = 1;
+  const MAX_SPACE_HEIGHT = 10;
+
   const isActive =
     config.answer_space_style !== "blank" ||
     config.space_height_cm !== 3 ||
@@ -62,13 +67,15 @@ const PdfConfigSection: React.FC<PdfConfigSectionProps> = ({
     setSpaceHeightError(null);
   }, [config.space_height_cm]);
 
+  useEffect(() => {
+    onValidityChange?.(spaceHeightError === null);
+  }, [spaceHeightError, onValidityChange]);
+
   const validateSpaceHeight = (raw: string): string | null => {
-    if (raw === "") return "Podaj liczbę od 1 do 10 (co 0.5).";
+    if (raw === "") return "Podaj liczbę od 1 do 10.";
     const num = Number(raw);
     if (Number.isNaN(num)) return "Wpisz liczbę.";
-    if (num < 1 || num > 10) return "Zakres: 1–10 cm.";
-    const isStep = Math.abs(num * 2 - Math.round(num * 2)) < 1e-6;
-    if (!isStep) return "Dozwolone przyrosty co 0.5 cm.";
+    if (num < MIN_SPACE_HEIGHT || num > MAX_SPACE_HEIGHT) return "Zakres: 1–10 cm.";
     return null;
   };
 
@@ -88,13 +95,13 @@ const PdfConfigSection: React.FC<PdfConfigSectionProps> = ({
 
   const handleSpaceHeightChange = (raw: string) => {
     setSpaceHeight(raw);
-    setSpaceHeightError(null);
+    setSpaceHeightError(validateSpaceHeight(raw));
   };
 
   const handleSpaceHeightBlur = () => {
     if (spaceHeight === "") {
       // pokaż błąd, ale nie nadpisuj stanu config
-      setSpaceHeightError("Podaj liczbę od 1 do 10 (co 0.5).");
+      setSpaceHeightError("Podaj liczbę od 1 do 10.");
       return;
     }
     commitSpaceHeight(spaceHeight);
@@ -122,32 +129,35 @@ const PdfConfigSection: React.FC<PdfConfigSectionProps> = ({
         </Box>
         <ConfigGrid>
           <FormField label="Styl pola odpowiedzi" fullWidth>
-            <Select
+            <CustomSelect
               value={config.answer_space_style}
-              onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+              $fullWidth
+              options={[
+                { value: "blank", label: "Puste miejsce" },
+                { value: "lines", label: "Linie do pisania" },
+                { value: "grid", label: "Kratka" },
+              ]}
+              onChange={(value) =>
                 onChange((cfg) => ({
                   ...cfg,
-                  answer_space_style: e.target.value as PdfExportConfig["answer_space_style"],
+                  answer_space_style: value as PdfExportConfig["answer_space_style"],
                 }))
               }
-            >
-              <option value="blank">Puste miejsce</option>
-              <option value="lines">Linie do pisania</option>
-              <option value="grid">Kratka</option>
-            </Select>
+            />
           </FormField>
 
           <FormField label="Wysokość pola odpowiedzi (cm)" fullWidth>
             <FieldWrapper style={spaceHeightError ? { paddingBottom: 14 } : undefined}>
               <Input
-                $size="sm"
+                $size="md"
                 $fullWidth
                 type="number"
                 inputMode="decimal"
-                step={0.5}
-                min={1}
-                max={10}
+                step="any"
+                min={MIN_SPACE_HEIGHT}
+                max={MAX_SPACE_HEIGHT}
                 placeholder="1-10"
+                style={{ minHeight: 41.6 }}
                 value={spaceHeight}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   handleSpaceHeightChange(e.target.value)
@@ -158,6 +168,7 @@ const PdfConfigSection: React.FC<PdfConfigSectionProps> = ({
               {spaceHeightError && <ErrorText>{spaceHeightError}</ErrorText>}
             </FieldWrapper>
           </FormField>
+
         </ConfigGrid>
 
         <FormField fullWidth>
@@ -233,20 +244,24 @@ const PdfConfigSection: React.FC<PdfConfigSectionProps> = ({
         </FormField>
 
         {config.generate_variants && (
-          <FormField label="Tryb drugiej grupy" fullWidth>
-            <Select
-              value={config.variant_mode || "shuffle"}
-              onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                onChange((cfg) => ({
-                  ...cfg,
-                  variant_mode: e.target.value as PdfExportConfig["variant_mode"],
-                }))
-              }
-            >
-              <option value="shuffle">Przetasuj w obrębie trudności</option>
-              <option value="llm_variant">Nowe pytania o tej samej trudności</option>
-            </Select>
-          </FormField>
+          <Box style={{ width: "100%", maxWidth: "50%" }}>
+            <FormField label="Tryb drugiej grupy" fullWidth>
+              <CustomSelect
+                value={config.variant_mode || "shuffle"}
+                $fullWidth
+                options={[
+                  { value: "shuffle", label: "Przetasuj w obrębie trudności" },
+                  { value: "llm_variant", label: "Nowe pytania o tej samej trudności" },
+                ]}
+                onChange={(value) =>
+                  onChange((cfg) => ({
+                    ...cfg,
+                    variant_mode: value as PdfExportConfig["variant_mode"],
+                  }))
+                }
+              />
+            </FormField>
+          </Box>
         )}
 
         <FormField fullWidth>

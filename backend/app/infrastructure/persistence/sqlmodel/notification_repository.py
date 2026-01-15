@@ -70,3 +70,9 @@ class SqlModelNotificationRepository(NotificationRepository):
     def add_read_record(self, read_record: UserReadNotification) -> None:
         self._session.add(read_record)
 
+    def add_notification(self, notification: SystemNotification) -> SystemNotification:
+        self._session.add(notification)
+        self._session.commit()
+        self._session.refresh(notification)
+        return notification
+
