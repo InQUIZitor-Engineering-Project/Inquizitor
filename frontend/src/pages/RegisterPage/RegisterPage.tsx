@@ -1,7 +1,7 @@
-import React, { useState, useEffect, type FormEvent } from "react";
+import React, { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import styled, { useTheme } from "styled-components";
-import { Turnstile } from "@marsidev/react-turnstile";
+import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 import { Stack, Heading, Text, Input, Button, Checkbox, Flex } from "../../design-system/primitives";
 import AlertBar from "../../design-system/patterns/AlertBar";
 import { registerUser } from "../../services/auth";
@@ -34,6 +34,9 @@ const RegisterPage: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileVerifying, setTurnstileVerifying] = useState(false);
+  const [pendingTurnstileSubmit, setPendingTurnstileSubmit] = useState(false);
+  const turnstileRef = useRef<TurnstileInstance | null>(null);
 
   const [touched, setTouched] = useState({
     email: false,
@@ -60,26 +63,16 @@ const RegisterPage: React.FC = () => {
     isPasswordComplex &&
     termsAccepted;
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    setErrorMessage("");
-
-    if (!isFormValid) return;
-
-    if (!turnstileToken && import.meta.env.VITE_TURNSTILE_SITE_KEY) {
-      setErrorMessage("Proszę poczekać na weryfikację Turnstile.");
-      return;
-    }
-
+  const submitRegistration = async (token?: string | null) => {
     setLoading(true);
     try {
       setSuccessMessage("");
       await registerUser({
-        first_name: firstName,  
-        last_name: lastName,    
+        first_name: firstName,
+        last_name: lastName,
         email,
         password,
-        turnstile_token: turnstileToken,
+        turnstile_token: token,
       });
       setSuccessMessage("Sprawdź swoją skrzynkę e-mail, wysłaliśmy link aktywacyjny.");
     } catch (err: any) {
@@ -87,7 +80,29 @@ const RegisterPage: React.FC = () => {
       setErrorMessage(msg);
     } finally {
       setLoading(false);
+      if (import.meta.env.VITE_TURNSTILE_SITE_KEY) {
+        setTurnstileToken(null);
+        setTurnstileVerifying(false);
+        setPendingTurnstileSubmit(false);
+        turnstileRef.current?.reset();
+      }
     }
+  };
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setErrorMessage("");
+
+    if (!isFormValid) return;
+
+    if (import.meta.env.VITE_TURNSTILE_SITE_KEY && !turnstileToken) {
+      setTurnstileVerifying(true);
+      setPendingTurnstileSubmit(true);
+      turnstileRef.current?.execute();
+      return;
+    }
+
+    await submitRegistration(turnstileToken);
   };
 
   useDocumentTitle("Rejestracja | Inquizitor");
@@ -283,7 +298,12 @@ const RegisterPage: React.FC = () => {
                     </AlertBar>
                   )}
 
-                  <Button type="submit" $fullWidth $size="lg" disabled={loading || !isFormValid}>
+                  <Button
+                    type="submit"
+                    $fullWidth
+                    $size="lg"
+                    disabled={loading || turnstileVerifying || !isFormValid}
+                  >
                     {loading ? "Tworzę konto..." : "Stwórz konto →"}
                   </Button>
                 </Stack>
@@ -294,9 +314,27 @@ const RegisterPage: React.FC = () => {
       />
 
       <Turnstile
+        ref={turnstileRef}
         siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
-        onSuccess={(token) => setTurnstileToken(token)}
-        options={{ size: 'invisible' }}
+        onSuccess={(token) => {
+          setTurnstileToken(token);
+          setTurnstileVerifying(false);
+          if (pendingTurnstileSubmit) {
+            setPendingTurnstileSubmit(false);
+            submitRegistration(token);
+          }
+        }}
+        onExpire={() => {
+          setTurnstileToken(null);
+          setTurnstileVerifying(false);
+        }}
+        onError={() => {
+          setTurnstileToken(null);
+          setTurnstileVerifying(false);
+          setPendingTurnstileSubmit(false);
+          setErrorMessage("Weryfikacja Turnstile nie powiodła się. Spróbuj ponownie.");
+        }}
+        options={{ size: "invisible", execution: "execute" }}
       />
 
       <Modal

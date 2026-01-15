@@ -166,6 +166,30 @@ class Job(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
     updated_at: datetime = Field(default_factory=datetime.utcnow, index=True)
 
+
+class PdfExportCache(SQLModel, table=True):
+    __tablename__ = "pdf_exports"
+
+    id: int | None = Field(default=None, primary_key=True)
+    test_id: int = Field(foreign_key="test.id", index=True)
+    cache_key: str = Field(index=True, unique=True, max_length=64)
+    config_hash: str = Field(index=True, max_length=64)
+    template_version: str = Field(max_length=20)
+    stored_path: str
+    created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
+
+
+class OcrCache(SQLModel, table=True):
+    __tablename__ = "ocr_cache"
+
+    id: int | None = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", index=True)
+    file_hash: str = Field(index=True, max_length=64)
+    ocr_options_hash: str = Field(index=True, max_length=64)
+    pipeline_version: str = Field(max_length=20)
+    result_ref: str
+    cache_key: str = Field(index=True, unique=True, max_length=64)
+    created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
 class SystemNotification(SQLModel, table=True):
     __tablename__ = "system_notifications"
     

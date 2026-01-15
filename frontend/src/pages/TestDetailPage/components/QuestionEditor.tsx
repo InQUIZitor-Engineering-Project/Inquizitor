@@ -1,6 +1,6 @@
 import React from "react";
-import { Flex, Stack, Button, Textarea, Select, Divider, Text } from "../../../design-system/primitives";
-import { ChoiceEditor, AlertBar } from "../../../design-system/patterns";
+import { Flex, Stack, Button, Textarea, Divider, Text } from "../../../design-system/primitives";
+import { ChoiceEditor, AlertBar, CustomSelect } from "../../../design-system/patterns";
 import SegmentedToggle from "../../../design-system/patterns/SegmentedToggle";
 import type { QuestionOut } from "../../../services/test";
 
@@ -51,15 +51,16 @@ const QuestionEditor: React.FC<QuestionEditorProps> = ({
           onChange={(v) => onToggleClosed(v === "closed")}
         />
 
-        <Select
-          value={draft.difficulty || 1}
-          onChange={(e) => onSetDifficulty(Number(e.target.value))}
-          aria-label="Poziom trudności"
-        >
-          <option value={1}>Łatwe</option>
-          <option value={2}>Średnie</option>
-          <option value={3}>Trudne</option>
-        </Select>
+        <CustomSelect
+          value={String(draft.difficulty || 1)}
+          onChange={(value) => onSetDifficulty(Number(value))}
+          $fullWidth={false}
+          options={[
+            { value: "1", label: "Łatwe" },
+            { value: "2", label: "Średnie" },
+            { value: "3", label: "Trudne" },
+          ]}
+        />
       </Flex>
 
       <Textarea

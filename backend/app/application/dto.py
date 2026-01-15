@@ -88,7 +88,12 @@ def to_test_response(test: Test) -> dict:
     }
 
 
-def to_material_out(material: Material) -> MaterialOut:
+def to_material_out(
+    material: Material,
+    *,
+    cache_hit: bool | None = None,
+    duration_ocr_sec: float | None = None,
+) -> MaterialOut:
     return MaterialOut(
         id=material.id,
         file_id=material.file.id,
@@ -101,6 +106,8 @@ def to_material_out(material: Material) -> MaterialOut:
         created_at=material.file.uploaded_at,
         extracted_text=material.extracted_text,
         processing_error=material.processing_error,
+        cache_hit=cache_hit,
+        duration_ocr_sec=duration_ocr_sec,
     )
 
 

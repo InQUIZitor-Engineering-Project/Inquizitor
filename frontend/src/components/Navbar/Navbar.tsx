@@ -17,7 +17,6 @@ import {
 } from "./Navbar.styles";
 import { Logo, LogosWrapper } from "../../styles/common";
 import { useAuth } from "../../hooks/useAuth";
-import { HashLink } from "react-router-hash-link";
 import { useLoader } from "../../components/Loader/GlobalLoader";
 import logoBook from "../../assets/logo_book.png";
 import logoText from "../../assets/logo_text.png";
@@ -101,14 +100,6 @@ const Navbar: React.FC = () => {
               O nas
             </StyledLink>
 
-            <StyledLink
-              as={HashLink}
-              to="/#how-it-works"
-              smooth
-              onClick={triggerQuickLoader}
-            >
-              Jak to działa?
-            </StyledLink>
 
             <StyledLink to="/pomoc" onClick={triggerQuickLoader}>
               Pomoc
@@ -189,14 +180,6 @@ const Navbar: React.FC = () => {
               O nas
             </StyledLink>
 
-            <StyledLink
-              as={HashLink}
-              to="/#how-it-works"
-              smooth
-              onClick={triggerQuickLoader}
-            >
-              Jak to działa?
-            </StyledLink>
 
             <StyledLink to="/pomoc" onClick={triggerQuickLoader}>
               Pomoc

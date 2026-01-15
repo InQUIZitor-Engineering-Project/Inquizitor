@@ -3,7 +3,7 @@ import styled from "styled-components";
 import { Stack, Heading, Text, Box } from "../../../design-system/primitives";
 import CounterControl from "./CounterControl";
 import SummaryPills from "./SummaryPills";
-import { PALETTE } from "../constants";
+import { MAX_QUESTIONS_TOTAL, PALETTE } from "../constants";
 
 export interface StructureCardProps {
   tfCount: number;
@@ -56,6 +56,11 @@ const StructureCard: React.FC<StructureCardProps> = ({
     { label: "Razem", value: totalAll, bg: PALETTE.total.bg, fg: PALETTE.total.fg },
   ];
 
+  const maxTf = Math.max(0, MAX_QUESTIONS_TOTAL - (singleCount + multiCount + openCount));
+  const maxSingle = Math.max(0, MAX_QUESTIONS_TOTAL - (tfCount + multiCount + openCount));
+  const maxMulti = Math.max(0, MAX_QUESTIONS_TOTAL - (tfCount + singleCount + openCount));
+  const maxOpen = Math.max(0, MAX_QUESTIONS_TOTAL - (tfCount + singleCount + multiCount));
+
   return (
     <Box $p="lg" $radius="xl" $bg="#fff" $shadow="md">
       <Stack $gap="md">
@@ -76,24 +81,32 @@ const StructureCard: React.FC<StructureCardProps> = ({
             value={tfCount}
             onChange={(v) => onChangeTf(Math.max(0, v))}
             helpText="Typ zamknięty"
+            min={0}
+            max={maxTf}
           />
           <CounterControl
             label="Jednokrotnego wyboru"
             value={singleCount}
             onChange={(v) => onChangeSingle(Math.max(0, v))}
             helpText="Typ zamknięty"
+            min={0}
+            max={maxSingle}
           />
           <CounterControl
             label="Wielokrotnego wyboru"
             value={multiCount}
             onChange={(v) => onChangeMulti(Math.max(0, v))}
             helpText="Typ zamknięty"
+            min={0}
+            max={maxMulti}
           />
           <CounterControl
             label="Otwarte"
             value={openCount}
             onChange={(v) => onChangeOpen(Math.max(0, v))}
             helpText="Wpisywana odpowiedź"
+            min={0}
+            max={maxOpen}
           />
         </CountersGrid>
 

@@ -73,7 +73,9 @@ def process_material_task(
             properties={
                 "material_id": material.id,
                 "job_id": job_id,
-                "duration_sec": duration_sec,
+                "duration_total_sec": duration_sec,
+                "duration_ocr_sec": material.duration_ocr_sec,
+                "cache_hit": material.cache_hit,
                 "status": "success",
                 "mime_type": material.mime_type,
                 "size_mb": (

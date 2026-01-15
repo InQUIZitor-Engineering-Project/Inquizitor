@@ -9,7 +9,9 @@ from app.domain.repositories import (
     JobRepository,
     MaterialRepository,
     NotificationRepository,
+    OcrCacheRepository,
     PasswordResetTokenRepository,
+    PdfExportCacheRepository,
     PendingVerificationRepository,
     RefreshTokenRepository,
     SupportRepository,
@@ -58,6 +60,14 @@ class UnitOfWork(Protocol):
 
     @property
     def refresh_tokens(self) -> RefreshTokenRepository:
+        ...
+
+    @property
+    def pdf_exports(self) -> PdfExportCacheRepository:
+        ...
+
+    @property
+    def ocr_cache(self) -> OcrCacheRepository:
         ...
 
     def __enter__(self) -> UnitOfWork:

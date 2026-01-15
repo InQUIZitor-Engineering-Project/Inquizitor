@@ -1,7 +1,7 @@
 import React, { type ReactNode } from "react";
 import { useTheme } from "styled-components";
 import { Box, Flex, Heading, Stack, Text } from "../../design-system/primitives";
-import onasImg from "../../assets/onas_nobackground2.png";
+import onasImg from "../../assets/onas_new2.webp";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { PageContainer, PageSection } from "../../design-system/patterns";
 import styled from "styled-components";

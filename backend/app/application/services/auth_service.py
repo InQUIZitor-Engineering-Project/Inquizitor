@@ -17,6 +17,7 @@ from app.core.security import (
     get_password_hash,
     verify_password,
 )
+from app.db.models import SystemNotification
 from app.domain.models import (
     PasswordResetToken,
     PendingVerification,
@@ -244,6 +245,25 @@ class AuthService:
             )
             created = uow.users.add(user)
             uow.pending_verifications.delete_by_email(pending.email)
+
+            raw_name = (created.first_name or "").strip()
+            display_name = raw_name[:1].upper() + raw_name[1:] if raw_name else ""
+            greeting = f"Cześć {display_name}!" if display_name else "Cześć!"
+            welcome_message = (
+                f"{greeting} Super, że jesteś z nami! 🚀 Rozgość się i sprawdź, "
+                "co dla Ciebie przygotowaliśmy. Jeśli będziesz potrzebować "
+                "wsparcia, zakładka Pomoc jest do Twojej dyspozycji. Twoja "
+                "opinia o Inquizitorze jest dla nas bezcenna - daj znać, co "
+                "myślisz!"
+            )
+            uow.notifications.add_notification(
+                SystemNotification(
+                    title="Witamy w Inquizitorze!",
+                    message=welcome_message,
+                    type="info",
+                    recipient_id=created.id,
+                )
+            )
             
             # Track sign up
             analytics.capture(

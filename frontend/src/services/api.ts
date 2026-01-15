@@ -58,6 +58,9 @@ async function handleUnauthorized(endpoint: string, response: Response, options:
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
     localStorage.removeItem("user");
+    if (endpoint.includes("/auth/login")) {
+      throw new Error("Niepoprawny email lub hasło.");
+    }
     throw new Error("Błąd autoryzacji (401).");
   }
 

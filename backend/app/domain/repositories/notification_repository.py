@@ -41,3 +41,8 @@ class NotificationRepository(ABC):
         """Mark a notification as read by adding a record."""
         ...
 
+    @abstractmethod
+    def add_notification(self, notification: SystemNotification) -> SystemNotification:
+        """Add a new system notification."""
+        ...
+
