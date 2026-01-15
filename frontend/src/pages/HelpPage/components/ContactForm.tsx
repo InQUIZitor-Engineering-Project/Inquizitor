@@ -1,6 +1,5 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import styled from "styled-components";
-import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 import {
   Stack,
   Heading,
@@ -39,10 +38,6 @@ const ContactForm: React.FC = () => {
   const [success, setSuccess] = useState(false);
   const [submittedEmail, setSubmittedEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
-  const [turnstileVerifying, setTurnstileVerifying] = useState(false);
-  const [pendingTurnstileSubmit, setPendingTurnstileSubmit] = useState(false);
-  const turnstileRef = useRef<TurnstileInstance | null>(null);
 
   const categoryOptions: SelectOption[] = [
     { value: "general", label: "Pytanie ogólne", icon: "💬" },
@@ -70,13 +65,12 @@ const ContactForm: React.FC = () => {
     setFormData((prev) => ({ ...prev, [id]: value }));
   };
 
-  const submitContactForm = async (token?: string | null) => {
+  const submitContactForm = async () => {
     setLoading(true);
     setError(null);
     try {
       await sendContactForm({
         ...formData,
-        turnstile_token: token,
       });
       setSubmittedEmail(formData.email);
       setSuccess(true);
@@ -92,27 +86,13 @@ const ContactForm: React.FC = () => {
       setError(err.message || "Wystąpił nieoczekiwany błąd.");
     } finally {
       setLoading(false);
-      if (import.meta.env.VITE_TURNSTILE_SITE_KEY) {
-        setTurnstileToken(null);
-        setTurnstileVerifying(false);
-        setPendingTurnstileSubmit(false);
-        turnstileRef.current?.reset();
-      }
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-
-    if (import.meta.env.VITE_TURNSTILE_SITE_KEY && !turnstileToken) {
-      setTurnstileVerifying(true);
-      setPendingTurnstileSubmit(true);
-      turnstileRef.current?.execute();
-      return;
-    }
-
-    await submitContactForm(turnstileToken);
+    await submitContactForm();
   };
 
   if (success) {
@@ -218,37 +198,12 @@ const ContactForm: React.FC = () => {
           </AlertBar>
         )}
 
-        <Button type="submit" $fullWidth $size="lg" disabled={loading || turnstileVerifying}>
+        <Button type="submit" $fullWidth $size="lg" disabled={loading}>
           {loading ? "Wysyłanie..." : "Wyślij wiadomość →"}
         </Button>
-
-        <Turnstile
-          ref={turnstileRef}
-          siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
-          onSuccess={(token) => {
-            setTurnstileToken(token);
-            setTurnstileVerifying(false);
-            if (pendingTurnstileSubmit) {
-              setPendingTurnstileSubmit(false);
-              submitContactForm(token);
-            }
-          }}
-          onExpire={() => {
-            setTurnstileToken(null);
-            setTurnstileVerifying(false);
-          }}
-          onError={() => {
-            setTurnstileToken(null);
-            setTurnstileVerifying(false);
-            setPendingTurnstileSubmit(false);
-            setError("Weryfikacja Turnstile nie powiodła się. Spróbuj ponownie.");
-          }}
-          options={{ size: "invisible", execution: "execute" }}
-        />
       </Stack>
     </ContactCard>
   );
 };
 
 export default ContactForm;
-
