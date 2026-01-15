@@ -11,8 +11,10 @@ from app.domain.repositories import (
     JobRepository,
     MaterialRepository,
     NotificationRepository,
+    OcrCacheRepository,
     PasswordResetTokenRepository,
     PendingVerificationRepository,
+    PdfExportCacheRepository,
     RefreshTokenRepository,
     SupportRepository,
     TestRepository,
@@ -23,8 +25,10 @@ from app.infrastructure.persistence.sqlmodel import (
     SqlModelJobRepository,
     SqlModelMaterialRepository,
     SqlModelNotificationRepository,
+    SqlModelOcrCacheRepository,
     SqlModelPasswordResetTokenRepository,
     SqlModelPendingVerificationRepository,
+    SqlModelPdfExportCacheRepository,
     SqlModelRefreshTokenRepository,
     SqlModelSupportRepository,
     SqlModelTestRepository,
@@ -46,6 +50,8 @@ class SqlAlchemyUnitOfWork(AbstractContextManager["SqlAlchemyUnitOfWork"]):
         self._password_reset_tokens: PasswordResetTokenRepository | None = None
         self._support_tickets: SupportRepository | None = None
         self._refresh_tokens: RefreshTokenRepository | None = None
+        self._pdf_exports: PdfExportCacheRepository | None = None
+        self._ocr_cache: OcrCacheRepository | None = None
 
     @property
     def users(self) -> UserRepository:
@@ -107,6 +113,18 @@ class SqlAlchemyUnitOfWork(AbstractContextManager["SqlAlchemyUnitOfWork"]):
             raise RuntimeError("UnitOfWork not initialized")
         return self._refresh_tokens
 
+    @property
+    def pdf_exports(self) -> PdfExportCacheRepository:
+        if self._pdf_exports is None:
+            raise RuntimeError("UnitOfWork not initialized")
+        return self._pdf_exports
+
+    @property
+    def ocr_cache(self) -> OcrCacheRepository:
+        if self._ocr_cache is None:
+            raise RuntimeError("UnitOfWork not initialized")
+        return self._ocr_cache
+
     def __enter__(self) -> SqlAlchemyUnitOfWork:
         self.session = self._session_factory()
         self.session.begin()
@@ -124,6 +142,8 @@ class SqlAlchemyUnitOfWork(AbstractContextManager["SqlAlchemyUnitOfWork"]):
         )
         self._support_tickets = SqlModelSupportRepository(self.session)
         self._refresh_tokens = SqlModelRefreshTokenRepository(self.session)
+        self._pdf_exports = SqlModelPdfExportCacheRepository(self.session)
+        self._ocr_cache = SqlModelOcrCacheRepository(self.session)
         return self
 
     def __exit__(

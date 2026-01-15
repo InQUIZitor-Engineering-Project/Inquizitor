@@ -2,6 +2,8 @@ from .file_repository import FileRepository
 from .job_repository import JobRepository
 from .material_repository import MaterialRepository
 from .notification_repository import NotificationRepository
+from .ocr_cache_repository import OcrCacheRepository
+from .pdf_export_cache_repository import PdfExportCacheRepository
 from .password_reset_token_repository import PasswordResetTokenRepository
 from .pending_verification_repository import PendingVerificationRepository
 from .refresh_token_repository import RefreshTokenRepository
@@ -14,6 +16,8 @@ __all__ = [
     "JobRepository",
     "MaterialRepository",
     "NotificationRepository",
+    "OcrCacheRepository",
+    "PdfExportCacheRepository",
     "PasswordResetTokenRepository",
     "PendingVerificationRepository",
     "RefreshTokenRepository",

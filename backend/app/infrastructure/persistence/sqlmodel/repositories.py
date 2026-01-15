@@ -12,8 +12,10 @@ from app.domain.models import (
     File,
     Job,
     Material,
+    OcrCache,
     PasswordResetToken,
     PendingVerification,
+    PdfExportCache,
     Question,
     RefreshToken,
     Test,
@@ -25,6 +27,8 @@ from app.domain.repositories import (
     MaterialRepository,
     PasswordResetTokenRepository,
     PendingVerificationRepository,
+    OcrCacheRepository,
+    PdfExportCacheRepository,
     RefreshTokenRepository,
     TestRepository,
     UserRepository,
@@ -248,6 +252,56 @@ class SqlModelJobRepository(JobRepository):
         )
         rows = cast(Any, self._session).exec(stmt).all()
         return [mappers.job_to_domain(row) for row in rows]
+
+
+class SqlModelPdfExportCacheRepository(PdfExportCacheRepository):
+    def __init__(self, session: Session):
+        self._session = session
+
+    def add(self, entry: PdfExportCache) -> PdfExportCache:
+        row = mappers.pdf_export_cache_to_row(entry)
+        self._session.add(row)
+        self._session.commit()
+        self._session.refresh(row)
+        return mappers.pdf_export_cache_to_domain(row)
+
+    def get_by_key(self, cache_key: str) -> PdfExportCache | None:
+        stmt = select(db_models.PdfExportCache).where(
+            db_models.PdfExportCache.cache_key == cache_key
+        )
+        row = cast(Any, self._session).exec(stmt).first()
+        return mappers.pdf_export_cache_to_domain(row) if row else None
+
+    def remove(self, entry_id: int) -> None:
+        row = self._session.get(db_models.PdfExportCache, entry_id)
+        if row:
+            self._session.delete(row)
+            self._session.commit()
+
+
+class SqlModelOcrCacheRepository(OcrCacheRepository):
+    def __init__(self, session: Session):
+        self._session = session
+
+    def add(self, entry: OcrCache) -> OcrCache:
+        row = mappers.ocr_cache_to_row(entry)
+        self._session.add(row)
+        self._session.commit()
+        self._session.refresh(row)
+        return mappers.ocr_cache_to_domain(row)
+
+    def get_by_key(self, cache_key: str) -> OcrCache | None:
+        stmt = select(db_models.OcrCache).where(
+            db_models.OcrCache.cache_key == cache_key
+        )
+        row = cast(Any, self._session).exec(stmt).first()
+        return mappers.ocr_cache_to_domain(row) if row else None
+
+    def remove(self, entry_id: int) -> None:
+        row = self._session.get(db_models.OcrCache, entry_id)
+        if row:
+            self._session.delete(row)
+            self._session.commit()
 
 
 class SqlModelPendingVerificationRepository(PendingVerificationRepository):
