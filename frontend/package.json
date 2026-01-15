@@ -10,15 +10,14 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@marsidev/react-turnstile": "^1.4.1",
     "classnames": "^2.5.1",
     "katex": "^0.16.11",
-    "ldrs": "^1.1.9",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.6.2",
     "react-router-hash-link": "^2.4.3",
     "styled-components": "^6.1.18",
+    "ldrs": "^1.1.9",
     "posthog-js": "^1.154.1"
   },
   "devDependencies": {
