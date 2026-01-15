@@ -1,7 +1,6 @@
-import React, { useEffect, useRef, useState, type FormEvent } from "react";
+import React, { useEffect, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import styled, { useTheme } from "styled-components";
-import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 import { Stack, Heading, Text, Input, Button, Checkbox, Flex } from "../../design-system/primitives";
 import AlertBar from "../../design-system/patterns/AlertBar";
 import { registerUser } from "../../services/auth";
@@ -33,10 +32,6 @@ const RegisterPage: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [loading, setLoading] = useState(false);
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
-  const [turnstileVerifying, setTurnstileVerifying] = useState(false);
-  const [pendingTurnstileSubmit, setPendingTurnstileSubmit] = useState(false);
-  const turnstileRef = useRef<TurnstileInstance | null>(null);
 
   const [touched, setTouched] = useState({
     email: false,
@@ -63,7 +58,7 @@ const RegisterPage: React.FC = () => {
     isPasswordComplex &&
     termsAccepted;
 
-  const submitRegistration = async (token?: string | null) => {
+  const submitRegistration = async () => {
     setLoading(true);
     try {
       setSuccessMessage("");
@@ -72,7 +67,6 @@ const RegisterPage: React.FC = () => {
         last_name: lastName,
         email,
         password,
-        turnstile_token: token,
       });
       setSuccessMessage("Sprawdź swoją skrzynkę e-mail, wysłaliśmy link aktywacyjny.");
     } catch (err: any) {
@@ -80,12 +74,6 @@ const RegisterPage: React.FC = () => {
       setErrorMessage(msg);
     } finally {
       setLoading(false);
-      if (import.meta.env.VITE_TURNSTILE_SITE_KEY) {
-        setTurnstileToken(null);
-        setTurnstileVerifying(false);
-        setPendingTurnstileSubmit(false);
-        turnstileRef.current?.reset();
-      }
     }
   };
 
@@ -95,14 +83,7 @@ const RegisterPage: React.FC = () => {
 
     if (!isFormValid) return;
 
-    if (import.meta.env.VITE_TURNSTILE_SITE_KEY && !turnstileToken) {
-      setTurnstileVerifying(true);
-      setPendingTurnstileSubmit(true);
-      turnstileRef.current?.execute();
-      return;
-    }
-
-    await submitRegistration(turnstileToken);
+    await submitRegistration();
   };
 
   useDocumentTitle("Rejestracja | Inquizitor");
@@ -302,7 +283,7 @@ const RegisterPage: React.FC = () => {
                     type="submit"
                     $fullWidth
                     $size="lg"
-                    disabled={loading || turnstileVerifying || !isFormValid}
+                    disabled={loading || !isFormValid}
                   >
                     {loading ? "Tworzę konto..." : "Stwórz konto →"}
                   </Button>
@@ -311,30 +292,6 @@ const RegisterPage: React.FC = () => {
             )}
           </Stack>
         }
-      />
-
-      <Turnstile
-        ref={turnstileRef}
-        siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
-        onSuccess={(token) => {
-          setTurnstileToken(token);
-          setTurnstileVerifying(false);
-          if (pendingTurnstileSubmit) {
-            setPendingTurnstileSubmit(false);
-            submitRegistration(token);
-          }
-        }}
-        onExpire={() => {
-          setTurnstileToken(null);
-          setTurnstileVerifying(false);
-        }}
-        onError={() => {
-          setTurnstileToken(null);
-          setTurnstileVerifying(false);
-          setPendingTurnstileSubmit(false);
-          setErrorMessage("Weryfikacja Turnstile nie powiodła się. Spróbuj ponownie.");
-        }}
-        options={{ size: "invisible", execution: "execute" }}
       />
 
       <Modal

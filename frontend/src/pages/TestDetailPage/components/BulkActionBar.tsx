@@ -2,13 +2,12 @@ import React from "react";
 import { createPortal } from "react-dom";
 import styled from "styled-components";
 import { Box, Flex, Button, Text, Stack, CloseButton } from "../../../design-system/primitives";
-import { BottomSheet, SelectableItem, PageContainer } from "../../../design-system/patterns";
+import { BottomSheet, SelectableItem } from "../../../design-system/patterns";
 
 const ActionBarPortalWrapper = styled.div`
-  /* Fixed to visual viewport so it stays visible under mobile browser chrome */
-  position: fixed;
-  bottom: 12px; /* fallback when env() not supported */
-  bottom: calc(12px + env(safe-area-inset-bottom));
+  /* Position absolute relative to main-content-area so it centers within content, not viewport */
+  position: absolute;
+  bottom: 12px;
   left: 0;
   right: 0;
   z-index: 1000;
@@ -17,8 +16,14 @@ const ActionBarPortalWrapper = styled.div`
   justify-content: center;
 
   @media (min-width: 600px) {
-    bottom: 24px; /* fallback when env() not supported */
-    bottom: calc(24px + env(safe-area-inset-bottom));
+    bottom: 24px;
+  }
+
+  @media (min-width: 1025px) {
+    /* Offset for the scrollbar width to match the centered question cards.
+       The scrollable area has a scrollbar, but this portal wrapper doesn't.
+       Adding padding-right compensates for the scrollbar space. */
+    padding-right: 15px;
   }
 `;
 
@@ -27,6 +32,7 @@ const FloatingContainer = styled(Box)`
   pointer-events: auto;
   width: 100%;
   max-width: 960px;
+  margin: 0 auto;
   background: white;
   border-radius: 16px;
   box-shadow: 0 12px 48px rgba(0, 0, 0, 0.2);
@@ -35,7 +41,6 @@ const FloatingContainer = styled(Box)`
   animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 
   @media (min-width: 600px) {
-    width: 70%;
     padding: 16px 24px;
   }
 
@@ -148,10 +153,9 @@ const BulkActionBar: React.FC<BulkActionBarProps> = ({
   const content = (
     <>
       <ActionBarPortalWrapper>
-        <PageContainer style={{ display: 'flex', justifyContent: 'center' }}>
-          <FloatingContainer>
-            <CloseButton onClick={onClear} aria-label="Anuluj zaznaczenie" $hideOnMobile />
-            <Stack $gap="md">
+        <FloatingContainer style={{ margin: '0 16px' }}>
+          <CloseButton onClick={onClear} aria-label="Anuluj zaznaczenie" $hideOnMobile />
+          <Stack $gap="md">
               <HeaderWrapper>
                 <Flex $align="center" $gap="xs">
                   <Text $variant="body3" $weight="medium" as="div">
@@ -194,9 +198,8 @@ const BulkActionBar: React.FC<BulkActionBarProps> = ({
                   Anuluj zaznaczenie
                 </Button>
               </DesktopActions>
-            </Stack>
-          </FloatingContainer>
-        </PageContainer>
+          </Stack>
+        </FloatingContainer>
       </ActionBarPortalWrapper>
 
       <BottomSheet
