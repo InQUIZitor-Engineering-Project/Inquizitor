@@ -5,7 +5,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { getMyTests } from "../../services/test";
 import { Box, Flex, Stack, Heading, Text, Button } from "../../design-system/primitives";
 import { useLoader } from "../Loader/GlobalLoader";
-import heroImg from "../../assets/main1.png";
+import heroImg from "../../assets/main1.webp";
 import { PageContainer } from "../../design-system/patterns";
 import { NAVBAR_HEIGHT } from "../Navbar/Navbar.styles";
 
