@@ -1,7 +1,7 @@
-import React, { useEffect, useState, type FormEvent } from "react";
+import React, { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import styled, { useTheme } from "styled-components";
-import { Turnstile } from "@marsidev/react-turnstile";
+import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 import { Stack, Heading, Text, Input, Button, Checkbox } from "../../design-system/primitives";
 import AlertBar from "../../design-system/patterns/AlertBar";
 import { useAuth } from "../../hooks/useAuth";
@@ -30,6 +30,9 @@ const LoginPage: React.FC = () => {
   const [infoMessage, setInfoMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileVerifying, setTurnstileVerifying] = useState(false);
+  const [pendingTurnstileSubmit, setPendingTurnstileSubmit] = useState(false);
+  const turnstileRef = useRef<TurnstileInstance | null>(null);
 
   useDocumentTitle("Zaloguj się | Inquizitor");
 
@@ -47,24 +50,36 @@ const LoginPage: React.FC = () => {
     }
   }, [location.state, searchParams]);
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    setErrorMessage("");
-
-    if (!turnstileToken && import.meta.env.VITE_TURNSTILE_SITE_KEY) {
-      setErrorMessage("Proszę poczekać na weryfikację Turnstile.");
-      return;
-    }
-
+  const submitLogin = async (token?: string | null) => {
     setLoading(true);
     try {
-      await login(email, password, turnstileToken);
+      await login(email, password, token);
       navigate("/dashboard");
     } catch (err: any) {
       setErrorMessage(err?.message || "Nie udało się zalogować.");
     } finally {
       setLoading(false);
+      if (import.meta.env.VITE_TURNSTILE_SITE_KEY) {
+        setTurnstileToken(null);
+        setTurnstileVerifying(false);
+        setPendingTurnstileSubmit(false);
+        turnstileRef.current?.reset();
+      }
     }
+  };
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setErrorMessage("");
+
+    if (import.meta.env.VITE_TURNSTILE_SITE_KEY && !turnstileToken) {
+      setTurnstileVerifying(true);
+      setPendingTurnstileSubmit(true);
+      turnstileRef.current?.execute();
+      return;
+    }
+
+    await submitLogin(turnstileToken);
   };
 
   return (
@@ -146,7 +161,7 @@ const LoginPage: React.FC = () => {
                   </Text>
                 </label>
 
-                <Button type="submit" $fullWidth $size="lg" disabled={loading}>
+                <Button type="submit" $fullWidth $size="lg" disabled={loading || turnstileVerifying}>
                   {loading ? "Loguję…" : "Zaloguj się →"}
                 </Button>
               </Stack>
@@ -156,9 +171,27 @@ const LoginPage: React.FC = () => {
       }
     />
     <Turnstile
+      ref={turnstileRef}
       siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
-      onSuccess={(token) => setTurnstileToken(token)}
-      options={{ size: 'invisible' }}
+      onSuccess={(token) => {
+        setTurnstileToken(token);
+        setTurnstileVerifying(false);
+        if (pendingTurnstileSubmit) {
+          setPendingTurnstileSubmit(false);
+          submitLogin(token);
+        }
+      }}
+      onExpire={() => {
+        setTurnstileToken(null);
+        setTurnstileVerifying(false);
+      }}
+      onError={() => {
+        setTurnstileToken(null);
+        setTurnstileVerifying(false);
+        setPendingTurnstileSubmit(false);
+        setErrorMessage("Weryfikacja Turnstile nie powiodła się. Spróbuj ponownie.");
+      }}
+      options={{ size: "invisible", execution: "execute" }}
     />
     </>
   );
