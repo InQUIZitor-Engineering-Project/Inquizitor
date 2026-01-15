@@ -1,4 +1,3 @@
-import logging
 from datetime import datetime, timedelta
 from typing import Annotated, Any, cast
 
@@ -11,8 +10,6 @@ from sqlmodel import Session, select
 from app.core.config import get_settings
 from app.db.models import User
 from app.db.session import get_session
-
-logger = logging.getLogger(__name__)
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -78,7 +75,6 @@ def get_current_user(
 
     return cast(User, user)
 
-
 def get_optional_current_user(
     token: Annotated[str | None, Depends(oauth2_scheme_optional)],
     db: Annotated[Session, Depends(get_session)],
@@ -95,4 +91,3 @@ def get_optional_current_user(
         return cast(User, user)
     except Exception:
         return None
-

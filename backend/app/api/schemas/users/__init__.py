@@ -13,7 +13,6 @@ class UserCreate(UserBase):
     password: str
     first_name: str | None = None
     last_name: str | None = None
-    turnstile_token: str | None = None
 
     @field_validator("password")
     @classmethod

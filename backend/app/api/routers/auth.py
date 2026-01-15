@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel
 
-from app.api.dependencies import get_auth_service, get_turnstile_service
+from app.api.dependencies import get_auth_service
 from app.api.schemas.auth import (
     PasswordResetConfirm,
     PasswordResetRequest,
@@ -13,7 +13,7 @@ from app.api.schemas.auth import (
     VerificationResponse,
 )
 from app.api.schemas.users import UserCreate
-from app.application.services import AuthService, TurnstileService
+from app.application.services import AuthService
 from app.application.services.auth_service import normalize_frontend_base_url
 from app.core.limiter import limiter
 
@@ -30,18 +30,11 @@ class RefreshTokenRequest(BaseModel):
     status_code=status.HTTP_202_ACCEPTED,
 )
 @limiter.limit("10/minute")
-async def register(
+def register(
     request: Request,
     user_in: UserCreate,
     auth_service: Annotated[AuthService, Depends(get_auth_service)],
-    turnstile_service: Annotated[TurnstileService, Depends(get_turnstile_service)],
 ) -> RegistrationRequested:
-    if not await turnstile_service.verify_token(user_in.turnstile_token):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Błąd weryfikacji Turnstile. Spróbuj ponownie.",
-        )
-
     try:
         auth_service.register_user(user_in)
         return RegistrationRequested()
@@ -54,22 +47,11 @@ async def register(
 
 @router.post("/login", response_model=Token)
 @limiter.limit("5/minute")
-async def login(
+def login(
     request: Request,
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     auth_service: Annotated[AuthService, Depends(get_auth_service)],
-    turnstile_service: Annotated[TurnstileService, Depends(get_turnstile_service)],
 ) -> Token:
-    form = await request.form()
-    token_value = form.get("cf-turnstile-response") or form.get("turnstile_token")
-    turnstile_token = str(token_value) if token_value else None
-
-    if not await turnstile_service.verify_token(turnstile_token):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Błąd weryfikacji Turnstile. Spróbuj ponownie.",
-        )
-
     try:
         user = auth_service.authenticate_user(
             email=form_data.username,
