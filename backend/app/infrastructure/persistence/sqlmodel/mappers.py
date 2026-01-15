@@ -118,16 +118,20 @@ def file_to_domain(row: db_models.File) -> File:
         filename=row.filename,
         stored_path=Path(row.filepath),
         uploaded_at=row.uploaded_at,
+        content_hash=row.content_hash,
     )
 
 
 def file_to_row(file: File) -> db_models.File:
+    if file.content_hash is None:
+        raise ValueError("content_hash is required when creating a File")
     return db_models.File(
         id=file.id,
         owner_id=file.owner_id,
         filename=file.filename,
         filepath=str(file.stored_path),
         uploaded_at=file.uploaded_at or datetime.utcnow(),
+        content_hash=file.content_hash,
     )
 
 

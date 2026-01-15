@@ -6,6 +6,7 @@ from fastapi import (
     Depends,
     File,
     HTTPException,
+    Query,
     Request,
     Response,
     UploadFile,
@@ -15,6 +16,7 @@ from fastapi.responses import FileResponse, RedirectResponse
 
 from app.api.dependencies import get_export_storage, get_file_service
 from app.api.schemas.tests import FileUploadResponse
+from app.api.schemas.files import FileExistsResponse
 from app.application.services import FileService
 from app.core.limiter import limiter
 from app.core.security import get_current_user
@@ -25,6 +27,28 @@ from app.infrastructure.storage import R2FileStorage
 router = APIRouter()
 
 _ALLOWED_EXTENSIONS = [".pdf", ".png", ".jpg", ".jpeg"]
+
+
+@router.get("/lookup-file", response_model=FileExistsResponse)
+def lookup_file(
+    content_hash: Annotated[str, Query(..., description="SHA256 hash of the file content")],
+    current_user: Annotated[User, Depends(get_current_user)],
+    file_service: Annotated[FileService, Depends(get_file_service)],
+) -> FileExistsResponse:
+    """Look up a file by its content hash for the current user."""
+    if current_user.id is None:
+        raise HTTPException(status_code=401, detail="User ID is missing")
+
+    if len(content_hash) != 64:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid content hash format (expected 64 character SHA256 hash)",
+        )
+
+    return file_service.lookup_file_by_hash(
+        owner_id=current_user.id,
+        content_hash=content_hash,
+    )
 
 
 @router.post("/upload-file", response_model=FileUploadResponse)

@@ -14,6 +14,7 @@ class File:
     filename: str
     stored_path: Path
     uploaded_at: datetime | None = None
+    content_hash: str | None = None
 
     def __post_init__(self) -> None:
         self.filename = self.filename.strip()
