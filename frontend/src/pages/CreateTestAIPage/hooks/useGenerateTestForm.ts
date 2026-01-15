@@ -5,6 +5,7 @@ import { uploadMaterial, type MaterialUploadResponse, type MaterialUploadEnqueue
 import { useLoader } from "../../../components/Loader/GlobalLoader";
 import useDocumentTitle from "../../../hooks/useDocumentTitle";
 import { useJobPolling } from "../../../hooks/useJobPolling";
+import { MAX_QUESTIONS_TOTAL } from "../constants";
 
 type LayoutCtx = { refreshSidebarTests: () => Promise<void> };
 
@@ -164,6 +165,10 @@ const useGenerateTestForm = (): UseGenerateTestFormResult => {
   };
 
   const clampNonNegative = (v: number) => Math.max(0, v);
+  const clampToTotalLimit = (v: number) => Math.min(MAX_QUESTIONS_TOTAL, clampNonNegative(v));
+
+  const clampByRemaining = (v: number, remaining: number) =>
+    Math.min(clampToTotalLimit(v), Math.max(0, remaining));
 
   const safeSetEasy = (v: number) => {
     const sanitized = clampNonNegative(v);
@@ -203,6 +208,12 @@ const useGenerateTestForm = (): UseGenerateTestFormResult => {
 
     if (totalAll <= 0) {
       setGenError("Podaj łączną liczbę pytań (co najmniej jedno).");
+      setGenLoading(false);
+      return;
+    }
+
+    if (totalAll > MAX_QUESTIONS_TOTAL) {
+      setGenError(`Maksymalna liczba pytań to ${MAX_QUESTIONS_TOTAL}.`);
       setGenLoading(false);
       return;
     }
@@ -375,10 +386,14 @@ const useGenerateTestForm = (): UseGenerateTestFormResult => {
       setSourceContent,
       setInstructions,
       setIsPersonalizationOpen,
-      setTfCount: (v: number) => setTfCount(clampNonNegative(v)),
-      setSingleCount: (v: number) => setSingleCount(clampNonNegative(v)),
-      setMultiCount: (v: number) => setMultiCount(clampNonNegative(v)),
-      setOpenCount: (v: number) => setOpenCount(clampNonNegative(v)),
+      setTfCount: (v: number) =>
+        setTfCount(clampByRemaining(v, MAX_QUESTIONS_TOTAL - (singleCount + multiCount + openCount))),
+      setSingleCount: (v: number) =>
+        setSingleCount(clampByRemaining(v, MAX_QUESTIONS_TOTAL - (tfCount + multiCount + openCount))),
+      setMultiCount: (v: number) =>
+        setMultiCount(clampByRemaining(v, MAX_QUESTIONS_TOTAL - (tfCount + singleCount + openCount))),
+      setOpenCount: (v: number) =>
+        setOpenCount(clampByRemaining(v, MAX_QUESTIONS_TOTAL - (tfCount + singleCount + multiCount))),
       setEasyCount: safeSetEasy,
       setMediumCount: safeSetMedium,
       setHardCount: safeSetHard,

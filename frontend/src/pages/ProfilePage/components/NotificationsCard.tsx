@@ -81,7 +81,7 @@ const NotificationsCard: React.FC = () => {
   return (
     <Box $bg="#fff" $p="lg" $radius="xl" $shadow="sm" style={{ height: "100%" }}>
       <Stack $gap="md">
-        <Heading $level="h4">Ogłoszenia i powiadomienia</Heading>
+        <Heading $level="h3">Powiadomienia</Heading>
         <Text $variant="body2" $tone="muted">
           Kliknij na powiadomienie, aby oznaczyć je jako przeczytane.
         </Text>

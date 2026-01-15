@@ -20,3 +20,5 @@ export const PALETTE = {
 };
 
 export type Palette = typeof PALETTE;
+
+export const MAX_QUESTIONS_TOTAL = 30;

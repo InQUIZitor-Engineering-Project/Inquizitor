@@ -81,21 +81,6 @@ const CreateTestSelectionPage: React.FC = () => {
 
               <Flex $gap="lg" $justify="center" $wrap="wrap" style={{ width: "100%", maxWidth: 900 }}>
                 <SelectionCard 
-                  $selected={selectedType === 'manual'} 
-                  onClick={() => setSelectedType('manual')}
-                >
-                  <IconWrapper>
-                    <img src={quizIcon} alt="Manual" />
-                  </IconWrapper>
-                  <Stack $gap="sm">
-                    <Heading as="h3" $level="h4">Od zera</Heading>
-                    <Text $variant="body3" $tone="muted">
-                      Stwórz test ręcznie, dodając każde pytanie po kolei. Masz pełną kontrolę nad treścią i strukturą.
-                    </Text>
-                  </Stack>
-                </SelectionCard>
-
-                <SelectionCard 
                   $selected={selectedType === 'ai'} 
                   onClick={() => setSelectedType('ai')}
                 >
@@ -106,6 +91,21 @@ const CreateTestSelectionPage: React.FC = () => {
                     <Heading as="h3" $level="h4">Przez AI</Heading>
                     <Text $variant="body3" $tone="muted">
                       Wgraj materiały (PDF, obraz, tekst), a nasza sztuczna inteligencja przygotuje propozycje pytań za Ciebie.
+                    </Text>
+                  </Stack>
+                </SelectionCard>
+
+                <SelectionCard 
+                  $selected={selectedType === 'manual'} 
+                  onClick={() => setSelectedType('manual')}
+                >
+                  <IconWrapper>
+                    <img src={quizIcon} alt="Manual" />
+                  </IconWrapper>
+                  <Stack $gap="sm">
+                    <Heading as="h3" $level="h4">Od zera</Heading>
+                    <Text $variant="body3" $tone="muted">
+                      Stwórz test ręcznie, dodając każde pytanie po kolei. Masz pełną kontrolę nad treścią i strukturą.
                     </Text>
                   </Stack>
                 </SelectionCard>

@@ -8,6 +8,9 @@ export interface CounterControlProps {
   onChange: (next: number) => void;
   disabled?: boolean;
   helpText?: string;
+  min?: number;
+  max?: number;
+  step?: number;
 }
 
 const CounterShell = styled.div`
@@ -58,34 +61,60 @@ const CounterInput = styled(Input)`
   }
 `;
 
-const CounterControl: React.FC<CounterControlProps> = ({ label, value, onChange, disabled, helpText }) => {
+const CounterControl: React.FC<CounterControlProps> = ({
+  label,
+  value,
+  onChange,
+  disabled,
+  helpText,
+  min = 0,
+  max = Number.POSITIVE_INFINITY,
+  step = 1,
+}) => {
 
   const [inputValue, setInputValue] = useState(value.toString());
 
+  const clamp = (next: number) => Math.min(max, Math.max(min, next));
+
   useEffect(() => {
-    if (Number(inputValue) !== value && inputValue !== "") {
-      setInputValue(value.toString());
-    } else if (Number(inputValue) !== value && value !== 0) {
+    if (inputValue === "") return;
+    if (Number(inputValue) !== value) {
       setInputValue(value.toString());
     }
   }, [value, inputValue]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value;
-    setInputValue(raw);
-
     if (raw === "") {
-      onChange(0);
+      setInputValue(raw);
+      return;
+    }
+
+    if (raw.trim().startsWith("-")) {
+      const clamped = clamp(min);
+      setInputValue(clamped.toString());
+      onChange(clamped);
       return;
     }
 
     const parsed = parseInt(raw, 10);
     if (!isNaN(parsed)) {
-      onChange(Math.max(0, parsed));
+      const clamped = clamp(parsed);
+      setInputValue(clamped.toString());
+      onChange(clamped);
+      return;
     }
+
+    setInputValue(raw);
   };
 
   const handleBlur = () => {
+    if (inputValue === "") {
+      const clampedMin = clamp(min);
+      setInputValue(clampedMin.toString());
+      onChange(clampedMin);
+      return;
+    }
     setInputValue(value.toString());
   };
   return (
@@ -100,14 +129,17 @@ const CounterControl: React.FC<CounterControlProps> = ({ label, value, onChange,
           $variant="ghost"
           $size="sm"
           type="button"
-          onClick={() => onChange(Math.max(0, value - 1))}
-          disabled={disabled}
+          onClick={() => onChange(clamp(value - step))}
+          disabled={disabled || value <= min}
         >
           −
         </CounterButton>
         <CounterInput
           type="number"
           value={inputValue} 
+          min={min}
+          max={Number.isFinite(max) ? max : undefined}
+          step={step}
           onChange={handleInputChange}
           onBlur={handleBlur}
           disabled={disabled}
@@ -116,8 +148,8 @@ const CounterControl: React.FC<CounterControlProps> = ({ label, value, onChange,
           $variant="ghost"
           $size="sm"
           type="button"
-          onClick={() => onChange(value + 1)}
-          disabled={disabled}
+          onClick={() => onChange(clamp(value + step))}
+          disabled={disabled || value >= max}
         >
           +
         </CounterButton>
