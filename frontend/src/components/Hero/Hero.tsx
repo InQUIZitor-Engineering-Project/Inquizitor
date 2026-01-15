@@ -5,7 +5,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { getMyTests } from "../../services/test";
 import { Box, Flex, Stack, Heading, Text, Button } from "../../design-system/primitives";
 import { useLoader } from "../Loader/GlobalLoader";
-import heroImg from "../../assets/landing_main.png";
+import heroImg from "../../assets/main1.png";
 import { PageContainer } from "../../design-system/patterns";
 import { NAVBAR_HEIGHT } from "../Navbar/Navbar.styles";
 
@@ -47,11 +47,13 @@ const HeroImage = styled(Flex)`
 
   ${({ theme }) => theme.media.down("md")} {
     order: -1;
+    margin-bottom: -40px;
   }
 
   ${({ theme }) => theme.media.up("md")} {
     order: 2;
     justify-self: end;
+    transform: scale(1.15) translateY(40px);
   }
 `;
 
@@ -95,7 +97,7 @@ const Hero: React.FC = () => {
               as="img"
               src={heroImg}
               alt="Hero Illustration"
-              style={{ width: "100%", maxWidth: 520, objectFit: "contain" }}
+              style={{ width: "100%", maxWidth: "100%", objectFit: "contain" }}
             />
           </HeroImage>
 
