@@ -38,8 +38,14 @@ from app.application.interfaces import (
 from app.db.models import Question as QuestionRow
 from app.db.models import Test as TestRow
 from app.domain.events import TestGenerated
+from app.domain.models import PdfExportCache
 from app.domain.models import Test as TestDomain
 from app.domain.models.enums import QuestionDifficulty
+from app.infrastructure.cache.cache_utils import (
+    PDF_TEMPLATE_VERSION,
+    hash_payload,
+    normalize_config,
+)
 from app.infrastructure.exporting import (
     compile_tex_to_pdf,
     render_custom_test_to_tex,
@@ -446,12 +452,41 @@ class TestService:
 
     def export_test_pdf(
         self, *, owner_id: int, test_id: int, show_answers: bool = False
-    ) -> tuple[bytes, str]:
+    ) -> tuple[bytes | None, str, str, str, str, str | None]:
         start_time = time.time()
         detail = self.get_test_detail(owner_id=owner_id, test_id=test_id)
+        cache_key, config_hash = self._build_standard_pdf_cache_key(
+            detail, show_answers
+        )
+        cached_path = self._get_cached_pdf_path(cache_key)
+        filename = self._build_export_filename(
+            detail.title, detail.test_id, suffix="pdf"
+        )
+        if cached_path:
+            duration_sec = time.time() - start_time
+            analytics.capture(
+                user_id=owner_id,
+                event="test_pdf_exported",
+                properties={
+                    "test_id": test_id,
+                    "is_custom": False,
+                    "show_answers": show_answers,
+                    "duration_sec": duration_sec,
+                    "question_count": len(detail.questions),
+                    "cache_hit": True,
+                },
+            )
+            return (
+                None,
+                filename,
+                cache_key,
+                config_hash,
+                PDF_TEMPLATE_VERSION,
+                cached_path,
+            )
         questions_payload = [
             {
-                "id": q.id,
+                "id": int(q.id) if q.id is not None else 0,
                 "text": q.text,
                 "is_closed": q.is_closed,
                 "difficulty": q.difficulty,
@@ -467,11 +502,8 @@ class TestService:
             brand_hex="4CAF4F",
             logo_path="/app/app/templates/logo.png",
         )
-        filename = self._build_export_filename(
-            detail.title, detail.test_id, suffix="pdf"
-        )
         pdf_bytes = self._compile_tex_to_pdf(tex)
-        
+
         duration_sec = time.time() - start_time
         analytics.capture(
             user_id=owner_id,
@@ -481,11 +513,19 @@ class TestService:
                 "is_custom": False,
                 "show_answers": show_answers,
                 "duration_sec": duration_sec,
-                "question_count": len(questions_payload)
-            }
+                "question_count": len(questions_payload),
+                "cache_hit": False,
+            },
         )
-        
-        return pdf_bytes, filename
+
+        return (
+            pdf_bytes,
+            filename,
+            cache_key,
+            config_hash,
+            PDF_TEMPLATE_VERSION,
+            None,
+        )
 
     def export_test_xml(self, *, owner_id: int, test_id: int) -> tuple[bytes, str]:
         detail = self.get_test_detail(owner_id=owner_id, test_id=test_id)
@@ -515,20 +555,50 @@ class TestService:
         owner_id: int,
         test_id: int,
         config: PdfExportConfig,
-    ) -> tuple[bytes, str]:
+    ) -> tuple[bytes | None, str, str, str, str, str | None]:
         """
         Export a test to a customized PDF using PdfExportConfig and the
         advanced LaTeX template.
         """
         start_time = time.time()
         detail = self.get_test_detail(owner_id=owner_id, test_id=test_id)
-        context = self._prepare_pdf_context(detail, config)
-        tex = self._render_custom_test_to_tex(context)
+        cache_key, config_hash = self._build_pdf_cache_key(detail, config)
+        cached_path = self._get_cached_pdf_path(cache_key)
         filename = self._build_export_filename(
             detail.title, detail.test_id, suffix="pdf"
         )
+        if cached_path:
+            duration_sec = time.time() - start_time
+            analytics.capture(
+                user_id=owner_id,
+                event="test_pdf_exported",
+                properties={
+                    "test_id": test_id,
+                    "is_custom": (
+                        config.generate_variants or config.variant_mode != "shuffle"
+                    ),
+                    "duration_sec": duration_sec,
+                    "question_count": len(detail.questions),
+                    "config": (
+                        config.model_dump()
+                        if hasattr(config, "model_dump")
+                        else str(config)
+                    ),
+                    "cache_hit": True,
+                },
+            )
+            return (
+                None,
+                filename,
+                cache_key,
+                config_hash,
+                PDF_TEMPLATE_VERSION,
+                cached_path,
+            )
+        context = self._prepare_pdf_context(detail, config)
+        tex = self._render_custom_test_to_tex(context)
         pdf_bytes = self._compile_tex_to_pdf(tex)
-        
+
         duration_sec = time.time() - start_time
         analytics.capture(
             user_id=owner_id,
@@ -545,10 +615,18 @@ class TestService:
                     if hasattr(config, "model_dump")
                     else str(config)
                 ),
-            }
+                "cache_hit": False,
+            },
         )
-        
-        return pdf_bytes, filename
+
+        return (
+            pdf_bytes,
+            filename,
+            cache_key,
+            config_hash,
+            PDF_TEMPLATE_VERSION,
+            None,
+        )
 
     @staticmethod
     def _build_question_payload(q: QuestionOut) -> dict[str, Any]:
@@ -603,6 +681,84 @@ class TestService:
             "brand_hex": "4CAF4F",
             "logo_path": "/app/app/templates/logo.png",
         }
+
+    def _build_pdf_cache_key(
+        self, detail: TestDetailOut, config: PdfExportConfig
+    ) -> tuple[str, str]:
+        questions_hash = self._build_questions_hash(detail)
+        config_hash = hash_payload(normalize_config(config))
+        cache_key = hash_payload(
+            str(detail.test_id),
+            config_hash,
+            PDF_TEMPLATE_VERSION,
+            questions_hash,
+        )
+        return cache_key, config_hash
+
+    def _build_standard_pdf_cache_key(
+        self, detail: TestDetailOut, show_answers: bool
+    ) -> tuple[str, str]:
+        questions_hash = self._build_questions_hash(detail)
+        config_hash = hash_payload(
+            normalize_config({"show_answers": show_answers, "type": "standard"})
+        )
+        cache_key = hash_payload(
+            str(detail.test_id),
+            config_hash,
+            PDF_TEMPLATE_VERSION,
+            questions_hash,
+        )
+        return cache_key, config_hash
+
+    @staticmethod
+    def _build_questions_hash(detail: TestDetailOut) -> str:
+        questions_payload = [
+            {
+                "id": q.id,
+                "text": q.text,
+                "is_closed": q.is_closed,
+                "difficulty": q.difficulty,
+                "choices": q.choices,
+                "correct_choices": q.correct_choices,
+            }
+            for q in detail.questions
+        ]
+        def _id_key(item: dict[str, Any]) -> int:
+            value = item.get("id")
+            if isinstance(value, list):
+                return 0
+            try:
+                return int(value or 0)
+            except Exception:
+                return 0
+
+        questions_payload = sorted(questions_payload, key=_id_key)
+        return hash_payload(normalize_config(questions_payload))
+
+    def _get_cached_pdf_path(self, cache_key: str) -> str | None:
+        with self._uow_factory() as uow:
+            entry = uow.pdf_exports.get_by_key(cache_key)
+            return entry.stored_path if entry else None
+
+    def record_pdf_export_cache(
+        self,
+        *,
+        test_id: int,
+        cache_key: str,
+        config_hash: str,
+        template_version: str,
+        stored_path: str,
+    ) -> None:
+        with self._uow_factory() as uow:
+            entry = PdfExportCache(
+                id=None,
+                test_id=test_id,
+                cache_key=cache_key,
+                config_hash=config_hash,
+                template_version=template_version,
+                stored_path=stored_path,
+            )
+            uow.pdf_exports.add(entry)
 
     def update_question(
         self,

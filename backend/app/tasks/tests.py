@@ -78,14 +78,31 @@ def export_test_pdf_task(
         logger.exception("Failed to mark job %s as running: %s", job_id, exc)
 
     try:
-        pdf_bytes, filename = test_service.export_test_pdf(
+        (
+            pdf_bytes,
+            filename,
+            cache_key,
+            config_hash,
+            template_version,
+            cached_path,
+        ) = test_service.export_test_pdf(
             owner_id=owner_id, test_id=test_id, show_answers=show_answers
         )
-        stored_path = export_storage.save(
-            owner_id=owner_id,
-            filename=filename,
-            content=pdf_bytes,
-        )
+        if cached_path:
+            stored_path = cached_path
+        else:
+            stored_path = export_storage.save(
+                owner_id=owner_id,
+                filename=filename,
+                content=pdf_bytes or b"",
+            )
+            test_service.record_pdf_export_cache(
+                test_id=test_id,
+                cache_key=cache_key,
+                config_hash=config_hash,
+                template_version=template_version,
+                stored_path=stored_path,
+            )
         file_url = export_storage.get_url(stored_path=stored_path)
         job_service.update_job_status(
             job_id=job_id,
@@ -123,16 +140,33 @@ def export_custom_test_pdf_task(
 
     try:
         config = PdfExportConfig(**config_payload)
-        pdf_bytes, filename = test_service.export_custom_test_pdf(
+        (
+            pdf_bytes,
+            filename,
+            cache_key,
+            config_hash,
+            template_version,
+            cached_path,
+        ) = test_service.export_custom_test_pdf(
             owner_id=owner_id,
             test_id=test_id,
             config=config,
         )
-        stored_path = export_storage.save(
-            owner_id=owner_id,
-            filename=filename,
-            content=pdf_bytes,
-        )
+        if cached_path:
+            stored_path = cached_path
+        else:
+            stored_path = export_storage.save(
+                owner_id=owner_id,
+                filename=filename,
+                content=pdf_bytes or b"",
+            )
+            test_service.record_pdf_export_cache(
+                test_id=test_id,
+                cache_key=cache_key,
+                config_hash=config_hash,
+                template_version=template_version,
+                stored_path=stored_path,
+            )
         file_url = export_storage.get_url(stored_path=stored_path)
         job_service.update_job_status(
             job_id=job_id,

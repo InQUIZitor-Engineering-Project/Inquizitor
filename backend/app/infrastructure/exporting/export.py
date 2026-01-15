@@ -152,6 +152,17 @@ def render_custom_test_to_tex(context: dict[str, Any]) -> str:
     return template.render(**context)
 
 
+def _needs_rerun(output: str) -> bool:
+    if not output:
+        return False
+    rerun_markers = [
+        "Rerun to get cross-references right",
+        "Label(s) may have changed",
+        "There were undefined references",
+    ]
+    return any(marker in output for marker in rerun_markers)
+
+
 def compile_tex_to_pdf(tex_source: str) -> bytes:
     with tempfile.TemporaryDirectory() as tmp:
         tmpdir = Path(tmp)
@@ -166,7 +177,14 @@ def compile_tex_to_pdf(tex_source: str) -> bytes:
             str(tmpdir),
             str(tex_path),
         ]
-        for _ in range(2):
+        proc = subprocess.run(cmd, capture_output=True, text=True)
+        if proc.returncode != 0:
+            raise RuntimeError(
+                f"LaTeX error:\nSTDOUT:\n{proc.stdout}\nSTDERR:\n{proc.stderr}"
+            )
+
+        combined_output = f"{proc.stdout}\n{proc.stderr}"
+        if _needs_rerun(combined_output):
             proc = subprocess.run(cmd, capture_output=True, text=True)
             if proc.returncode != 0:
                 raise RuntimeError(

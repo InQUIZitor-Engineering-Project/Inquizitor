@@ -17,6 +17,8 @@ class MaterialOut(BaseModel):
     created_at: datetime
     extracted_text: str | None = None
     processing_error: str | None = None
+    cache_hit: bool | None = None
+    duration_ocr_sec: float | None = None
 
     class Config:
         from_attributes = True

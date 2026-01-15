@@ -9,7 +9,9 @@ from app.domain.models import (
     File,
     Job,
     Material,
+    OcrCache,
     PasswordResetToken,
+    PdfExportCache,
     PendingVerification,
     Question,
     RefreshToken,
@@ -195,6 +197,56 @@ def job_to_domain(row: db_models.Job) -> Job:
         error=row.error,
         created_at=row.created_at,
         updated_at=row.updated_at,
+    )
+
+
+def pdf_export_cache_to_domain(row: db_models.PdfExportCache) -> PdfExportCache:
+    return PdfExportCache(
+        id=row.id,
+        test_id=row.test_id,
+        cache_key=row.cache_key,
+        config_hash=row.config_hash,
+        template_version=row.template_version,
+        stored_path=row.stored_path,
+        created_at=row.created_at,
+    )
+
+
+def pdf_export_cache_to_row(entry: PdfExportCache) -> db_models.PdfExportCache:
+    return db_models.PdfExportCache(
+        id=entry.id,
+        test_id=entry.test_id,
+        cache_key=entry.cache_key,
+        config_hash=entry.config_hash,
+        template_version=entry.template_version,
+        stored_path=entry.stored_path,
+        created_at=entry.created_at or datetime.utcnow(),
+    )
+
+
+def ocr_cache_to_domain(row: db_models.OcrCache) -> OcrCache:
+    return OcrCache(
+        id=row.id,
+        user_id=row.user_id,
+        file_hash=row.file_hash,
+        ocr_options_hash=row.ocr_options_hash,
+        pipeline_version=row.pipeline_version,
+        result_ref=row.result_ref,
+        cache_key=row.cache_key,
+        created_at=row.created_at,
+    )
+
+
+def ocr_cache_to_row(entry: OcrCache) -> db_models.OcrCache:
+    return db_models.OcrCache(
+        id=entry.id,
+        user_id=entry.user_id,
+        file_hash=entry.file_hash,
+        ocr_options_hash=entry.ocr_options_hash,
+        pipeline_version=entry.pipeline_version,
+        result_ref=entry.result_ref,
+        cache_key=entry.cache_key,
+        created_at=entry.created_at or datetime.utcnow(),
     )
 
 

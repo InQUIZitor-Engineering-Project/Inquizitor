@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import time
 from collections.abc import Callable, Sequence
 from datetime import datetime
 from pathlib import Path
@@ -12,7 +13,13 @@ from app.application import dto
 from app.application.interfaces import FileStorage, UnitOfWork
 from app.domain.models import File as FileDomain
 from app.domain.models import Material as MaterialDomain
+from app.domain.models import OcrCache
 from app.domain.models.enums import ProcessingStatus
+from app.infrastructure.cache.cache_utils import (
+    OCR_PIPELINE_VERSION,
+    hash_payload,
+    normalize_config,
+)
 
 
 class MaterialService:
@@ -193,11 +200,59 @@ class MaterialService:
                     except Exception:
                         material.page_count = None
 
+                file_hash = material.checksum
+                if not file_hash:
+                    try:
+                        file_hash = hashlib.sha256(local.read_bytes()).hexdigest()
+                    except Exception:
+                        file_hash = None
+
+                ocr_options = {
+                    "mode": "composite",
+                    "lang": "pol+eng",
+                    "dpi": 300,
+                    "mime": mime_type,
+                }
+                ocr_options_hash = hash_payload(normalize_config(ocr_options))
+                cache_key = (
+                    hash_payload(
+                        str(owner_id),
+                        file_hash or "",
+                        ocr_options_hash,
+                        OCR_PIPELINE_VERSION,
+                    )
+                    if file_hash
+                    else None
+                )
+                cached_text = None
+                if cache_key:
+                    cached = uow.ocr_cache.get_by_key(cache_key)
+                    cached_text = cached.result_ref if cached else None
+
+                cache_hit = cached_text is not None
+                duration_ocr_sec = None
                 try:
-                    raw_text = self._text_extractor(local, mime_type)
+                    if cached_text is None:
+                        ocr_start = time.time()
+                        raw_text = self._text_extractor(local, mime_type)
+                        duration_ocr_sec = time.time() - ocr_start
+                    else:
+                        raw_text = cached_text
                     normalized_text = self._sanitize_text(raw_text)
                     if normalized_text:
                         material.mark_processed(normalized_text)
+                        if cache_key and not cached_text:
+                            uow.ocr_cache.add(
+                                OcrCache(
+                                    id=None,
+                                    user_id=owner_id,
+                                    file_hash=file_hash or "",
+                                    ocr_options_hash=ocr_options_hash,
+                                    pipeline_version=OCR_PIPELINE_VERSION,
+                                    result_ref=normalized_text,
+                                    cache_key=cache_key,
+                                )
+                            )
                     else:
                         material.mark_failed(
                             "Could not extract text (unsupported or empty)"
@@ -207,7 +262,11 @@ class MaterialService:
 
             updated = uow.materials.update(material)
 
-        return dto.to_material_out(updated)
+        return dto.to_material_out(
+            updated,
+            cache_hit=cache_hit,
+            duration_ocr_sec=duration_ocr_sec,
+        )
 
 
 __all__ = ["MaterialService"]
