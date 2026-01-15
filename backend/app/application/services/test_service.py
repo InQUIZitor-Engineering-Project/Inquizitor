@@ -486,7 +486,7 @@ class TestService:
             )
         questions_payload = [
             {
-                "id": q.id,
+                "id": int(q.id) if q.id is not None else 0,
                 "text": q.text,
                 "is_closed": q.is_closed,
                 "difficulty": q.difficulty,
@@ -723,7 +723,16 @@ class TestService:
             }
             for q in detail.questions
         ]
-        questions_payload = sorted(questions_payload, key=lambda q: q["id"])
+        def _id_key(item: dict[str, Any]) -> int:
+            value = item.get("id")
+            if isinstance(value, list):
+                return 0
+            try:
+                return int(value or 0)
+            except Exception:
+                return 0
+
+        questions_payload = sorted(questions_payload, key=_id_key)
         return hash_payload(normalize_config(questions_payload))
 
     def _get_cached_pdf_path(self, cache_key: str) -> str | None:

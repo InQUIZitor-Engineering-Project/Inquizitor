@@ -26,8 +26,8 @@ def hash_payload(*parts: str) -> str:
 
 
 __all__ = [
-    "PDF_TEMPLATE_VERSION",
     "OCR_PIPELINE_VERSION",
+    "PDF_TEMPLATE_VERSION",
     "hash_payload",
     "normalize_config",
 ]
