@@ -7,7 +7,7 @@ import { BottomSheet, SelectableItem } from "../../../design-system/patterns";
 const ActionBarPortalWrapper = styled.div`
   /* Position absolute relative to main-content-area so it centers within content, not viewport */
   position: absolute;
-  bottom: 12px;
+  bottom: calc(12px + env(safe-area-inset-bottom));
   left: 0;
   right: 0;
   z-index: 1000;
@@ -16,7 +16,7 @@ const ActionBarPortalWrapper = styled.div`
   justify-content: center;
 
   @media (min-width: 600px) {
-    bottom: 24px;
+    bottom: calc(24px + env(safe-area-inset-bottom));
   }
 
   @media (min-width: 1025px) {
@@ -31,7 +31,7 @@ const FloatingContainer = styled(Box)`
   position: relative;
   pointer-events: auto;
   width: 100%;
-  max-width: 960px;
+  max-width: 840px;
   margin: 0 auto;
   background: white;
   border-radius: 16px;

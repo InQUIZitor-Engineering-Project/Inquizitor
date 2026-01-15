@@ -31,6 +31,15 @@ const FieldWrapper = styled.div`
   display: block;
 `;
 
+const VariantModeWrapper = styled(Box)`
+  width: 100%;
+  max-width: 50%;
+
+  ${({ theme }) => theme.media.down("sm")} {
+    max-width: 100%;
+  }
+`;
+
 export interface PdfConfigSectionProps {
   config: PdfExportConfig;
   isOpen: boolean;
@@ -244,7 +253,7 @@ const PdfConfigSection: React.FC<PdfConfigSectionProps> = ({
         </FormField>
 
         {config.generate_variants && (
-          <Box style={{ width: "100%", maxWidth: "50%" }}>
+          <VariantModeWrapper>
             <FormField label="Tryb drugiej grupy" fullWidth>
               <CustomSelect
                 value={config.variant_mode || "shuffle"}
@@ -261,7 +270,7 @@ const PdfConfigSection: React.FC<PdfConfigSectionProps> = ({
                 }
               />
             </FormField>
-          </Box>
+          </VariantModeWrapper>
         )}
 
         <FormField fullWidth>

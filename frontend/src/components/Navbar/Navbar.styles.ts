@@ -2,6 +2,7 @@ import styled from "styled-components";
 import { Link } from "react-router-dom";
 
 export const NAVBAR_HEIGHT = 80;
+export const NAVBAR_HEIGHT_MOBILE = 64;
 
 export const NavbarContainer = styled.nav`
   width: 100%;
@@ -23,7 +24,7 @@ export const NavbarContainer = styled.nav`
   }
 
   @media (max-width: 768px) {
-    min-height: 64px;
+    min-height: ${NAVBAR_HEIGHT_MOBILE}px;
     padding: 8px 0;
   }
 `;
