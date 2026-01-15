@@ -1,5 +1,5 @@
 import styled from "styled-components";
-import { NAVBAR_HEIGHT } from "../Navbar/Navbar.styles";
+import { NAVBAR_HEIGHT, NAVBAR_HEIGHT_MOBILE } from "../Navbar/Navbar.styles";
 
 export const SidebarWrapper = styled.aside<{ $isDrawerOpen?: boolean }>`
   display: flex;
@@ -13,16 +13,23 @@ export const SidebarWrapper = styled.aside<{ $isDrawerOpen?: boolean }>`
 
   @media (max-width: 1024px) {
     position: fixed;
-    top: ${NAVBAR_HEIGHT}px;
+    top: calc(${NAVBAR_HEIGHT}px + env(safe-area-inset-top));
     left: 0;
-    height: calc(100vh - ${NAVBAR_HEIGHT}px);
-    max-height: calc(100vh - ${NAVBAR_HEIGHT}px);
+    height: calc(100dvh - ${NAVBAR_HEIGHT}px - env(safe-area-inset-top));
+    max-height: calc(100dvh - ${NAVBAR_HEIGHT}px - env(safe-area-inset-top));
     width: 280px;
     max-width: 82vw;
     transform: translateX(${({ $isDrawerOpen }) => ($isDrawerOpen ? "0" : "-100%")});
     transition: transform 0.25s ease, box-shadow 0.25s ease;
-    z-index: 110;
+    z-index: 1200;
     border-right: 1px solid ${({ theme }) => theme.colors.neutral.greyBlue};
+    padding-bottom: calc(24px + env(safe-area-inset-bottom));
+  }
+
+  @media (max-width: 768px) {
+    top: calc(${NAVBAR_HEIGHT_MOBILE}px + env(safe-area-inset-top));
+    height: calc(100dvh - ${NAVBAR_HEIGHT_MOBILE}px - env(safe-area-inset-top));
+    max-height: calc(100dvh - ${NAVBAR_HEIGHT_MOBILE}px - env(safe-area-inset-top));
   }
 `;
 

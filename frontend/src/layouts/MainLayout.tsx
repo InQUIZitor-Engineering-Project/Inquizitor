@@ -6,19 +6,24 @@ import Footer from "../components/Footer/Footer";
 import { Modal } from "../design-system/patterns";
 import { getMyTests, deleteTest } from "../services/test";
 import type { TestOut } from "../services/test";
-import { NAVBAR_HEIGHT } from "../components/Navbar/Navbar.styles";
+import { NAVBAR_HEIGHT, NAVBAR_HEIGHT_MOBILE } from "../components/Navbar/Navbar.styles";
 
 export const LayoutWrapper = styled.div`
   display: flex;
   width: 100%;
-  height: calc(100vh - ${NAVBAR_HEIGHT}px);
-  min-height: calc(100vh - ${NAVBAR_HEIGHT}px);
+  height: calc(100dvh - ${NAVBAR_HEIGHT}px);
+  min-height: calc(100dvh - ${NAVBAR_HEIGHT}px);
   flex-shrink: 0;
   margin: 0;
   padding: 0;
   overflow: hidden;
   background-color: ${({ theme }) => theme.colors.neutral.silver};
   position: relative;
+
+  @media (max-width: 768px) {
+    height: calc(100dvh - ${NAVBAR_HEIGHT_MOBILE}px);
+    min-height: calc(100dvh - ${NAVBAR_HEIGHT_MOBILE}px);
+  }
 `;
 
 export const ContentArea = styled.div`
@@ -54,6 +59,10 @@ const SidebarOverlay = styled.div<{ $open: boolean }>`
 
   @media (max-width: 1024px) {
     display: ${({ $open }) => ($open ? "block" : "none")};
+  }
+
+  @media (max-width: 768px) {
+    top: ${NAVBAR_HEIGHT_MOBILE}px;
   }
 `;
 
