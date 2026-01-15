@@ -5,8 +5,10 @@ import { Box, Flex, Button, Text, Stack, CloseButton } from "../../../design-sys
 import { BottomSheet, SelectableItem, PageContainer } from "../../../design-system/patterns";
 
 const ActionBarPortalWrapper = styled.div`
-  position: absolute;
-  bottom: 12px;
+  /* Fixed to visual viewport so it stays visible under mobile browser chrome */
+  position: fixed;
+  bottom: 12px; /* fallback when env() not supported */
+  bottom: calc(12px + env(safe-area-inset-bottom));
   left: 0;
   right: 0;
   z-index: 1000;
@@ -15,7 +17,8 @@ const ActionBarPortalWrapper = styled.div`
   justify-content: center;
 
   @media (min-width: 600px) {
-    bottom: 24px;
+    bottom: 24px; /* fallback when env() not supported */
+    bottom: calc(24px + env(safe-area-inset-bottom));
   }
 `;
 
