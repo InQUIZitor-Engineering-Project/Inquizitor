@@ -193,7 +193,7 @@ const PdfConfigSection: React.FC<PdfConfigSectionProps> = ({
               }
             />
             <label htmlFor="pdf-student-header" style={{ cursor: "pointer" }}>
-              Dodaj linię na imię i nazwisko ucznia.
+              Dodaj linię na imię i nazwisko ucznia
             </label>
           </Flex>
         </FormField>
@@ -211,7 +211,7 @@ const PdfConfigSection: React.FC<PdfConfigSectionProps> = ({
               }
             />
             <label htmlFor="pdf-include-answer-key" style={{ cursor: "pointer" }}>
-              Dołącz klucz odpowiedzi do pytań zamkniętych.
+              Dołącz klucz odpowiedzi do pytań zamkniętych
             </label>
           </Flex>
         </FormField>
@@ -229,7 +229,7 @@ const PdfConfigSection: React.FC<PdfConfigSectionProps> = ({
               }
             />
             <label htmlFor="pdf-scratchpad" style={{ cursor: "pointer" }}>
-              Dodaj brudnopis na końcu testu.
+              Dodaj brudnopis na końcu testu
             </label>
           </Flex>
         </FormField>
@@ -247,7 +247,7 @@ const PdfConfigSection: React.FC<PdfConfigSectionProps> = ({
               }
             />
             <label htmlFor="pdf-generate-variants" style={{ cursor: "pointer" }}>
-              Wygeneruj dwie wersje (Grupa A i B).
+              Wygeneruj dwie wersje (grupa A i B)
             </label>
           </Flex>
         </FormField>
@@ -259,7 +259,7 @@ const PdfConfigSection: React.FC<PdfConfigSectionProps> = ({
                 value={config.variant_mode || "shuffle"}
                 $fullWidth
                 options={[
-                  { value: "shuffle", label: "Przetasuj w obrębie trudności" },
+                  { value: "shuffle", label: "Zamień kolejność pytań i odpowiedzi" },
                   { value: "llm_variant", label: "Nowe pytania o tej samej trudności" },
                 ]}
                 onChange={(value) =>
@@ -286,7 +286,7 @@ const PdfConfigSection: React.FC<PdfConfigSectionProps> = ({
               }
             />
             <label htmlFor="pdf-mark-multi-choice" style={{ cursor: "pointer" }}>
-              Oznacz graficznie pytania wielokrotnego wyboru.
+              Oznacz graficznie pytania wielokrotnego wyboru
             </label>
           </Flex>
         </FormField>

@@ -34,8 +34,31 @@ class MaterialUploadEnqueueResponse(BaseModel):
     material: MaterialOut
 
 
+class MaterialUploadBatchResponse(BaseModel):
+    materials: list[MaterialOut]
+
+
+class MaterialAnalyzeRequest(BaseModel):
+    material_ids: list[int]
+
+
+class MaterialAnalyzeJob(BaseModel):
+    job_id: int
+    status: str
+    material: MaterialOut
+
+
+class MaterialAnalyzeResponse(BaseModel):
+    jobs: list[MaterialAnalyzeJob]
+    total_pages: int
+
+
 __all__ = [
     "MaterialOut",
     "MaterialUpdate",
     "MaterialUploadEnqueueResponse",
+    "MaterialUploadBatchResponse",
+    "MaterialAnalyzeRequest",
+    "MaterialAnalyzeJob",
+    "MaterialAnalyzeResponse",
 ]

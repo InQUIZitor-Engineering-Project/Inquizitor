@@ -59,6 +59,7 @@ export interface BoxProps {
   $border?: string;
   $width?: string;
   $height?: string;
+  $minHeight?: string;
   $flex?: string | number;
   $display?: string;
   $overflow?: string;
@@ -75,6 +76,7 @@ export const Box = styled.div<BoxProps>`
     `}
   ${({ $width }) => $width && css`width: ${$width};`}
   ${({ $height }) => $height && css`height: ${$height};`}
+  ${({ $minHeight }) => $minHeight && css`min-height: ${$minHeight};`}
 
   ${({ theme, $p }) => $p && css`padding: ${resolveSpace(theme, $p)};`}
   ${({ theme, $px }) =>

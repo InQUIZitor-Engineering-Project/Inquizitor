@@ -1,4 +1,4 @@
-from typing import Annotated, cast
+from typing import Annotated, Any, cast
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 
@@ -381,6 +381,22 @@ def update_test_title(
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except Exception as exc:
         raise HTTPException(status_code=500, detail="Failed to update title") from exc
+
+
+@router.get("/{test_id}/config")
+def get_test_config(
+    test_id: int,
+    current_user: Annotated[User, Depends(get_current_user)],
+    test_service: Annotated[TestService, Depends(get_test_service)],
+) -> dict[str, Any]:
+    if current_user.id is None:
+        raise HTTPException(status_code=401, detail="User ID is missing")
+    try:
+        return test_service.get_test_generation_config(
+            owner_id=current_user.id, test_id=test_id
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
 __all__ = ["router"]

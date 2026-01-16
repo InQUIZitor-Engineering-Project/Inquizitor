@@ -134,6 +134,11 @@ class TestService:
             "other": [],
         }
         for q in questions:
+            choices = q.get("choices")
+            if isinstance(choices, list) and len(choices) > 1:
+                random.shuffle(choices)
+                q["choices"] = choices
+
             d = q.get("difficulty")
             if d in (1, 2, 3):
                 buckets[d].append(q)
@@ -295,10 +300,24 @@ class TestService:
                     source_file = uow.files.get(request.file_id)
                     if not source_file or source_file.owner_id != owner_id:
                         raise ValueError("Plik nie został znaleziony")
-                        raise ValueError("Plik nie został znaleziony")
                     base_title = source_file.filename
                 else:
                     base_title = "From raw text"
+            elif request.material_ids:
+                # Pobieramy tekst ze wszystkich wskazanych materiałów
+                texts = []
+                base_title = "Z wielu plików"
+                for m_id in request.material_ids:
+                    m = uow.materials.get(m_id)
+                    if m and m.owner_id == owner_id and m.extracted_text:
+                        texts.append(m.extracted_text)
+                        if len(request.material_ids) == 1:
+                            base_title = m.file.filename if m.file else m.filename
+                
+                if not texts:
+                    raise ValueError("Nie znaleziono tekstu w wybranych plikach")
+                
+                source_text = "\n\n".join(texts)
             elif request.file_id is not None:
                 existing_material = uow.materials.get_by_file_id(request.file_id)
 
@@ -448,6 +467,7 @@ class TestService:
             if not test or test.owner_id != owner_id:
                 raise ValueError("Test nie został znaleziony")
                 raise ValueError("Test nie został znaleziony")
+            uow.pdf_exports.remove_for_test(test_id)
             uow.tests.remove(test_id)
 
     def export_test_pdf(
@@ -1296,6 +1316,13 @@ class TestService:
             session.flush()
 
             return dto.to_test_out(test_row)
+
+    def get_test_generation_config(self, *, owner_id: int, test_id: int) -> dict[str, Any]:
+        with self._uow_factory() as uow:
+            job = uow.jobs.get_generation_job_by_test_id(test_id)
+            if not job or job.owner_id != owner_id:
+                raise ValueError("Nie znaleziono konfiguracji dla tego testu")
+            return job.payload
 
 
 __all__ = ["TestService"]

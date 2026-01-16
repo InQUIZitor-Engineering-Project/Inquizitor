@@ -81,15 +81,17 @@ class GenerateParams(BaseModel):
 class TestGenerateRequest(GenerateParams):
     text: str | None = None
     file_id: int | None = None
+    material_ids: list[int] | None = None
 
     @model_validator(mode="after")
     def validate_source(self):
         text_value = (self.text or "").strip() if self.text else ""
         has_text = bool(text_value)
         has_file = self.file_id is not None
+        has_materials = self.material_ids is not None and len(self.material_ids) > 0
 
-        if not has_text and not has_file:
-            raise ValueError("Please provide text or file_id")
+        if not has_text and not has_file and not has_materials:
+            raise ValueError("Please provide text, file_id or material_ids")
 
         self.text = text_value or None
         return self
