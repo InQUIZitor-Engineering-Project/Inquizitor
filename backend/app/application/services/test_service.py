@@ -312,7 +312,9 @@ class TestService:
                     if m and m.owner_id == owner_id and m.extracted_text:
                         texts.append(m.extracted_text)
                         if len(request.material_ids) == 1:
-                            base_title = m.file.filename if m.file else m.filename
+                            base_title = (
+                                m.file.filename if m.file else "Unknown file"
+                            )
                 
                 if not texts:
                     raise ValueError("Nie znaleziono tekstu w wybranych plikach")
@@ -1317,7 +1319,12 @@ class TestService:
 
             return dto.to_test_out(test_row)
 
-    def get_test_generation_config(self, *, owner_id: int, test_id: int) -> dict[str, Any]:
+    def get_test_generation_config(
+        self,
+        *,
+        owner_id: int,
+        test_id: int,
+    ) -> dict[str, Any]:
         with self._uow_factory() as uow:
             job = uow.jobs.get_generation_job_by_test_id(test_id)
             if not job or job.owner_id != owner_id:

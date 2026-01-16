@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { Segmented, SegmentedIndicator } from "../primitives";
 
 export interface SegmentedToggleOption<T extends string | number> {

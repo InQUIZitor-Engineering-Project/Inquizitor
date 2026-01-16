@@ -170,7 +170,7 @@ const useGenerateTestForm = (): UseGenerateTestFormResult => {
             setInstructions(config.additional_instructions);
             setIsPersonalizationOpen(true);
           }
-        } catch (err: any) {
+        } catch {
           setGenError("Nie udało się pobrać poprzedniej konfiguracji testu.");
         } finally {
           stopLoading();

@@ -4,9 +4,9 @@ from collections.abc import Iterable
 from datetime import datetime
 from typing import Any, cast
 
+from sqlalchemy import delete
 from sqlalchemy.orm import joinedload
 from sqlmodel import Session, select
-from sqlalchemy import delete
 
 from app.db import models as db_models
 from app.domain.models import (
@@ -255,15 +255,13 @@ class SqlModelJobRepository(JobRepository):
         return [mappers.job_to_domain(row) for row in rows]
 
     def get_generation_job_by_test_id(self, test_id: int) -> Job | None:
-        from sqlalchemy import cast as sa_cast
-        from sqlalchemy.dialects.postgresql import JSONB
 
         # Szukamy joba typu test_generation, którego result zawiera test_id
         stmt = (
             select(db_models.Job)
             .where(
                 db_models.Job.job_type == db_models.JobType.test_generation,
-                db_models.Job.result["test_id"].astext == str(test_id)
+                cast(Any, db_models.Job.result)["test_id"].astext == str(test_id)
             )
         )
         row = cast(Any, self._session).exec(stmt).first()
