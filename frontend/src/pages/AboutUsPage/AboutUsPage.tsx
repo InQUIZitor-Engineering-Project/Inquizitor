@@ -133,11 +133,10 @@ const AboutUsPage: React.FC = () => {
                     Kim jesteśmy?
                   </Heading>
                   <Text>
-                    Inquizitor powstał jako projekt inżynierski trójki studentów z Krakowa,
-                    którzy postanowili połączyć nowoczesną technologię z edukacją. 
-                    Dostrzegliśmy, jak dużym wyzwaniem jest przygotowanie wartościowych 
-                    materiałów sprawdzających, dlatego zamiast prostego „generatora pytań”, 
-                    stworzyliśmy narzędzie, które:
+                  Inquizitor to projekt stworzony przez <strong>trójkę studentów z Krakowa</strong>, którzy połączyli pasję do technologii z realnymi potrzebami edukacji. Zamiast kolejnego prostego generatora pytań, stworzyliśmy <strong>inteligentne narzędzie</strong>, które faktycznie rozumie materiał i pomaga nauczycielom tworzyć wartościowe testy szybciej i wygodniej.
+                  </Text>
+                  <Text>
+                    <strong>Inquizitor:</strong>
                   </Text>
                   <Box as="ul" style={{ margin: 0, paddingLeft: 18, listStyle: "disc" }}>
                     <li>
@@ -153,6 +152,9 @@ const AboutUsPage: React.FC = () => {
                       <Text as="span">pracuje wygodnie również przy większej liczbie testów.</Text>
                     </li>
                   </Box>
+                  <Text>
+                    To narzędzie stworzone z myślą o realnej pracy nauczyciela.
+                  </Text>
                 </Stack>
               </Box>
 
@@ -162,9 +164,27 @@ const AboutUsPage: React.FC = () => {
                     Dokąd zmierzamy?
                   </Heading>
                   <Text>
-                    Naszym celem jest stworzenie kompletnej platformy do przygotowywania testów:
-                    z automatycznym generowaniem tytułów, statystykami profilu, rozbudowanym
-                    panelem użytkownika oraz łatwym wdrożeniem w szkołach, firmach i na uczelniach.
+                    Naszą wizją jest <strong>kompletna platforma edukacyjna</strong>, która wspiera nauczycieli i uczniów na każdym etapie nauki. Chcemy, aby Inquizitor był nie tylko generatorem testów, ale <strong>centrum zarządzania materiałami dydaktycznymi</strong>.
+                  </Text>
+                  <Text>
+                    <strong>Planujemy m.in.:</strong>
+                  </Text>
+                  <Box as="ul" style={{ margin: 0, paddingLeft: 18, listStyle: "disc" }}>
+                    <li>
+                      <Text as="span">funkcje wspierające <strong>neuroróżnorodnych uczniów</strong>,</Text>
+                    </li>
+                    <li>
+                      <Text as="span">rozbudowany <strong>moduł zarządzania materiałami edukacyjnymi</strong>,</Text>
+                    </li>
+                    <li>
+                      <Text as="span"><strong>personalizację nauki</strong> pod potrzeby klasy i pojedynczego ucznia,</Text>
+                    </li>
+                    <li>
+                      <Text as="span">narzędzia do <strong>analizy postępów i wyników</strong>.</Text>
+                    </li>
+                  </Box>
+                  <Text>
+                    Tworzymy Inquizitora jako <strong>nowoczesne narzędzie edukacyjne</strong> na miarę XXI wieku.
                   </Text>
                 </Stack>
               </Box>

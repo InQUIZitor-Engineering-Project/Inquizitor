@@ -34,7 +34,6 @@ from app.application.services import (
     NotificationService,
     SupportService,
     TestService,
-    TurnstileService,
     UserService,
 )
 from app.application.unit_of_work import SqlAlchemyUnitOfWork
@@ -67,9 +66,6 @@ class AppContainer:
         self._settings = settings
         self._question_generator = GeminiQuestionGenerator()
         self._ocr_service = DefaultOCRService()
-        self._turnstile_service = TurnstileService(
-            secret_key=settings.TURNSTILE_SECRET_KEY
-        )
         self._file_storage = self._create_storage(base_dir=Path("uploads"))
         self._materials_storage = self._create_storage(
             base_dir=Path("uploads/materials")
@@ -95,9 +91,6 @@ class AppContainer:
 
     def provide_ocr_service(self) -> DefaultOCRService:
         return self._ocr_service
-
-    def provide_turnstile_service(self) -> TurnstileService:
-        return self._turnstile_service
 
     def provide_file_storage(self) -> FileStorage:
         return self._file_storage

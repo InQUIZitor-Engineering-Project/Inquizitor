@@ -12,7 +12,6 @@ class SupportTicketCreate(BaseModel):
     category: SupportCategory = SupportCategory.general
     subject: str = Field(..., max_length=200)
     message: str = Field(..., min_length=10)
-    turnstile_token: str | None = None
 
 class SupportTicketRead(BaseModel):
     id: int
