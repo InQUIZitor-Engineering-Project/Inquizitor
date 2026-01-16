@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import math
 import time
 from collections.abc import Callable, Sequence
 from datetime import datetime
@@ -60,15 +61,9 @@ class MaterialService:
             size_bytes = local.stat().st_size if local.exists() else len(content)
             mime_type = self._detect_mime(local)
 
-            page_count = None
-            if mime_type == "application/pdf" or local.suffix.lower() == ".pdf":
-                try:
-                    from pypdf import PdfReader
-
-                    reader = PdfReader(local)
-                    page_count = len(reader.pages)
-                except Exception:
-                    pass
+            page_count = self._estimate_page_count(
+                local, mime_type, filename=filename
+            )
 
         checksum = hashlib.sha256(content).hexdigest()
 
@@ -173,6 +168,97 @@ class MaterialService:
         )
         return cleaned[: self._max_text_length]
 
+    def _estimate_page_count(
+        self,
+        local: Path,
+        mime_type: str | None,
+        *,
+        filename: str | None = None,
+    ) -> int:
+        extension = Path(filename).suffix.lower() if filename else local.suffix.lower()
+
+        if extension in {".png", ".jpg", ".jpeg", ".webp"}:
+            return 1
+
+        if extension == ".pdf" or mime_type == "application/pdf":
+            try:
+                from pypdf import PdfReader
+
+                reader = PdfReader(local)
+                return len(reader.pages)
+            except Exception:
+                return 1
+
+        if extension == ".docx":
+            try:
+                import xml.etree.ElementTree as ET
+                import zipfile
+
+                with zipfile.ZipFile(local) as docx_zip:
+                    with docx_zip.open("docProps/app.xml") as app_xml:
+                        tree = ET.parse(app_xml)
+                        root = tree.getroot()
+                        pages = root.find(".//{*}Pages")
+                        if pages is not None and pages.text:
+                            value = int(pages.text)
+                            if value > 0:
+                                return value
+            except Exception:
+                pass
+
+            try:
+                text = self._text_extractor(local, mime_type) or ""
+            except Exception:
+                text = ""
+
+            char_count = len(text.strip())
+            if char_count == 0:
+                return 1
+            return max(1, math.ceil(char_count / 2500))
+
+        if extension in {".txt", ".md"}:
+            try:
+                text = self._text_extractor(local, mime_type) or ""
+            except Exception:
+                text = ""
+
+            char_count = len(text.strip())
+            if char_count == 0:
+                return 1
+            return max(1, math.ceil(char_count / 2500))
+
+        return 1
+
+    def _empty_extraction_error(
+        self,
+        local: Path,
+        mime_type: str | None,
+        *,
+        filename: str | None = None,
+    ) -> str:
+        extension = Path(filename).suffix.lower() if filename else local.suffix.lower()
+        is_pdf = extension == ".pdf" or mime_type == "application/pdf"
+        is_image = extension in {".png", ".jpg", ".jpeg", ".webp"} or (
+            mime_type and mime_type.startswith("image/")
+        )
+
+        if extension == ".docx":
+            return (
+                "Dokument DOCX nie zawiera tekstu do odczytu "
+                "(może to być skan lub obraz)."
+            )
+        if is_pdf:
+            return (
+                "Nie udało się rozpoznać tekstu w PDF (brak warstwy tekstowej "
+                "lub zbyt niska jakość skanu)."
+            )
+        if is_image:
+            return (
+                "Nie udało się rozpoznać tekstu na obrazie "
+                "(sprawdź jakość lub kontrast)."
+            )
+        return "Could not extract text (unsupported or empty)."
+
     def process_material(self, *, owner_id: int, material_id: int) -> MaterialOut:
         with self._uow_factory() as uow:
             material = uow.materials.get(material_id)
@@ -191,14 +277,10 @@ class MaterialService:
                 material.mime_type = mime_type
                 material.size_bytes = local.stat().st_size if local.exists() else None
 
-                # Detect page count for PDFs
-                if mime_type == "application/pdf" or local.suffix.lower() == ".pdf":
-                    try:
-                        from pypdf import PdfReader
-                        reader = PdfReader(local)
-                        material.page_count = len(reader.pages)
-                    except Exception:
-                        material.page_count = None
+                if material.page_count is None:
+                    material.page_count = self._estimate_page_count(
+                        local, mime_type, filename=file_record.filename
+                    )
 
                 file_hash = material.checksum
                 if not file_hash:
@@ -239,7 +321,7 @@ class MaterialService:
                     else:
                         raw_text = cached_text
                     normalized_text = self._sanitize_text(raw_text)
-                    if normalized_text:
+                    if normalized_text and normalized_text.strip():
                         material.mark_processed(normalized_text)
                         if cache_key and not cached_text:
                             uow.ocr_cache.add(
@@ -255,7 +337,11 @@ class MaterialService:
                             )
                     else:
                         material.mark_failed(
-                            "Could not extract text (unsupported or empty)"
+                            self._empty_extraction_error(
+                                local,
+                                mime_type,
+                                filename=file_record.filename,
+                            )
                         )
                 except Exception as exc:
                     material.mark_failed(str(exc))

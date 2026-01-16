@@ -1,8 +1,29 @@
 import React from "react";
-import { Box, Stack, Heading, Text, Button, Textarea } from "../../../design-system/primitives";
-import { FormField, AlertBar } from "../../../design-system/patterns";
+import styled from "styled-components";
+import {
+  Box,
+  Flex,
+  Stack,
+  Heading,
+  Text,
+  Button,
+  Textarea,
+} from "../../../design-system/primitives";
+import { FormField, AlertBar, Tooltip } from "../../../design-system/patterns";
 import SegmentedToggle from "../../../design-system/patterns/SegmentedToggle";
 import type { MaterialUploadResponse } from "../../../services/materials";
+import { Ring } from "ldrs/react";
+import "ldrs/react/Ring.css";
+
+const SegmentedWrapper = styled(Box)`
+  display: inline-flex;
+  max-width: 100%;
+
+  ${({ theme }) => theme.media.down("sm")} {
+    display: flex;
+    width: 100%;
+  }
+`;
 
 export interface SourceSectionProps {
   sourceType: "text" | "material";
@@ -10,11 +31,22 @@ export interface SourceSectionProps {
   sourceContent: string;
   onSourceContentChange: (value: string) => void;
   materialUploading: boolean;
-  materialData: MaterialUploadResponse | null;
-  materialError: string | null;
+  materialAnalyzing: boolean;
+  materials: MaterialUploadResponse[];
+  totalMaterialPages: number;
+  materialLimitExceeded: boolean;
+  uploadingMaterials: {
+    tempId: string;
+    filename: string;
+    sizeBytes: number;
+    status: "uploading" | "failed";
+    error?: string;
+  }[];
   fileInputRef: React.RefObject<HTMLInputElement | null>;
   onMaterialChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onMaterialButtonClick: () => void;
+  onRemoveMaterial: (materialId: number) => void;
+  onRemoveUpload: (tempId: string) => void;
 }
 
 const SourceSection: React.FC<SourceSectionProps> = ({
@@ -23,11 +55,16 @@ const SourceSection: React.FC<SourceSectionProps> = ({
   sourceContent,
   onSourceContentChange,
   materialUploading,
-  materialData,
-  materialError,
+  materialAnalyzing,
+  materials,
+  totalMaterialPages,
+  materialLimitExceeded,
+  uploadingMaterials,
   fileInputRef,
   onMaterialChange,
   onMaterialButtonClick,
+  onRemoveMaterial,
+  onRemoveUpload,
 }) => {
   return (
     <Box as={Stack} $gap="md" $p="lg" $bg="#fff" $radius="xl" $shadow="md">
@@ -40,7 +77,7 @@ const SourceSection: React.FC<SourceSectionProps> = ({
         </Text>
       </Stack>
 
-      <Box $display="inline-flex" style={{ maxWidth: "100%" }}>
+      <SegmentedWrapper>
         <SegmentedToggle
           options={[
             { label: "Własny tekst", value: "text" },
@@ -49,43 +86,212 @@ const SourceSection: React.FC<SourceSectionProps> = ({
           value={sourceType}
           onChange={(v) => onSourceTypeChange(v as "text" | "material")}
         />
+      </SegmentedWrapper>
+
+      <Box>
+        {sourceType === "material" && (
+          <Stack $gap="md">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf,.docx,.txt,.md,.png,.jpg,.jpeg"
+              multiple
+              onChange={onMaterialChange}
+              style={{ display: "none" }}
+            />
+
+            {uploadingMaterials.length === 0 && materials.length === 0 ? (
+              <Flex
+                $p="xl"
+                $direction="column"
+                $align="center"
+                $justify="center"
+                $bg="#f9fafb"
+                $radius="xl"
+                $border="2px dashed #e5e7eb"
+                $height="200px"
+                style={{ cursor: "pointer" }}
+                onClick={onMaterialButtonClick}
+              >
+                <Box $mb="sm" style={{ opacity: 0.5 }}>
+                  <svg
+                    width="32"
+                    height="32"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="17 8 12 3 7 8" />
+                    <line x1="12" y1="3" x2="12" y2="15" />
+                  </svg>
+                </Box>
+              <Text $variant="body2" $weight="medium" $tone="default" $align="center">
+                Kliknij, aby wgrać pliki
+              </Text>
+              <Text $variant="body3" $tone="muted" $align="center">
+                PDF, Docx, TXT lub zdjęcia (max 20 stron łącznie)
+              </Text>
+              </Flex>
+            ) : (
+              <Box $display="inline-flex">
+                <Button $variant="info" onClick={onMaterialButtonClick}>
+                  Dodaj kolejne pliki
+                </Button>
+              </Box>
+            )}
+
+            {materialLimitExceeded && (
+              <AlertBar variant="danger">
+                Przekroczono limit 20 stron (obecnie: {totalMaterialPages}). Usuń niektóre pliki, aby
+                kontynuować.
+              </AlertBar>
+            )}
+
+            {(!!uploadingMaterials.length || !!materials.length) && (
+              <Stack $gap="xs">
+                {uploadingMaterials.map((upload) => (
+                  <Flex
+                    key={upload.tempId}
+                    $p="sm"
+                    $bg="#f9fafb"
+                    $border="1px solid #e5e7eb"
+                    $radius="md"
+                    $align="center"
+                    $justify="space-between"
+                  >
+                    <Stack $gap="xxs" style={{ flex: 1, minWidth: 0 }}>
+                      <Text
+                        $variant="body3"
+                        $weight="medium"
+                        style={{
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {upload.filename}
+                      </Text>
+                      {upload.status === "uploading" && (
+                        <Flex $align="center" style={{ gap: "6px" }}>
+                          <Ring size={12} speed={1.2} color="#2194f3" />
+                          <Text $variant="body3" $tone="info" $weight="medium">
+                            Wgrywanie...
+                          </Text>
+                        </Flex>
+                      )}
+                    </Stack>
+                    <Button
+                      $variant="danger"
+                      onClick={() => onRemoveUpload(upload.tempId)}
+                      disabled={upload.status === "uploading"}
+                      style={{ padding: "4px 8px", fontSize: "12px" }}
+                    >
+                      Usuń
+                    </Button>
+                  </Flex>
+                ))}
+
+                {uploadingMaterials
+                  .filter((upload) => upload.status === "failed" && upload.error)
+                  .map((upload) => (
+                    <AlertBar key={`${upload.tempId}-error`} variant="danger">
+                      Błąd {upload.filename}: {upload.error}
+                    </AlertBar>
+                  ))}
+
+                {materials.map((material) => {
+                  const isFailed = material.processing_status === "failed";
+                  const isDone = material.processing_status === "done";
+                  return (
+                    <Flex
+                      key={material.id}
+                      $p="sm"
+                      $bg={isFailed ? "#fff5f5" : "#f9fafb"}
+                      $border={isFailed ? "1px solid #feb2b2" : "1px solid #e5e7eb"}
+                      $radius="md"
+                      $align="center"
+                      $justify="space-between"
+                    >
+                      <Box style={{ flex: 1, minWidth: 0 }}>
+                        <Flex $align="center" style={{ gap: "8px" }}>
+                          <Text
+                            $variant="body3"
+                            $weight="medium"
+                            $tone={isFailed ? "danger" : "default"}
+                            style={{
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {material.filename}
+                          </Text>
+                          {isDone && (
+                            <Box style={{ display: "flex", alignItems: "center", color: "#48bb78" }}>
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="20 6 9 17 4 12" />
+                              </svg>
+                            </Box>
+                          )}
+                          {isFailed && (
+                            <Tooltip content={material.processing_error || "Błąd przetwarzania pliku"}>
+                              <Box style={{ display: "flex", alignItems: "center", color: "#e53e3e" }}>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                  <circle cx="12" cy="12" r="10" />
+                                  <line x1="12" y1="8" x2="12" y2="12" />
+                                  <line x1="12" y1="16" x2="12.01" y2="16" />
+                                </svg>
+                              </Box>
+                            </Tooltip>
+                          )}
+                        </Flex>
+                      </Box>
+                      <Button
+                        $variant="danger"
+                        onClick={() => onRemoveMaterial(material.id)}
+                        disabled={materialUploading || materialAnalyzing}
+                        style={{ padding: "4px 8px", fontSize: "12px" }}
+                      >
+                        Usuń
+                      </Button>
+                    </Flex>
+                  );
+                })}
+              </Stack>
+            )}
+
+            {!!materials.length && (
+              <Stack $gap="sm">
+                {materialAnalyzing && (
+                  <Flex $align="center" style={{ gap: "8px" }}>
+                    <Ring size={18} speed={1.2} color="#2194f3" />
+                    <Text $variant="body3" $tone="info" $weight="medium">
+                      Analizuję pliki...
+                    </Text>
+                  </Flex>
+                )}
+              </Stack>
+            )}
+          </Stack>
+        )}
+
+        {sourceType === "text" && (
+          <FormField label="Treść źródłowa" hint={`${sourceContent.trim().length} znaków`} fullWidth>
+            <Textarea
+              $fullWidth
+              $minHeight="140px"
+              value={sourceContent}
+              onChange={(e) => onSourceContentChange(e.target.value)}
+              placeholder="Wklej treść materiału, notatki z zajęć, fragment podręcznika lub tekst, na podstawie którego chcesz wygenerować test..."
+              className="ph-no-capture"
+            />
+          </FormField>
+        )}
       </Box>
-
-      {sourceType === "material" && (
-        <Stack $gap="sm">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".pdf,.docx,.txt,.md,.png,.jpg,.jpeg"
-            onChange={onMaterialChange}
-            style={{ display: "none" }}
-          />
-          <Box $display="inline-flex">
-            <Button $variant="info" onClick={onMaterialButtonClick} disabled={materialUploading}>
-              {materialUploading ? "Wgrywam…" : "Wgraj plik"}
-            </Button>
-          </Box>
-          {materialData && materialData.processing_status === "done" && (
-            <Text $variant="body3" $tone="muted">
-              Tekst z pliku "{materialData.filename}" został dodany do formularza.
-            </Text>
-          )}
-          {materialError && <AlertBar variant="danger">{materialError}</AlertBar>}
-        </Stack>
-      )}
-
-      {sourceType === "text" && (
-        <FormField label="Treść źródłowa" hint={`${sourceContent.trim().length} znaków`} fullWidth>
-          <Textarea
-            $fullWidth
-            $minHeight="140px"
-            value={sourceContent}
-            onChange={(e) => onSourceContentChange(e.target.value)}
-            placeholder="Wklej treść materiału, notatki z zajęć, fragment podręcznika lub tekst, na podstawie którego chcesz wygenerować test..."
-            className="ph-no-capture"
-          />
-        </FormField>
-      )}
     </Box>
   );
 };

@@ -3,6 +3,7 @@ import { Box, Button, Flex, Stack, Text } from "../../../design-system/primitive
 import { QuestionCard } from "../../../design-system/patterns";
 import QuestionView from "./QuestionView";
 import QuestionEditor from "./QuestionEditor";
+import MetaSummary from "./MetaSummary";
 import type { QuestionOut } from "../../../services/test";
 import { MathText } from "../../../components/MathText/MathText";
 import { MAX_QUESTIONS_TOTAL } from "../../CreateTestAIPage/constants";
@@ -13,6 +14,12 @@ export interface QuestionsSectionProps {
   isAdding: boolean;
   draft: Partial<QuestionOut>;
   selectedIds: number[];
+  summary: {
+    total: number;
+    easy: number;
+    medium: number;
+    hard: number;
+  };
   actions: {
     startEdit: (q: QuestionOut) => void;
     startAdd: () => void;
@@ -46,6 +53,7 @@ const QuestionsSection: React.FC<QuestionsSectionProps> = ({
   isAdding,
   draft,
   selectedIds,
+  summary,
   actions,
   stateFlags,
 }) => {
@@ -87,8 +95,9 @@ const QuestionsSection: React.FC<QuestionsSectionProps> = ({
   );
 
   return (
-    <Stack $gap="lg">
-      <Flex $justify="flex-end" $align="center">
+    <Stack $gap="xl">
+      <Flex $justify="space-between" $align="center" $wrap="wrap" $gap="md">
+        <MetaSummary {...summary} />
         <Flex $gap="sm">
           <Button $variant="outline" $size="sm" onClick={actions.selectAll}>
             Zaznacz wszystko

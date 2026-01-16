@@ -2,7 +2,6 @@ import React from "react";
 import { Box, Flex, Stack, Text, Textarea } from "../../design-system/primitives";
 import useTestDetail from "./hooks/useTestDetail";
 import TitleBar from "./components/TitleBar";
-import MetaSummary from "./components/MetaSummary";
 import QuestionsSection from "./components/QuestionsSection";
 import PdfConfigSection from "./components/PdfConfigSection";
 import BulkActionBar from "./components/BulkActionBar";
@@ -25,7 +24,7 @@ const TestDetailPage: React.FC = () => {
       <Box $flex={1} $width="100%">
         <PageSection $py="xl">
           <PageContainer>
-            <Stack style={{ width: "100%", maxWidth: 960, margin: "0 auto" }} $gap="lg">
+            <Stack style={{ width: "100%", maxWidth: 960, margin: "0 auto" }} $gap="3xl">
               <TitleBar
                 title={data.title}
                 isEditing={state.isEditingTitle}
@@ -34,66 +33,65 @@ const TestDetailPage: React.FC = () => {
                 onSave={actions.saveTitle}
                 onCancel={actions.cancelTitle}
                 onBeginEdit={() => actions.beginTitleEdit(data.title)}
+                onEditConfig={actions.handleEditConfig}
               />
 
-              <MetaSummary
-                total={data.questions.length}
-                easy={data.questions.filter((q) => q.difficulty === 1).length}
-                medium={data.questions.filter((q) => q.difficulty === 2).length}
-                hard={data.questions.filter((q) => q.difficulty === 3).length}
-                closedCount={derived.closedCount}
-                openCount={derived.openCount}
-              />
+              <Stack $gap="lg">
+                <QuestionsSection
+                  questions={data.questions}
+                  editingId={state.editingId}
+                  isAdding={state.isAdding}
+                  draft={state.draft}
+                  selectedIds={state.selectedIds}
+                  summary={{
+                    total: data.questions.length,
+                    easy: data.questions.filter((q) => q.difficulty === 1).length,
+                    medium: data.questions.filter((q) => q.difficulty === 2).length,
+                    hard: data.questions.filter((q) => q.difficulty === 3).length,
+                  }}
+                  actions={{
+                    startEdit: actions.startEdit,
+                    startAdd: actions.startAdd,
+                    cancelEdit: actions.cancelEdit,
+                    handleSaveEdit: actions.handleSaveEdit,
+                    handleAdd: actions.handleAdd,
+                    handleDelete: actions.handleDelete,
+                    toggleDraftClosed: actions.toggleDraftClosed,
+                    setDraftDifficulty: actions.setDraftDifficulty,
+                    onTextChange: actions.onTextChange,
+                    updateDraftChoice: actions.updateDraftChoice,
+                    toggleDraftCorrect: actions.toggleDraftCorrect,
+                    removeChoiceRow: actions.removeChoiceRow,
+                    addDraftChoiceRow: actions.addDraftChoiceRow,
+                    toggleSelect: actions.toggleSelect,
+                    selectAll: actions.selectAll,
+                    clearSelection: actions.clearSelection,
+                  }}
+                  stateFlags={{
+                    savingEdit: state.savingEdit,
+                    savingAdd: state.savingAdd,
+                    editorError: state.editorError,
+                    missingCorrectLive: derived.missingCorrectLive,
+                    ensureChoices: derived.ensureChoices,
+                  }}
+                />
 
-              <QuestionsSection
-                questions={data.questions}
-                editingId={state.editingId}
-                isAdding={state.isAdding}
-                draft={state.draft}
-                selectedIds={state.selectedIds}
-                actions={{
-                  startEdit: actions.startEdit,
-                  startAdd: actions.startAdd,
-                  cancelEdit: actions.cancelEdit,
-                  handleSaveEdit: actions.handleSaveEdit,
-                  handleAdd: actions.handleAdd,
-                  handleDelete: actions.handleDelete,
-                  toggleDraftClosed: actions.toggleDraftClosed,
-                  setDraftDifficulty: actions.setDraftDifficulty,
-                  onTextChange: actions.onTextChange,
-                  updateDraftChoice: actions.updateDraftChoice,
-                  toggleDraftCorrect: actions.toggleDraftCorrect,
-                  removeChoiceRow: actions.removeChoiceRow,
-                  addDraftChoiceRow: actions.addDraftChoiceRow,
-                  toggleSelect: actions.toggleSelect,
-                  selectAll: actions.selectAll,
-                  clearSelection: actions.clearSelection,
-                }}
-                stateFlags={{
-                  savingEdit: state.savingEdit,
-                  savingAdd: state.savingAdd,
-                  editorError: state.editorError,
-                  missingCorrectLive: derived.missingCorrectLive,
-                  ensureChoices: derived.ensureChoices,
-                }}
-              />
+                <PdfConfigSection
+                  config={state.pdfConfig}
+                  isOpen={state.pdfConfigOpen}
+                  onToggle={() => actions.setPdfConfigOpen(!state.pdfConfigOpen)}
+                  onChange={(updater) => actions.setPdfConfig((cfg) => updater(cfg))}
+                  onReset={actions.resetPdfConfig}
+                  onValidityChange={actions.setPdfConfigValid}
+                />
 
-              <PdfConfigSection
-                config={state.pdfConfig}
-                isOpen={state.pdfConfigOpen}
-                onToggle={() => actions.setPdfConfigOpen(!state.pdfConfigOpen)}
-                onChange={(updater) => actions.setPdfConfig((cfg) => updater(cfg))}
-                onReset={actions.resetPdfConfig}
-                onValidityChange={actions.setPdfConfigValid}
-              />
-
-              <DownloadActions 
-                onDownloadPdf={actions.handleDownloadCustomPdf}
-                onDownloadXml={actions.downloadXml}
-                pdfDisabled={!state.pdfConfigValid}
-                pdfDisabledReason="Ustaw poprawną wysokość pola odpowiedzi (1–10 cm), aby pobrać PDF."
-              />
-
+                <DownloadActions 
+                  onDownloadPdf={actions.handleDownloadCustomPdf}
+                  onDownloadXml={actions.downloadXml}
+                  pdfDisabled={!state.pdfConfigValid}
+                  pdfDisabledReason="Ustaw poprawną wysokość pola odpowiedzi (1–10 cm), aby pobrać PDF."
+                />
+              </Stack>
             </Stack>
           </PageContainer>
         </PageSection>
