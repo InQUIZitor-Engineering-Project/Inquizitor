@@ -3,8 +3,8 @@ import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { Box, Flex, Stack, Heading, Text, Button } from "../../design-system/primitives";
 import { PageContainer, PageSection } from "../../design-system/patterns";
-import quizIcon from "../../assets/icons/quiz.png";
-import uploadIcon from "../../assets/icons/upload.png";
+import quizIcon from "../../assets/icons/quiz.webp";
+import uploadIcon from "../../assets/icons/upload.webp";
 
 const SelectionCard = styled(Box)<{ $selected: boolean }>`
   cursor: pointer;

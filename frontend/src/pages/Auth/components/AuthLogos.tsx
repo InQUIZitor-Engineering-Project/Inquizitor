@@ -1,7 +1,7 @@
 import React from "react";
 import { Flex, Box } from "../../../design-system/primitives";
-import logoBook from "../../../assets/logo_book.png";
-import logoText from "../../../assets/logo_text.png";
+import logoBook from "../../../assets/logo_book.webp";
+import logoText from "../../../assets/logo_text.webp";
 
 const AuthLogos: React.FC = () => (
   <Flex $align="center" $gap="md" $wrap="wrap">

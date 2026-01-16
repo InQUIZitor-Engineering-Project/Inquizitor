@@ -1,7 +1,7 @@
 import React from "react";
 import { useTheme } from "styled-components";
 import { Box, Flex, Heading, Stack, Text } from "../../design-system/primitives";
-import faqImg from "../../assets/faq_nobackground2.png";
+import faqImg from "../../assets/faq_nobackground2.webp";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { faqItems } from "./faqData";
 import useFaq from "./hooks/useFaq";

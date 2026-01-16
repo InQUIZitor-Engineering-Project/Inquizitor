@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import defaultFavicon from "../assets/logo_book.png";
+import defaultFavicon from "../assets/logo_book.webp";
 
 const useFavicon = (iconPath: string = defaultFavicon) => {
   useEffect(() => {

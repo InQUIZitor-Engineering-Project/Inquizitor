@@ -4,7 +4,7 @@ import styled, { useTheme } from "styled-components";
 import { Stack, Heading, Text, Input, Button } from "../../design-system/primitives";
 import AlertBar from "../../design-system/patterns/AlertBar";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
-import loginIllustration from "../../assets/login.png";
+import loginIllustration from "../../assets/login.webp";
 import AuthLayout from "../Auth/components/AuthLayout";
 import AuthLogos from "../Auth/components/AuthLogos";
 import { requestPasswordReset } from "../../services/auth";

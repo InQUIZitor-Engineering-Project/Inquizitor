@@ -5,7 +5,7 @@ import { Stack, Heading, Text, Input, Button, Checkbox } from "../../design-syst
 import AlertBar from "../../design-system/patterns/AlertBar";
 import { useAuth } from "../../hooks/useAuth";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
-import loginIllustration from "../../assets/login.png";
+import loginIllustration from "../../assets/login.webp";
 import AuthLayout from "../Auth/components/AuthLayout";
 import AuthLogos from "../Auth/components/AuthLogos";
 
