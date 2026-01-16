@@ -7,7 +7,6 @@ export interface ContactFormData {
   category: string;
   subject: string;
   message: string;
-  turnstile_token?: string | null;
 }
 
 export async function sendContactForm(data: ContactFormData) {
@@ -32,8 +31,7 @@ export async function sendContactForm(data: ContactFormData) {
           email: "Adres email",
           first_name: "Imię",
           last_name: "Nazwisko",
-          category: "Kategoria",
-          turnstile_token: "Weryfikacja botów"
+          category: "Kategoria"
         };
 
         const translatedField = fieldNames[field] || field;

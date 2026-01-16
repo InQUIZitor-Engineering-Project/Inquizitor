@@ -52,8 +52,6 @@ class Settings(BaseSettings):
     SENTRY_ENV: str = "production"
     POSTHOG_API_KEY: str | None = None
     POSTHOG_HOST: str = "https://eu.i.posthog.com"
-    TURNSTILE_SITE_KEY: str | None = None
-    TURNSTILE_SECRET_KEY: str | None = None
 
 
 @lru_cache

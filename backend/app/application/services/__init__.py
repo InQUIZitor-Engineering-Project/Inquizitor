@@ -7,7 +7,6 @@ from .material_service import MaterialService
 from .notification_service import NotificationService
 from .support_service import SupportService
 from .test_service import TestService
-from .turnstile_service import TurnstileService
 from .user_service import UserService
 
 __all__ = [
@@ -18,7 +17,6 @@ __all__ = [
     "NotificationService",
     "SupportService",
     "TestService",
-    "TurnstileService",
     "UserService",
 ]
 

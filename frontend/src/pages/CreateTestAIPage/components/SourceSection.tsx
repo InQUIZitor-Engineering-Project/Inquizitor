@@ -56,7 +56,7 @@ const SourceSection: React.FC<SourceSectionProps> = ({
           <input
             ref={fileInputRef}
             type="file"
-            accept=".pdf,.docx,.txt,.md,.png,.jpg"
+            accept=".pdf,.docx,.txt,.md,.png,.jpg,.jpeg"
             onChange={onMaterialChange}
             style={{ display: "none" }}
           />
