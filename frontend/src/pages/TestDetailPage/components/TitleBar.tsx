@@ -1,6 +1,6 @@
 import React from "react";
 import styled from "styled-components";
-import editIcon from "../../../assets/icons/edit-icon.png";
+import editIcon from "../../../assets/icons/edit-icon.webp";
 import { Flex, Heading, Input, Button, Box } from "../../../design-system/primitives";
 
 export interface TitleBarProps {

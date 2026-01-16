@@ -2,9 +2,9 @@ import React from "react";
 import styled from "styled-components";
 import { Box, Stack, Heading, Text, Flex } from "../../design-system/primitives";
 import StepCard from "./StepCard";
-import uploadIcon from "../../assets/icons/upload.png";
-import quizIcon from "../../assets/icons/quiz.png";
-import shareIcon from "../../assets/icons/share.png";
+import uploadIcon from "../../assets/icons/upload.webp";
+import quizIcon from "../../assets/icons/quiz.webp";
+import shareIcon from "../../assets/icons/share.webp";
 import { PageContainer } from "../../design-system/patterns";
 
 const HowItWorksSection = styled(Box)`

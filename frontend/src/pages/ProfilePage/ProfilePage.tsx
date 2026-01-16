@@ -7,7 +7,7 @@ import AccountInfoCard from "./components/AccountInfoCard";
 import StatsCard from "./components/StatsCard";
 import NotificationsCard from "./components/NotificationsCard";
 import PasswordCard from "./components/PasswordCard";
-import profileIllustration from "../../assets/profile.png";
+import profileIllustration from "../../assets/profile.webp";
 import { PageContainer, PageSection } from "../../design-system/patterns";
 
 const API_BASE = import.meta.env.VITE_API_URL || "";

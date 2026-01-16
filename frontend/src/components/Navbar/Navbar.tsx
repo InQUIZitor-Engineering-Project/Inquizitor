@@ -18,9 +18,9 @@ import {
 import { Logo, LogosWrapper } from "../../styles/common";
 import { useAuth } from "../../hooks/useAuth";
 import { useLoader } from "../../components/Loader/GlobalLoader";
-import logoBook from "../../assets/logo_book.png";
-import logoText from "../../assets/logo_text.png";
-import hamburgerIcon from "../../assets/hamburger.png";
+import logoBook from "../../assets/logo_book.webp";
+import logoText from "../../assets/logo_text.webp";
+import hamburgerIcon from "../../assets/hamburger.webp";
 import { PageContainer } from "../../design-system/patterns";
 import { Flex } from "../../design-system/primitives";
 
