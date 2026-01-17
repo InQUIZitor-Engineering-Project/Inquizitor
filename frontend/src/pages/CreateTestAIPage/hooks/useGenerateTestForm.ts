@@ -84,6 +84,7 @@ export interface UseGenerateTestFormResult {
     setHardCount: (v: number) => void;
     handleMaterialButtonClick: () => void;
     handleMaterialChange: (event: React.ChangeEvent<HTMLInputElement>) => Promise<void>;
+    handleFilesUpload: (files: File[]) => Promise<void>;
     handleRemoveMaterial: (materialId: number) => Promise<void>;
     handleRemoveUpload: (tempId: string) => void;
     handleGenerate: () => Promise<void>;
@@ -246,6 +247,10 @@ const useGenerateTestForm = (): UseGenerateTestFormResult => {
 
   const handleMaterialChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files ?? []);
+    await handleFilesUpload(files);
+  };
+
+  const handleFilesUpload = async (files: File[]) => {
     if (!files.length) return;
 
     const oversized = files.find((file) => file.size > MAX_FILE_SIZE_BYTES);
@@ -287,6 +292,10 @@ const useGenerateTestForm = (): UseGenerateTestFormResult => {
           const result = await uploadMaterials([file]);
           const uploaded = result.materials[0];
           if (uploaded) {
+            setUploadingMaterials((prev) =>
+              prev.filter((item) => item.tempId !== tempId)
+            );
+
             let nextTotal = 0;
             setMaterials((prev) => {
               nextTotal = prev.reduce(
@@ -296,6 +305,7 @@ const useGenerateTestForm = (): UseGenerateTestFormResult => {
               nextTotal += uploaded.page_count ?? 1;
               return [...prev, uploaded];
             });
+
             if (nextTotal > MAX_TOTAL_PAGES) {
               setMaterialError(
                 `Limit stron przekroczony (max ${MAX_TOTAL_PAGES}). Usuń część plików.`
@@ -313,9 +323,6 @@ const useGenerateTestForm = (): UseGenerateTestFormResult => {
               }
             }
           }
-          setUploadingMaterials((prev) =>
-            prev.filter((item) => item.tempId !== tempId)
-          );
         } catch (error: any) {
           setUploadingMaterials((prev) =>
             prev.map((item) =>
@@ -599,6 +606,7 @@ const useGenerateTestForm = (): UseGenerateTestFormResult => {
       setHardCount: safeSetHard,
       handleMaterialButtonClick,
       handleMaterialChange,
+      handleFilesUpload,
       handleRemoveMaterial,
       handleRemoveUpload,
       handleGenerate,
