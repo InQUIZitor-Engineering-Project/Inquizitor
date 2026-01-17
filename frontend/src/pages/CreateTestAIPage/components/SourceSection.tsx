@@ -1,5 +1,5 @@
-import React from "react";
-import styled from "styled-components";
+import React, { useState, useCallback } from "react";
+import styled, { css } from "styled-components";
 import {
   Box,
   Flex,
@@ -25,6 +25,32 @@ const SegmentedWrapper = styled(Box)`
   }
 `;
 
+const DropZone = styled(Flex)<{ $isDragging: boolean }>`
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+
+  ${({ $isDragging, theme }) =>
+    $isDragging &&
+    css`
+      background-color: ${theme.colors.tint.t5};
+      border-color: ${theme.colors.brand.primary};
+      transform: scale(1.01);
+    `}
+`;
+
+const DesktopOnly = styled.span`
+  ${({ theme }) => theme.media.down("sm")} {
+    display: none;
+  }
+`;
+
+const MobileOnly = styled.span`
+  display: none;
+  ${({ theme }) => theme.media.down("sm")} {
+    display: inline;
+  }
+`;
+
 export interface SourceSectionProps {
   sourceType: "text" | "material";
   onSourceTypeChange: (next: "text" | "material") => void;
@@ -44,6 +70,7 @@ export interface SourceSectionProps {
   }[];
   fileInputRef: React.RefObject<HTMLInputElement | null>;
   onMaterialChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  onFilesUpload: (files: File[]) => void;
   onMaterialButtonClick: () => void;
   onRemoveMaterial: (materialId: number) => void;
   onRemoveUpload: (tempId: string) => void;
@@ -62,10 +89,39 @@ const SourceSection: React.FC<SourceSectionProps> = ({
   uploadingMaterials,
   fileInputRef,
   onMaterialChange,
+  onFilesUpload,
   onMaterialButtonClick,
   onRemoveMaterial,
   onRemoveUpload,
 }) => {
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  }, []);
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragging(false);
+
+      const files = Array.from(e.dataTransfer.files);
+      if (files.length > 0) {
+        onFilesUpload(files);
+      }
+    },
+    [onFilesUpload]
+  );
+
   return (
     <Box as={Stack} $gap="md" $p="lg" $bg="#fff" $radius="xl" $shadow="md">
       <Stack $gap="xs">
@@ -81,7 +137,7 @@ const SourceSection: React.FC<SourceSectionProps> = ({
         <SegmentedToggle
           options={[
             { label: "Własny tekst", value: "text" },
-            { label: "Materiał dydaktyczny (plik)", value: "material" },
+            { label: "Materiał dydaktyczny", value: "material" },
           ]}
           value={sourceType}
           onChange={(v) => onSourceTypeChange(v as "text" | "material")}
@@ -101,7 +157,7 @@ const SourceSection: React.FC<SourceSectionProps> = ({
             />
 
             {uploadingMaterials.length === 0 && materials.length === 0 ? (
-              <Flex
+              <DropZone
                 $p="xl"
                 $direction="column"
                 $align="center"
@@ -110,8 +166,11 @@ const SourceSection: React.FC<SourceSectionProps> = ({
                 $radius="xl"
                 $border="2px dashed #e5e7eb"
                 $height="200px"
-                style={{ cursor: "pointer" }}
+                $isDragging={isDragging}
                 onClick={onMaterialButtonClick}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
               >
                 <Box $mb="sm" style={{ opacity: 0.5 }}>
                   <svg
@@ -130,17 +189,37 @@ const SourceSection: React.FC<SourceSectionProps> = ({
                   </svg>
                 </Box>
               <Text $variant="body2" $weight="medium" $tone="default" $align="center">
-                Kliknij, aby wgrać pliki
+                <DesktopOnly>Kliknij lub przeciągnij, aby wgrać pliki</DesktopOnly>
+                <MobileOnly>Kliknij, aby wgrać pliki</MobileOnly>
               </Text>
               <Text $variant="body3" $tone="muted" $align="center">
-                PDF, Docx, TXT lub zdjęcia (max 20 stron łącznie)
+                PDF, Docx, TXT lub zdjęcia (maksymalnie 20 stron łącznie)
               </Text>
-              </Flex>
+              </DropZone>
             ) : (
-              <Box $display="inline-flex">
+              <Box $display="inline-flex" style={{ gap: "12px" }}>
                 <Button $variant="info" onClick={onMaterialButtonClick}>
                   Dodaj kolejne pliki
                 </Button>
+                <DesktopOnly>
+                  <DropZone
+                    $px="lg"
+                    $direction="row"
+                    $align="center"
+                    $bg="#f9fafb"
+                    $radius="lg"
+                    $border="1px dashed #e5e7eb"
+                    $isDragging={isDragging}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    style={{ minHeight: "42px" }}
+                  >
+                    <Text $variant="body3" $tone="muted">
+                      lub przeciągnij tutaj
+                    </Text>
+                  </DropZone>
+                </DesktopOnly>
               </Box>
             )}
 
@@ -264,16 +343,14 @@ const SourceSection: React.FC<SourceSectionProps> = ({
               </Stack>
             )}
 
-            {!!materials.length && (
+            {materialAnalyzing && !!materials.length && (
               <Stack $gap="sm">
-                {materialAnalyzing && (
-                  <Flex $align="center" style={{ gap: "8px" }}>
-                    <Ring size={18} speed={1.2} color="#2194f3" />
-                    <Text $variant="body3" $tone="info" $weight="medium">
-                      Analizuję pliki...
-                    </Text>
-                  </Flex>
-                )}
+                <Flex $align="center" style={{ gap: "8px" }}>
+                  <Ring size={18} speed={1.2} color="#2194f3" />
+                  <Text $variant="body3" $tone="info" $weight="medium">
+                    Analizuję pliki...
+                  </Text>
+                </Flex>
               </Stack>
             )}
           </Stack>

@@ -65,6 +65,7 @@ const CreateTestAIPage: React.FC = () => {
                 uploadingMaterials={state.uploadingMaterials}
                 fileInputRef={refs.fileInputRef}
                 onMaterialChange={actions.handleMaterialChange}
+                onFilesUpload={actions.handleFilesUpload}
                 onMaterialButtonClick={actions.handleMaterialButtonClick}
                 onRemoveMaterial={actions.handleRemoveMaterial}
                 onRemoveUpload={actions.handleRemoveUpload}
