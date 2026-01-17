@@ -19,6 +19,10 @@ class PdfExportCacheRepository(ABC):
     def remove(self, entry_id: int) -> None:
         raise NotImplementedError
 
+    @abstractmethod
+    def remove_for_test(self, test_id: int) -> None:
+        raise NotImplementedError
+
     def purge_older_than(self, cutoff: datetime) -> int:
         _ = cutoff
         return 0

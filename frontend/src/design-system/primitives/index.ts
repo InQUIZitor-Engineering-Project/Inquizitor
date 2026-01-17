@@ -21,7 +21,7 @@ export type { CheckboxProps } from "./Checkbox";
 export { Divider } from "./Divider";
 export { ActionBar } from "./ActionBar";
 export { Toolbar } from "./Toolbar";
-export { Segmented } from "./Segmented";
+export { Segmented, SegmentedIndicator } from "./Segmented";
 export { Badge } from "./Badge";
 export type { BadgeProps } from "./Badge";
 export { CloseButton } from "./CloseButton";

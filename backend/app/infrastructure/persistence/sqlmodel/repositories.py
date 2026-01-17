@@ -4,6 +4,7 @@ from collections.abc import Iterable
 from datetime import datetime
 from typing import Any, cast
 
+from sqlalchemy import delete
 from sqlalchemy.orm import joinedload
 from sqlmodel import Session, select
 
@@ -113,7 +114,7 @@ class SqlModelTestRepository(TestRepository):
             select(db_models.Test)
             .where(db_models.Test.owner_id == user_id)
             .order_by(
-                cast(Any, db_models.Test.id).asc(),
+                cast(Any, db_models.Test.created_at).desc(),
             )
         )
         rows = cast(Any, self._session).exec(stmt).all()
@@ -253,6 +254,19 @@ class SqlModelJobRepository(JobRepository):
         rows = cast(Any, self._session).exec(stmt).all()
         return [mappers.job_to_domain(row) for row in rows]
 
+    def get_generation_job_by_test_id(self, test_id: int) -> Job | None:
+
+        # Szukamy joba typu test_generation, którego result zawiera test_id
+        stmt = (
+            select(db_models.Job)
+            .where(
+                db_models.Job.job_type == db_models.JobType.test_generation,
+                cast(Any, db_models.Job.result)["test_id"].astext == str(test_id)
+            )
+        )
+        row = cast(Any, self._session).exec(stmt).first()
+        return mappers.job_to_domain(row) if row else None
+
 
 class SqlModelPdfExportCacheRepository(PdfExportCacheRepository):
     def __init__(self, session: Session):
@@ -277,6 +291,13 @@ class SqlModelPdfExportCacheRepository(PdfExportCacheRepository):
         if row:
             self._session.delete(row)
             self._session.commit()
+
+    def remove_for_test(self, test_id: int) -> None:
+        stmt = delete(db_models.PdfExportCache).where(
+            db_models.PdfExportCache.test_id == test_id
+        )
+        cast(Any, self._session).exec(stmt)
+        self._session.commit()
 
 
 class SqlModelOcrCacheRepository(OcrCacheRepository):

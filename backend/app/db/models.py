@@ -144,6 +144,7 @@ class Material(SQLModel, table=True):
     mime_type: str | None = Field(default=None, index=True)
     size_bytes: int | None = None
     checksum: str | None = Field(default=None, index=True)
+    page_count: int | None = None
     extracted_text: str | None = None
     processing_status: ProcessingStatus = Field(
         default=ProcessingStatus.done, index=True

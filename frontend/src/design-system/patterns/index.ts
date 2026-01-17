@@ -15,4 +15,6 @@ export { default as BottomSheet } from "./BottomSheet";
 export type { BottomSheetProps } from "./BottomSheet";
 export { default as CustomSelect } from "./CustomSelect";
 export type { CustomSelectProps, SelectOption } from "./CustomSelect";
+export { default as Tooltip } from "./Tooltip";
+export type { TooltipProps } from "./Tooltip";
 export { PageContainer, PageSection } from "./Container";

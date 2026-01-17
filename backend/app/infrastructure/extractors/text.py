@@ -26,8 +26,45 @@ def _read_pdf(path: Path) -> str:
 def _read_docx(path: Path) -> str:
     import docx
 
-    document = docx.Document(str(path))
-    return "\n".join(paragraph.text for paragraph in document.paragraphs)
+    try:
+        document = docx.Document(str(path))
+    except Exception:
+        document = None
+
+    parts: list[str] = []
+
+    def collect_text(parent: object) -> None:
+        paragraphs = getattr(parent, "paragraphs", None)
+        if paragraphs:
+            for paragraph in paragraphs:
+                text = paragraph.text.strip()
+                if text:
+                    parts.append(text)
+
+        tables = getattr(parent, "tables", None)
+        if tables:
+            for table in tables:
+                for row in table.rows:
+                    for cell in row.cells:
+                        collect_text(cell)
+
+    if document:
+        collect_text(document)
+        for section in document.sections:
+            collect_text(section.header)
+            collect_text(section.footer)
+
+    text_value = "\n".join(parts)
+    if len(text_value.strip()) >= 50:
+        return text_value
+
+    try:
+        import docx2txt
+
+        fallback_text = docx2txt.process(str(path))
+        return fallback_text.strip()
+    except Exception:
+        return text_value
 
 
 def extract_text_from_file(path: Path, mime: str | None) -> str | None:

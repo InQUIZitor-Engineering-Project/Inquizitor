@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { useOutletContext, useParams, useSearchParams } from "react-router-dom";
+import { useOutletContext, useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { useLoader } from "../../../components/Loader/GlobalLoader";
 import useDocumentTitle from "../../../hooks/useDocumentTitle";
 import useTestData, { sortQuestions } from "./useTestData";
@@ -98,10 +98,12 @@ type UseTestDetailResult = {
     setPdfConfigValid: (valid: boolean) => void;
     handleDownloadCustomPdf: () => Promise<void>;
     downloadXml: () => Promise<void>;
+    handleEditConfig: () => void;
   };
 };
 
 const useTestDetail = (): UseTestDetailResult => {
+  const navigate = useNavigate();
   const { refreshSidebarTests } = useOutletContext<LayoutCtx>();
   const { withLoader, startLoading, stopLoading } = useLoader();
   const { data, loading, error, refresh, deleteCurrent, setData } = useTestData();
@@ -343,6 +345,11 @@ const useTestDetail = (): UseTestDetailResult => {
     });
   };
 
+  const handleEditConfig = () => {
+    if (!data) return;
+    navigate(`/tests/new/ai?from=${data.test_id}`);
+  };
+
   const closedCount = data?.questions.filter((q) => q.is_closed).length || 0;
   const openCount = data ? data.questions.length - closedCount : 0;
 
@@ -432,6 +439,7 @@ const useTestDetail = (): UseTestDetailResult => {
       setPdfConfigValid,
       handleDownloadCustomPdf,
       downloadXml,
+      handleEditConfig,
     },
   };
 };

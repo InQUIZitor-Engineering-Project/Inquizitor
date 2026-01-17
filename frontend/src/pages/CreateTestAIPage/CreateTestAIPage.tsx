@@ -1,6 +1,8 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
+import styled from "styled-components";
 import { Box, Flex, Stack, Heading, Text, Button } from "../../design-system/primitives";
-import { AlertBar } from "../../design-system/patterns";
+import { AlertBar, Tooltip } from "../../design-system/patterns";
 import useGenerateTestForm from "./hooks/useGenerateTestForm";
 import SourceSection from "./components/SourceSection";
 import PersonalizationSection from "./components/PersonalizationSection";
@@ -8,7 +10,15 @@ import StructureCard from "./components/StructureCard";
 import DifficultyCard from "./components/DifficultyCard";
 import { PageContainer, PageSection } from "../../design-system/patterns";
 
+const ActionButton = styled(Button)`
+  ${({ theme }) => theme.media.down("sm")} {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+`;
+
 const CreateTestAIPage: React.FC = () => {
+  const navigate = useNavigate();
   const { state, derived, status, actions, refs } = useGenerateTestForm();
 
   return (
@@ -18,16 +28,28 @@ const CreateTestAIPage: React.FC = () => {
           <PageContainer>
             <Stack style={{ width: "100%", maxWidth: 960, margin: "0 auto" }} $gap="lg">
               <Stack $gap="xs">
-              <Heading as="h1" $level="h2" style={{ fontSize: "clamp(24px, 5vw, 32px)", lineHeight: "1.25" }}>
-                Utwórz test dopasowany do swoich potrzeb
-              </Heading>
-              <Text
-                $variant="body2"
-                $tone="muted"
-                style={{ fontSize: "clamp(14px, 4vw, 16px)", lineHeight: "1.4" }}
-              >
-                Wgraj materiał lub wklej treść, wybierz typ pytań oraz poziom trudności, a we wygenerujemy gotowy test.
-              </Text>
+                <Flex $justify="space-between" $align="flex-start">
+                  <Stack $gap="xs">
+                    <Heading as="h1" $level="h2" style={{ fontSize: "clamp(24px, 5vw, 32px)", lineHeight: "1.25" }}>
+                      {status.isEditing ? "Dostosuj konfigurację i wygeneruj ponownie" : "Utwórz test dopasowany do swoich potrzeb"}
+                    </Heading>
+                    <Text
+                      $variant="body2"
+                      $tone="muted"
+                      style={{ fontSize: "clamp(14px, 4vw, 16px)", lineHeight: "1.4" }}
+                    >
+                      {status.isEditing 
+                        ? "Zmień parametry poniżej, aby wygenerować nową wersję testu. Oryginalny test pozostanie bez zmian."
+                        : "Wgraj materiał lub wklej treść, wybierz typ pytań oraz poziom trudności, a my wygenerujemy gotowy test."
+                      }
+                    </Text>
+                  </Stack>
+                  {status.isEditing && (
+                    <ActionButton $variant="ghost" onClick={() => navigate(`/tests/${status.editTestId}`)}>
+                      Wróć do testu
+                    </ActionButton>
+                  )}
+                </Flex>
               </Stack>
 
               <SourceSection
@@ -36,11 +58,17 @@ const CreateTestAIPage: React.FC = () => {
                 sourceContent={state.sourceContent}
                 onSourceContentChange={actions.setSourceContent}
                 materialUploading={state.materialUploading}
-                materialData={state.materialData}
-                materialError={state.materialError}
+                materialAnalyzing={state.materialAnalyzing}
+                materials={state.materials}
+                totalMaterialPages={derived.totalMaterialPages}
+                materialLimitExceeded={derived.materialLimitExceeded}
+                uploadingMaterials={state.uploadingMaterials}
                 fileInputRef={refs.fileInputRef}
                 onMaterialChange={actions.handleMaterialChange}
+                onFilesUpload={actions.handleFilesUpload}
                 onMaterialButtonClick={actions.handleMaterialButtonClick}
+                onRemoveMaterial={actions.handleRemoveMaterial}
+                onRemoveUpload={actions.handleRemoveUpload}
               />
 
               <PersonalizationSection
@@ -80,13 +108,22 @@ const CreateTestAIPage: React.FC = () => {
               />
 
               <Flex $justify="center">
-                <Button
-                  $size="lg"
-                  onClick={actions.handleGenerate}
-                  disabled={status.genLoading || state.materialUploading}
-                >
-                  {status.genLoading ? "Generuję…" : "Generuj test"}
-                </Button>
+                <Tooltip content={derived.primaryValidationError}>
+                  <Button
+                    $size="lg"
+                    onClick={actions.handleGenerate}
+                    disabled={
+                      status.genLoading || state.materialUploading || !derived.canGenerate
+                    }
+                  >
+                    {status.genLoading 
+                      ? "Generuję…" 
+                      : status.isEditing 
+                        ? "Wygeneruj ponownie" 
+                        : "Generuj test"
+                    }
+                  </Button>
+                </Tooltip>
               </Flex>
 
               {status.genError && <AlertBar variant="danger">{status.genError}</AlertBar>}

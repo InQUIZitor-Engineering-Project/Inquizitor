@@ -5,7 +5,7 @@ import { Stack, Heading, Text, Input, Button, Checkbox, Flex } from "../../desig
 import AlertBar from "../../design-system/patterns/AlertBar";
 import { registerUser } from "../../services/auth";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
-import loginIllustration from "../../assets/login.png";
+import loginIllustration from "../../assets/login.webp";
 import AuthLayout from "../Auth/components/AuthLayout";
 import AuthLogos from "../Auth/components/AuthLogos";
 import { Modal } from "../../design-system/patterns";

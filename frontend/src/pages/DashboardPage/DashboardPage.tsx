@@ -4,7 +4,7 @@ import { Flex, Stack } from "../../design-system/primitives";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import useDashboard from "./hooks/useDashboard";
 import EmptyState from "./components/EmptyState";
-import dashboardWelcome from "../../assets/dashboard_welcome.png";
+import dashboardWelcome from "../../assets/dashboard_welcome.webp";
 import { PageContainer, PageSection, Modal } from "../../design-system/patterns";
 
 const EMPTY_ILLUSTRATION = dashboardWelcome;

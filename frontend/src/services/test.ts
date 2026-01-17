@@ -122,6 +122,7 @@ export interface GenerateParams {
   text?: string;
   additional_instructions?: string;
   file_id?: number;
+  material_ids?: number[];
 }
 
 export async function generateTest(
@@ -157,6 +158,11 @@ export async function updateTestTitle(testId: number, title: string) {
     throw new Error(body.detail || "Nie udało się zaktualizować tytułu");
   }
   return res.json();
+}
+
+export async function getTestConfig(testId: number): Promise<GenerateParams> {
+  const res = await apiRequest(`/tests/${testId}/config`);
+  return handleJson<GenerateParams>(res, "Nie udało się pobrać konfiguracji testu");
 }
 
 // --- NOWE: zarządzanie pytaniami ---

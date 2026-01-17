@@ -7,7 +7,7 @@ import {
   CreateNewButton,
   DeleteIcon,
 } from "./Sidebar.styles";
-import trashIcon from "../../assets/icons/Trash.png";
+import trashIcon from "../../assets/icons/Trash.webp";
 
 export interface SidebarProps {
   tests: { id: number; title: string }[];

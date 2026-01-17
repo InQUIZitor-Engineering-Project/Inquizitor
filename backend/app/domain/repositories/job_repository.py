@@ -23,5 +23,9 @@ class JobRepository(ABC):
     def list_for_user(self, owner_id: int) -> Iterable[Job]:
         raise NotImplementedError
 
+    @abstractmethod
+    def get_generation_job_by_test_id(self, test_id: int) -> Job | None:
+        raise NotImplementedError
+
 
 __all__ = ["JobRepository"]
