@@ -109,6 +109,7 @@ class QuestionOut(BaseModel):
     difficulty: int
     choices: list[str] | None = None
     correct_choices: list[str] | None = None
+    citations: list[str] | None = None
 
     @field_validator("choices", "correct_choices", mode="before")
     @classmethod
@@ -133,6 +134,7 @@ class QuestionCreate(BaseModel):
     difficulty: int = 1
     choices: list[str] | None = None
     correct_choices: list[str] | None = None
+    citations: list[str] | None = None
 
     @field_validator("choices", "correct_choices", mode="before")
     @classmethod
@@ -158,6 +160,7 @@ class QuestionUpdate(BaseModel):
     difficulty: int | None = None
     choices: list[str] | None = None
     correct_choices: list[str] | None = None
+    citations: list[str] | None = None
 
     @field_validator("choices", "correct_choices", mode="before")
     @classmethod

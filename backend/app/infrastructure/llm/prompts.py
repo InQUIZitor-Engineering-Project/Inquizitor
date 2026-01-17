@@ -49,8 +49,10 @@ class PromptBuilder:
             (
                 f"Twoim zadaniem jest przygotowanie testu ({c_total} pytań "
                 f"zamkniętych, {params.num_open} pytań otwartych) na podstawie "
-                "materiału."
+                "dostarczonego materiału w formacie Markdown."
             ),
+            "Materiał ten jest 'cyfrowym bliźniakiem' oryginalnego dokumentu, "
+            "zawierającym pełną treść, opisy tabel, schematów i ilustracji.",
             (
                 f"Rozkład trudności: {params.easy} łatwych, {params.medium} "
                 f"średnich, {params.hard} trudnych."
@@ -66,11 +68,13 @@ class PromptBuilder:
             '      "is_closed": true,',
             '      "difficulty": 1,',
             '      "choices": ["Opcja A", "Opcja B", "Opcja C", "Opcja D"],',
-            '      "correct_choices": ["Opcja A"]',
+            '      "correct_choices": ["Opcja A"],',
+            '      "citations": ["dokładny cytat z tekstu źródłowego"]',
             '    },',
             '    {',
             '      "text": "Treść pytania otwartego", "is_closed": false, ',
-            '      "difficulty": 2, "choices": null, "correct_choices": null',
+            '      "difficulty": 2, "choices": null, "correct_choices": null,',
+            '      "citations": ["dokładny cytat z tekstu źródłowego"]',
             '    }',
             '  ]',
             "}",
@@ -78,8 +82,13 @@ class PromptBuilder:
             "Wymagania i formatowanie:",
             cls.LATEX_RULES,
             cls.GENERAL_CONSTRAINTS,
+            "- Tytuł (`title`) musi być krótką, autonomiczną nazwą testu sformułowaną na podstawie "
+            "głównego tematu dokumentu. NIE kopiuj bezkrytycznie pierwszego nagłówka z tekstu "
+            "źródłowego, jeśli nie oddaje on esencji całego materiału.",
+            "- Każde pytanie MUSI zawierać pole `citations` z 1-3 krótkimi, "
+            "dosłownymi cytatami z tekstu źródłowego (bez parafrazy).",
             "",
-            f"Tekst źródłowy:\n{text}",
+            f"Tekst źródłowy (Markdown Twin):\n{text}",
         ]
 
         if params.additional_instructions:
@@ -226,4 +235,56 @@ class PromptBuilder:
             "Pytania do konwersji z kontekstem (JSON):\n"
             f"{json.dumps(questions, ensure_ascii=False)}",
         ]
+        return "\n".join(parts)
+
+    @classmethod
+    def build_document_analysis_prompt(
+        cls, *, text: str, filename: str | None, mime_type: str | None
+    ) -> str:
+        """
+        Prompt for generating a Markdown "document twin" from source text.
+        """
+        context = []
+        if filename:
+            context.append(f"Nazwa pliku: {filename}")
+        if mime_type:
+            context.append(f"MIME: {mime_type}")
+        context_header = "\n".join(context)
+
+        parts = [
+            cls.PERSONA,
+            (
+                "Twoim zadaniem jest przygotowanie precyzyjnego opisu dokumentu "
+                "w Markdown oraz sklasyfikowanie poziomu analizy (fast/reasoning)."
+            ),
+            "",
+            "### WYMAGANY FORMAT ODPOWIEDZI (JSON):",
+            "{",
+            '  "routing_tier": "fast | reasoning",',
+            '  "markdown_twin": "Pełny opis dokumentu w Markdown",',
+            '  "suggested_title": "Krótki, merytoryczny tytuł dokumentu po polsku"',
+            "}",
+            "",
+            "Wymagania i formatowanie:",
+            cls.LATEX_RULES,
+            "",
+            "Zasady:",
+            "- Tytuł (`suggested_title`) musi być zwięzły (2-5 słów) i oddawać główny temat materiału.",
+            "- Zachowaj kolejność treści z dokumentu.",
+            "- Opisuj diagramy/rysunki tekstowo, zachowując relacje.",
+            "- Nie dodawaj informacji spoza materiału.",
+            "- Użyj 'reasoning' jeśli dokument jest złożony, zawiera schematy, "
+            "tabele, rysunki lub jest skanem/obrazem; inaczej 'fast'.",
+            "",
+        ]
+        if context_header:
+            parts.append(f"Kontekst:\n{context_header}\n")
+        if text.strip():
+            parts.append(f"Tekst źródłowy:\n{text}")
+        else:
+            parts.append(
+                "Tekst źródłowy nie został dostarczony. "
+                "Analizuj na podstawie załączonego pliku."
+            )
+
         return "\n".join(parts)

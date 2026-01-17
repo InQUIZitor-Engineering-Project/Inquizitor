@@ -195,11 +195,22 @@ class SqlModelMaterialRepository(MaterialRepository):
         db_material.mime_type = material.mime_type
         db_material.size_bytes = material.size_bytes
         db_material.checksum = material.checksum
+        db_material.page_count = material.page_count
         db_material.extracted_text = material.extracted_text
         db_material.processing_status = db_models.ProcessingStatus(
             material.status.value
         )
         db_material.processing_error = material.processing_error
+        db_material.analysis_status = db_models.AnalysisStatus(
+            material.analysis_status.value
+        )
+        db_material.routing_tier = (
+            db_models.RoutingTier(material.routing_tier.value)
+            if material.routing_tier
+            else None
+        )
+        db_material.analysis_version = material.analysis_version
+        db_material.markdown_twin = material.markdown_twin
 
         self._session.add(db_material)
         self._session.commit()

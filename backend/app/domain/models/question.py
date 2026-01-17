@@ -15,6 +15,7 @@ class Question:
     difficulty: QuestionDifficulty
     choices: list[str] = field(default_factory=list)
     correct_choices: list[str] = field(default_factory=list)
+    citations: list[str] = field(default_factory=list)
 
     def __post_init__(self) -> None:
         self.text = self.text.strip()

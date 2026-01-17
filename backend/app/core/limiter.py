@@ -21,6 +21,6 @@ settings = get_settings()
 limiter = Limiter(
     key_func=get_real_user_key,
     storage_uri=settings.CELERY_BROKER_URL,
-    default_limits=["200/minute"],
+    default_limits=["1000/minute"],
 )
 

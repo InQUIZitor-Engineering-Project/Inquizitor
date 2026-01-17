@@ -9,8 +9,12 @@ export interface MaterialUploadResponse {
   page_count?: number | null;
   checksum?: string | null;
   processing_status: "pending" | "done" | "failed" | string;
+  analysis_status?: "pending" | "done" | "failed" | string;
+  routing_tier?: "fast" | "reasoning" | string | null;
+  analysis_version?: string | null;
   created_at: string;
   extracted_text?: string | null;
+  markdown_twin?: string | null;
   processing_error?: string | null;
 }
 
@@ -55,7 +59,7 @@ export async function uploadMaterial(file: File): Promise<MaterialUploadEnqueueR
 export async function analyzeMaterials(
   materialIds: number[]
 ): Promise<MaterialAnalyzeResponse> {
-  const res = await apiRequest(`/materials/analyze`, {
+  const res = await apiRequest(`/materials/analyze-deep`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ material_ids: materialIds }),

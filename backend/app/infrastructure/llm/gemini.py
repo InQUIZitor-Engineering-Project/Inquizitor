@@ -48,8 +48,9 @@ def _response_schema() -> dict[str, Any]:
                             "type": "array",
                             "items": {"type": "string"},
                         },
+                        "citations": {"type": "array", "items": {"type": "string"}},
                     },
-                    "required": ["text", "is_closed", "difficulty"],
+                    "required": ["text", "is_closed", "difficulty", "citations"],
                 },
             },
         },
@@ -63,6 +64,7 @@ class LLMQuestionPayload(BaseModel):
     difficulty: Annotated[int, Field(ge=1, le=3)]
     choices: list[str] | None = None
     correct_choices: list[str | int] | None = None
+    citations: list[str] | None = None
 
     @model_validator(mode="before")
     @classmethod
@@ -106,6 +108,11 @@ class LLMQuestionPayload(BaseModel):
         self.text = str(self.text).strip()
         if not self.text:
             raise ValueError("Pole 'text' nie może być puste.")
+
+        citations = [str(c).strip() for c in (self.citations or []) if str(c).strip()]
+        if not citations:
+            raise ValueError("Pole 'citations' nie może być puste.")
+        self.citations = citations
 
         if not self.is_closed:
             self.choices = None
@@ -167,8 +174,9 @@ class LLMResponse(BaseModel):
 
 
 class GeminiQuestionGenerator(QuestionGenerator):
-    def __init__(self, model_name: str = "gemini-2.0-flash") -> None:
-        self._model_name = model_name
+    def __init__(self, model_name: str | None = None) -> None:
+        settings = get_settings()
+        self._model_name = model_name or settings.GEMINI_QUIZ_FAST_MODEL
 
     @staticmethod
     @lru_cache
@@ -257,6 +265,7 @@ class GeminiQuestionGenerator(QuestionGenerator):
                 correct_choices=cast(list[str], payload.correct_choices or [])
                 if payload.is_closed
                 else [],
+                citations=payload.citations or [],
             )
 
             if q.is_closed and got_closed < need_closed:
@@ -342,7 +351,8 @@ class GeminiQuestionGenerator(QuestionGenerator):
             '"is_closed": true | false, '
             '"difficulty": 1 | 2 | 3, '
             '"choices": ["..."] (wymagane dla is_closed=true), '
-            '"correct_choices": ["..."] (co najmniej jedna dla is_closed=true) '
+            '"correct_choices": ["..."] (co najmniej jedna dla is_closed=true), '
+            '"citations": ["..."] (co najmniej jeden cytat) '
             "} ] "
             "}\n"
             f"Wymagane liczby pytań: zamknięte={closed_total}, "

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .enums import ProcessingStatus
+from .enums import AnalysisStatus, ProcessingStatus, RoutingTier
 from .file import File
 
 
@@ -20,6 +20,10 @@ class Material:
     status: ProcessingStatus = ProcessingStatus.PENDING
     extracted_text: str | None = None
     processing_error: str | None = None
+    analysis_status: AnalysisStatus = AnalysisStatus.PENDING
+    routing_tier: RoutingTier | None = None
+    analysis_version: str | None = None
+    markdown_twin: str | None = None
 
     def mark_processed(self, text: str) -> None:
         self.status = ProcessingStatus.DONE

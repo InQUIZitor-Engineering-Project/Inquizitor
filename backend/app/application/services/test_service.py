@@ -9,7 +9,6 @@ import re
 import time
 import unicodedata
 from collections.abc import Callable
-from pathlib import Path
 from typing import Any, cast
 
 from fastapi import HTTPException
@@ -52,7 +51,6 @@ from app.infrastructure.exporting import (
     render_test_to_tex,
     test_to_xml_bytes,
 )
-from app.infrastructure.extractors.extract_composite import composite_text_extractor
 from app.infrastructure.llm.gemini import GeminiQuestionGenerator
 from app.infrastructure.llm.prompts import PromptBuilder
 from app.infrastructure.monitoring.posthog_client import analytics
@@ -65,8 +63,8 @@ class TestService:
         self,
         uow_factory: Callable[[], UnitOfWork],
         *,
-        question_generator: QuestionGenerator,
-        ocr_service: OCRService,
+        question_generator_fast: QuestionGenerator,
+        question_generator_reasoning: QuestionGenerator,
         storage: FileStorage,
         tex_renderer: Callable[..., str] = render_test_to_tex,
         pdf_compiler: Callable[[str], bytes] = compile_tex_to_pdf,
@@ -76,8 +74,8 @@ class TestService:
         ) = render_custom_test_to_tex,
     ) -> None:
         self._uow_factory = uow_factory
-        self._question_generator = question_generator
-        self._ocr_service = ocr_service
+        self._question_generator_fast = question_generator_fast
+        self._question_generator_reasoning = question_generator_reasoning
         self._storage = storage
         self._render_test_to_tex = tex_renderer
         self._compile_tex_to_pdf = pdf_compiler
@@ -293,6 +291,7 @@ class TestService:
             normalized_text = request.text.strip() if request.text else ""
             source_text: str
             base_title: str
+            routing_tier = None
 
             if normalized_text:
                 source_text = normalized_text
@@ -304,70 +303,74 @@ class TestService:
                 else:
                     base_title = "From raw text"
             elif request.material_ids:
-                # Pobieramy tekst ze wszystkich wskazanych materiałów
+                # We always use markdown_twin for materials
                 texts = []
                 base_title = "Z wielu plików"
+                routing_tiers: list[str] = []
                 for m_id in request.material_ids:
                     m = uow.materials.get(m_id)
-                    if m and m.owner_id == owner_id and m.extracted_text:
+                    if not m or m.owner_id != owner_id:
+                        continue
+                    
+                    # Markdown twin is our source of truth
+                    if m.markdown_twin:
+                        texts.append(m.markdown_twin)
+                    elif m.extracted_text:
+                        # Fallback for old materials without twin
                         texts.append(m.extracted_text)
-                        if len(request.material_ids) == 1:
-                            base_title = (
-                                m.file.filename if m.file else "Unknown file"
-                            )
-                
+                    
+                    if m.routing_tier:
+                        routing_tiers.append(m.routing_tier.value)
+                    if len(request.material_ids) == 1:
+                        base_title = m.file.filename if m.file else "Unknown file"
+
                 if not texts:
-                    raise ValueError("Nie znaleziono tekstu w wybranych plikach")
-                
+                    raise ValueError(
+                        "Materiał nie jest gotowy. Poczekaj na zakończenie przetwarzania."
+                    )
+
                 source_text = "\n\n".join(texts)
+                routing_tier = (
+                    "reasoning"
+                    if any(tier == "reasoning" for tier in routing_tiers)
+                    else "fast"
+                )
             elif request.file_id is not None:
                 existing_material = uow.materials.get_by_file_id(request.file_id)
 
                 if (
                     existing_material
-                    and existing_material.extracted_text
                     and existing_material.owner_id == owner_id
+                    and existing_material.markdown_twin
                 ):
                     logger.info(
                         f"Using cached text from material {existing_material.id} "
                         f"for file {request.file_id}"
                     )
-                    source_text = existing_material.extracted_text
+                    source_text = existing_material.markdown_twin
                     base_title = (
                         existing_material.file.filename
                         if existing_material.file
                         else "Unknown file"
                     )
+                    if existing_material.routing_tier:
+                        routing_tier = existing_material.routing_tier.value
 
                 else:
-                    source_file = uow.files.get(request.file_id)
-                    if not source_file or source_file.owner_id != owner_id:
-                        raise ValueError("Plik nie został znaleziony")
-                        raise ValueError("Plik nie został znaleziony")
-                    with self._storage.download_to_temp(
-                        stored_path=str(source_file.stored_path)
-                    ) as local_path:
-                        local_path = Path(local_path)
-                        # Prefer composite extractor (text layer + PDF OCR fallback).
-                        # If still empty, fallback to raw OCR.
-                        source_text = composite_text_extractor(local_path, None).strip()
-                        if not source_text:
-                            source_text = (
-                                self._ocr_service.extract_text(
-                                    file_path=str(local_path)
-                                )
-                                or ""
-                            ).strip()
-                    if not source_text:
-                        raise ValueError(
-                            "Could not extract text from the provided file."
-                        )
-                    base_title = source_file.filename
+                    raise ValueError(
+                        "Brak analizy dla wskazanego pliku. "
+                        "Uruchom analizę dokumentu przed generowaniem testu."
+                    )
             else:
                 raise ValueError("Either text or file_id must be provided")
 
             try:
-                llm_title, questions, usage = self._question_generator.generate(
+                generator = (
+                    self._question_generator_reasoning
+                    if routing_tier == "reasoning"
+                    else self._question_generator_fast
+                )
+                llm_title, questions, usage = generator.generate(
                     source_text=source_text,
                     params=request,
                 )
@@ -398,6 +401,12 @@ class TestService:
 
             if not questions:
                 raise ValueError("LLM zwrócił pustą listę pytań.")
+
+            missing_citations = [
+                q for q in questions if not getattr(q, "citations", None)
+            ]
+            if missing_citations:
+                raise ValueError("Brak wymaganych cytowań w wygenerowanych pytaniach.")
 
             questions = self._sort_questions(questions)
 

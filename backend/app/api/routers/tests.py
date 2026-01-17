@@ -22,7 +22,7 @@ from app.application.services import JobService, TestService
 from app.core.limiter import limiter
 from app.core.security import get_current_user
 from app.db.models import User
-from app.domain.models.enums import JobType
+from app.domain.models.enums import JobStatus, JobType
 from app.tasks.tests import (
     bulk_convert_questions_task,
     bulk_regenerate_questions_task,
@@ -53,7 +53,18 @@ def generate_test(
         job_type=JobType.TEST_GENERATION,
         payload=req.model_dump(),
     )
-    generate_test_task.delay(job.id, current_user.id, req.model_dump())
+    try:
+        generate_test_task.delay(job.id, current_user.id, req.model_dump())
+    except Exception as exc:
+        job_service.update_job_status(
+            job_id=job.id,
+            status=JobStatus.FAILED,
+            error=f"Nie udało się uruchomić zadania: {exc}",
+        )
+        raise HTTPException(
+            status_code=503,
+            detail="Nie udało się uruchomić zadania generowania testu.",
+        ) from exc
     return JobEnqueueResponse(job_id=job.id, status=job.status.value)
 
 

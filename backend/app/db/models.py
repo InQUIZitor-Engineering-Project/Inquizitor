@@ -2,7 +2,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional
 
-from sqlalchemy import Column, ForeignKey, Integer
+from sqlalchemy import Column, ForeignKey, Integer, Text
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Field, Relationship, SQLModel
@@ -89,6 +89,9 @@ class Question(SQLModel, table=True):
     correct_choices: list[str] | None = Field(
         default=None, sa_column=Column(JSONB)
     )
+    citations: list[str] | None = Field(
+        default=None, sa_column=Column(JSONB)
+    )
 
     test: Test | None = Relationship(back_populates="questions")
 
@@ -122,8 +125,18 @@ class JobType(str, Enum):
     test_generation = "test_generation"
     pdf_export = "pdf_export"
     material_processing = "material_processing"
+    material_analysis = "material_analysis"
     questions_regeneration = "questions_regeneration"
     questions_conversion = "questions_conversion"
+
+class AnalysisStatus(str, Enum):
+    pending = "pending"
+    done = "done"
+    failed = "failed"
+
+class RoutingTier(str, Enum):
+    fast = "fast"
+    reasoning = "reasoning"
 
 class SupportCategory(str, Enum):
     general = "general"
@@ -150,6 +163,14 @@ class Material(SQLModel, table=True):
         default=ProcessingStatus.done, index=True
     )
     processing_error: str | None = None
+    analysis_status: AnalysisStatus = Field(
+        default=AnalysisStatus.pending, index=True
+    )
+    routing_tier: RoutingTier | None = Field(
+        default=None, sa_column=Column(SAEnum(RoutingTier), index=True)
+    )
+    analysis_version: str | None = Field(default=None, max_length=50)
+    markdown_twin: str | None = Field(default=None, sa_column=Column(Text))
     created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
 
     owner: User | None = Relationship(back_populates="materials")

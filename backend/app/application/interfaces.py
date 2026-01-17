@@ -18,7 +18,12 @@ from app.domain.repositories import (
     TestRepository,
     UserRepository,
 )
-from app.domain.services import FileStorage, OCRService, QuestionGenerator
+from app.domain.services import (
+    DocumentAnalyzer,
+    FileStorage,
+    OCRService,
+    QuestionGenerator,
+)
 
 
 class UnitOfWork(Protocol):
@@ -88,5 +93,11 @@ class UnitOfWork(Protocol):
         ...
 
 
-__all__ = ["FileStorage", "OCRService", "QuestionGenerator", "UnitOfWork"]
+__all__ = [
+    "DocumentAnalyzer",
+    "FileStorage",
+    "OCRService",
+    "QuestionGenerator",
+    "UnitOfWork",
+]
 

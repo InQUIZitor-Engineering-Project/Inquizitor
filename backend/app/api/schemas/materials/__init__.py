@@ -14,8 +14,12 @@ class MaterialOut(BaseModel):
     page_count: int | None = None
     checksum: str | None = None
     processing_status: str
+    analysis_status: str | None = None
+    routing_tier: str | None = None
+    analysis_version: str | None = None
     created_at: datetime
     extracted_text: str | None = None
+    markdown_twin: str | None = None
     processing_error: str | None = None
     cache_hit: bool | None = None
     duration_ocr_sec: float | None = None
@@ -42,6 +46,10 @@ class MaterialAnalyzeRequest(BaseModel):
     material_ids: list[int]
 
 
+class MaterialDeepAnalyzeRequest(BaseModel):
+    material_ids: list[int]
+
+
 class MaterialAnalyzeJob(BaseModel):
     job_id: int
     status: str
@@ -53,10 +61,17 @@ class MaterialAnalyzeResponse(BaseModel):
     total_pages: int
 
 
+class MaterialDeepAnalyzeResponse(BaseModel):
+    jobs: list[MaterialAnalyzeJob]
+    total_pages: int
+
+
 __all__ = [
     "MaterialAnalyzeJob",
     "MaterialAnalyzeRequest",
     "MaterialAnalyzeResponse",
+    "MaterialDeepAnalyzeRequest",
+    "MaterialDeepAnalyzeResponse",
     "MaterialOut",
     "MaterialUpdate",
     "MaterialUploadBatchResponse",
