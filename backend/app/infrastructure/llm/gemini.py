@@ -238,15 +238,19 @@ class GeminiQuestionGenerator(QuestionGenerator):
             validated = repaired
 
         closed_p = params.closed
-        need_closed = (
-            closed_p.true_false + closed_p.single_choice + closed_p.multi_choice
-        )
+        need_tf = closed_p.true_false
+        need_single = closed_p.single_choice
+        need_multi = closed_p.multi_choice
         need_open = params.num_open
+        need_closed_total = need_tf + need_single + need_multi
 
         selected: list[Question] = []
-        got_closed = 0
+        got_tf = 0
+        got_single = 0
+        got_multi = 0
         got_open = 0
 
+        # Pierwsze przejście: wybieramy pytania pasujące do konkretnych typów
         for payload in validated.questions:
             q = Question(
                 id=None,
@@ -259,14 +263,53 @@ class GeminiQuestionGenerator(QuestionGenerator):
                 else [],
             )
 
-            if q.is_closed and got_closed < need_closed:
-                selected.append(q)
-                got_closed += 1
-            elif (not q.is_closed) and got_open < need_open:
+            if q.is_closed:
+                # Detekcja typu
+                is_tf = len(q.choices) == 2 and any(
+                    c.lower() in ["prawda", "fałsz", "true", "false"] for c in q.choices
+                )
+                is_multi = len(q.correct_choices) > 1
+                is_single = not is_tf and not is_multi
+
+                if is_tf and got_tf < need_tf:
+                    selected.append(q)
+                    got_tf += 1
+                elif is_multi and got_multi < need_multi:
+                    selected.append(q)
+                    got_multi += 1
+                elif is_single and got_single < need_single:
+                    selected.append(q)
+                    got_single += 1
+            elif got_open < need_open:
                 selected.append(q)
                 got_open += 1
-            if got_closed >= need_closed and got_open >= need_open:
-                break
+
+        # Drugie przejście: jeśli brakuje zamkniętych, bierzemy dowolne pozostałe zamknięte
+        got_closed_total = got_tf + got_single + got_multi
+        if got_closed_total < need_closed_total:
+            for payload in validated.questions:
+                if not payload.is_closed:
+                    continue
+                
+                # Sprawdzamy czy to pytanie już wybraliśmy
+                # (uproszczone porównanie po treści, bo id=None)
+                if any(s.text == payload.text for s in selected):
+                    continue
+                
+                q = Question(
+                    id=None,
+                    text=payload.text,
+                    is_closed=payload.is_closed,
+                    difficulty=QuestionDifficulty(int(payload.difficulty)),
+                    choices=(payload.choices or []) if payload.is_closed else [],
+                    correct_choices=cast(list[str], payload.correct_choices or [])
+                    if payload.is_closed
+                    else [],
+                )
+                selected.append(q)
+                got_closed_total += 1
+                if got_closed_total >= need_closed_total:
+                    break
 
         questions = selected
 
@@ -286,9 +329,8 @@ class GeminiQuestionGenerator(QuestionGenerator):
         try:
             return LLMResponse.model_validate(parsed)
         except ValidationError as exc:
-            raise ValueError(
-                "Odpowiedź LLM nie spełnia wymaganego schematu. " f"Szczegóły: {exc}"
-            ) from exc
+            msg = f"Odpowiedź LLM nie spełnia wymaganego schematu. Szczegóły: {exc}"
+            raise ValueError(msg) from exc
 
     def _attempt_repair(
         self,
@@ -325,11 +367,7 @@ class GeminiQuestionGenerator(QuestionGenerator):
 
     @staticmethod
     def _build_repair_prompt(bad_json: str, params: GenerateParams) -> str:
-        closed_total = (
-            params.closed.true_false
-            + params.closed.single_choice
-            + params.closed.multi_choice
-        )
+        c = params.closed
         return (
             "Napraw poniższą odpowiedź LLM tak, aby była poprawnym JSON "
             "zgodnym ze schematem. "
@@ -345,8 +383,11 @@ class GeminiQuestionGenerator(QuestionGenerator):
             '"correct_choices": ["..."] (co najmniej jedna dla is_closed=true) '
             "} ] "
             "}\n"
-            f"Wymagane liczby pytań: zamknięte={closed_total}, "
-            f"otwarte={params.num_open}. "
+            "Wymagane liczby pytań:\n"
+            f"- Prawda/Fałsz: {c.true_false}\n"
+            f"- Jednokrotny wybór: {c.single_choice}\n"
+            f"- Wielokrotny wybór (min. 2 poprawne): {c.multi_choice}\n"
+            f"- Otwarte: {params.num_open}\n\n"
             "Wejściowa odpowiedź do naprawy:\n"
             f"{bad_json}"
         )

@@ -52,6 +52,13 @@ class PromptBuilder:
                 "materiału."
             ),
             (
+                "Struktura pytań zamkniętych:\n"
+                f"- Prawda/Fałsz: {closed_p.true_false}\n"
+                f"- Jednokrotnego wyboru: {closed_p.single_choice}\n"
+                "- Wielokrotnego wyboru (co najmniej dwie poprawne odpowiedzi): "
+                f"{closed_p.multi_choice}"
+            ),
+            (
                 f"Rozkład trudności: {params.easy} łatwych, {params.medium} "
                 f"średnich, {params.hard} trudnych."
             ),
@@ -62,14 +69,28 @@ class PromptBuilder:
             '  "title": "Krótki tytuł testu po polsku",',
             '  "questions": [',
             '    {',
-            '      "text": "Treść pytania",',
+            '      "text": "Przykładowe pytanie jednokrotnego wyboru",',
             '      "is_closed": true,',
             '      "difficulty": 1,',
             '      "choices": ["Opcja A", "Opcja B", "Opcja C", "Opcja D"],',
             '      "correct_choices": ["Opcja A"]',
             '    },',
             '    {',
-            '      "text": "Treść pytania otwartego", "is_closed": false, ',
+            '      "text": "Przykładowe pytanie wielokrotnego wyboru",',
+            '      "is_closed": true,',
+            '      "difficulty": 2,',
+            '      "choices": ["Opcja A", "Opcja B", "Opcja C", "Opcja D"],',
+            '      "correct_choices": ["Opcja A", "Opcja C"]',
+            '    },',
+            '    {',
+            '      "text": "Przykładowe pytanie typu Prawda/Fałsz",',
+            '      "is_closed": true,',
+            '      "difficulty": 1,',
+            '      "choices": ["Prawda", "Fałsz"],',
+            '      "correct_choices": ["Prawda"]',
+            '    },',
+            '    {',
+            '      "text": "Przykładowe pytanie otwarte", "is_closed": false, ',
             '      "difficulty": 2, "choices": null, "correct_choices": null',
             '    }',
             '  ]',
@@ -102,6 +123,11 @@ class PromptBuilder:
             (
                 "- Zachowaj oryginalne 'id', 'is_closed' oraz 'difficulty' "
                 "dla każdego pytania."
+            ),
+            (
+                "- Zachowaj typ pytania: jeśli oryginalne pytanie jest "
+                "wielokrotnego wyboru (ma wiele poprawnych odpowiedzi), "
+                "nowy wariant RÓWNIEŻ musi być wielokrotnego wyboru."
             ),
             (
                 "- Zmień treść pytania i opcje tak, aby sprawdzały tę samą "
