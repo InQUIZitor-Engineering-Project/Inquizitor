@@ -3,6 +3,8 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+from fastapi import HTTPException
+
 from app.api.schemas.tests import (
     BulkConvertQuestionsRequest,
     BulkRegenerateQuestionsRequest,
@@ -55,6 +57,14 @@ def generate_test_task(
         )
         analytics.flush()
         return response.test_id
+    except HTTPException as exc:
+        logger.exception("Job %s failed: %s", job_id, exc)
+        job_service.update_job_status(
+            job_id=job_id,
+            status=JobStatus.FAILED,
+            error=str(exc.detail),
+        )
+        raise RuntimeError(str(exc.detail)) from exc
     except Exception as exc:
         logger.exception("Job %s failed: %s", job_id, exc)
         job_service.update_job_status(

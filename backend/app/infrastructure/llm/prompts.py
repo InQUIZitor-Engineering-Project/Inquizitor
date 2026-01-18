@@ -30,6 +30,9 @@ class PromptBuilder:
         "- NIE numeruj treści pytań ani odpowiedzi: nie dodawaj prefiksów typu "
         "'1.', 'Pytanie 1', '-', '•' ani innych numerów w polach `text` i "
         "`choices`.\n"
+        "- Nie twórz pytań o strukturę dokumentu ani metapoziom (np. "
+        "'co jest w treści 3 zadania', 'ile jest punktów', 'jaki jest tytuł "
+        "sekcji'). Skup się wyłącznie na merytorycznej treści.\n"
         "- Wszystkie pytania muszą wynikać z tekstu źródłowego; nie wymyślaj "
         "danych ani nazw własnych.\n"
         "- Preferuj pytania sprawdzające zrozumienie pojęć, relacji, "
@@ -52,6 +55,13 @@ class PromptBuilder:
                 "materiału."
             ),
             (
+                "Struktura pytań zamkniętych:\n"
+                f"- Prawda/Fałsz: {closed_p.true_false}\n"
+                f"- Jednokrotnego wyboru: {closed_p.single_choice}\n"
+                "- Wielokrotnego wyboru (co najmniej dwie poprawne odpowiedzi): "
+                f"{closed_p.multi_choice}"
+            ),
+            (
                 f"Rozkład trudności: {params.easy} łatwych, {params.medium} "
                 f"średnich, {params.hard} trudnych."
             ),
@@ -62,14 +72,28 @@ class PromptBuilder:
             '  "title": "Krótki tytuł testu po polsku",',
             '  "questions": [',
             '    {',
-            '      "text": "Treść pytania",',
+            '      "text": "Przykładowe pytanie jednokrotnego wyboru",',
             '      "is_closed": true,',
             '      "difficulty": 1,',
             '      "choices": ["Opcja A", "Opcja B", "Opcja C", "Opcja D"],',
             '      "correct_choices": ["Opcja A"]',
             '    },',
             '    {',
-            '      "text": "Treść pytania otwartego", "is_closed": false, ',
+            '      "text": "Przykładowe pytanie wielokrotnego wyboru",',
+            '      "is_closed": true,',
+            '      "difficulty": 2,',
+            '      "choices": ["Opcja A", "Opcja B", "Opcja C", "Opcja D"],',
+            '      "correct_choices": ["Opcja A", "Opcja C"]',
+            '    },',
+            '    {',
+            '      "text": "Przykładowe pytanie typu Prawda/Fałsz",',
+            '      "is_closed": true,',
+            '      "difficulty": 1,',
+            '      "choices": ["Prawda", "Fałsz"],',
+            '      "correct_choices": ["Prawda"]',
+            '    },',
+            '    {',
+            '      "text": "Przykładowe pytanie otwarte", "is_closed": false, ',
             '      "difficulty": 2, "choices": null, "correct_choices": null',
             '    }',
             '  ]',
@@ -102,6 +126,11 @@ class PromptBuilder:
             (
                 "- Zachowaj oryginalne 'id', 'is_closed' oraz 'difficulty' "
                 "dla każdego pytania."
+            ),
+            (
+                "- Zachowaj typ pytania: jeśli oryginalne pytanie jest "
+                "wielokrotnego wyboru (ma wiele poprawnych odpowiedzi), "
+                "nowy wariant RÓWNIEŻ musi być wielokrotnego wyboru."
             ),
             (
                 "- Zmień treść pytania i opcje tak, aby sprawdzały tę samą "

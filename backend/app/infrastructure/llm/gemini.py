@@ -167,8 +167,9 @@ class LLMResponse(BaseModel):
 
 
 class GeminiQuestionGenerator(QuestionGenerator):
-    def __init__(self, model_name: str = "gemini-2.0-flash") -> None:
-        self._model_name = model_name
+    def __init__(self, model_name: str | None = None) -> None:
+        settings = get_settings()
+        self._model_name = model_name or settings.GEMINI_MODEL_NAME
 
     @staticmethod
     @lru_cache
@@ -185,67 +186,112 @@ class GeminiQuestionGenerator(QuestionGenerator):
             response_schema=_response_schema(),
         )
 
-        try:
-            response = self._client().models.generate_content(
-                model=self._model_name,
-                contents=prompt,
-                config=cast(Any, generation_config),
-            )
-        except Exception as exc:
-            # ... existing error handling ...
-            message = str(exc)
-            is_quota = (
-                "RESOURCE_EXHAUSTED" in message
-                or "quota" in message.lower()
-                or "429" in message
-            )
-            if is_quota:
-                raise ValueError(
-                    "Limit zapytań do Gemini został przekroczony. "
-                    "Spróbuj ponownie za chwilę."
-                ) from exc
-            raise RuntimeError(f"Gemini request failed: {exc}") from exc
+        usage: dict[str, Any] = {}
+        max_attempts = 3
+        last_validation_error: ValueError | None = None
 
-        # Extract usage metadata
-        usage = {}
-        if response.usage_metadata:
-            usage = {
-                "prompt_tokens": response.usage_metadata.prompt_token_count,
-                "candidates_tokens": response.usage_metadata.candidates_token_count,
-                "total_tokens": response.usage_metadata.total_token_count,
-            }
+        for attempt in range(max_attempts):
+            try:
+                response = self._client().models.generate_content(
+                    model=self._model_name,
+                    contents=prompt,
+                    config=cast(Any, generation_config),
+                )
+            except Exception as exc:
+                # ... existing error handling ...
+                message = str(exc)
+                is_quota = (
+                    "RESOURCE_EXHAUSTED" in message
+                    or "quota" in message.lower()
+                    or "429" in message
+                )
+                if is_quota:
+                    raise ValueError(
+                        "Limit zapytań do Gemini został przekroczony. "
+                        "Spróbuj ponownie za chwilę."
+                    ) from exc
+                raise RuntimeError(f"Gemini request failed: {exc}") from exc
 
-        raw_output = (response.text or "").strip()
+            # Extract usage metadata
+            if response.usage_metadata:
+                usage = {
+                    "prompt_tokens": response.usage_metadata.prompt_token_count,
+                    "candidates_tokens": response.usage_metadata.candidates_token_count,
+                    "total_tokens": response.usage_metadata.total_token_count,
+                }
 
-        if raw_output.startswith("```"):
-            first_nl = raw_output.find("\n")
-            if first_nl != -1:
-                raw_output = raw_output[first_nl + 1 :].strip()
-            if raw_output.endswith("```"):
-                raw_output = raw_output[:-3].strip()
+            raw_output = (response.text or "").strip()
 
-        if raw_output.lower().startswith("json"):
-            raw_output = raw_output[4:].lstrip(":").strip()
+            if raw_output.startswith("```"):
+                first_nl = raw_output.find("\n")
+                if first_nl != -1:
+                    raw_output = raw_output[first_nl + 1 :].strip()
+                if raw_output.endswith("```"):
+                    raw_output = raw_output[:-3].strip()
 
-        try:
-            validated = self._parse_and_validate(raw_output)
-        except ValueError as initial_err:
-            repaired = self._attempt_repair(
-                raw_output, params, cast(dict[str, Any], generation_config)
-            )
-            if repaired is None:
-                raise initial_err
-            validated = repaired
+            if raw_output.lower().startswith("json"):
+                raw_output = raw_output[4:].lstrip(":").strip()
 
+            try:
+                validated = self._parse_and_validate(raw_output)
+            except ValueError as initial_err:
+                repaired = self._attempt_repair(
+                    raw_output, params, cast(dict[str, Any], generation_config)
+                )
+                if repaired is None:
+                    last_validation_error = initial_err
+                    if attempt < max_attempts - 1:
+                        logger.info(
+                            (
+                                "LLM response invalid, retrying generation "
+                                "(attempt %s/%s)."
+                            ),
+                            attempt + 2,
+                            max_attempts,
+                        )
+                        prompt = self._build_retry_prompt(
+                            source_text, params, str(initial_err)
+                        )
+                        continue
+                    raise initial_err
+                validated = repaired
+
+            try:
+                questions = self._select_questions(validated, params)
+            except ValueError as exc:
+                last_validation_error = exc
+                if attempt < max_attempts - 1:
+                    logger.info(
+                        (
+                            "LLM response mismatched config, retrying generation "
+                            "(attempt %s/%s)."
+                        ),
+                        attempt + 2,
+                        max_attempts,
+                    )
+                    prompt = self._build_retry_prompt(source_text, params, str(exc))
+                    continue
+                raise exc
+
+            return validated.title, questions, usage
+
+        if last_validation_error is not None:
+            raise last_validation_error
+        raise ValueError("Generowanie testu nie powiodło się.")
+
+    @staticmethod
+    def _select_questions(
+        validated: LLMResponse, params: GenerateParams
+    ) -> list[Question]:
         closed_p = params.closed
-        need_closed = (
-            closed_p.true_false + closed_p.single_choice + closed_p.multi_choice
-        )
+        need_tf = closed_p.true_false
+        need_single = closed_p.single_choice
+        need_multi = closed_p.multi_choice
         need_open = params.num_open
-
-        selected: list[Question] = []
-        got_closed = 0
-        got_open = 0
+        tf_questions: list[Question] = []
+        single_questions: list[Question] = []
+        multi_questions: list[Question] = []
+        open_questions: list[Question] = []
 
         for payload in validated.questions:
             q = Question(
@@ -259,18 +305,47 @@ class GeminiQuestionGenerator(QuestionGenerator):
                 else [],
             )
 
-            if q.is_closed and got_closed < need_closed:
-                selected.append(q)
-                got_closed += 1
-            elif (not q.is_closed) and got_open < need_open:
-                selected.append(q)
-                got_open += 1
-            if got_closed >= need_closed and got_open >= need_open:
-                break
+            if not q.is_closed:
+                open_questions.append(q)
+                continue
 
-        questions = selected
+            # Detekcja typu + walidacje liczności poprawnych odpowiedzi
+            is_tf = len(q.choices) == 2 and any(
+                c.lower() in ["prawda", "fałsz", "true", "false"] for c in q.choices
+            )
+            correct_len = len(q.correct_choices)
+            is_multi = correct_len >= 2
+            is_single = (not is_tf) and correct_len == 1
 
-        return validated.title, questions, usage
+            if is_tf and correct_len == 1:
+                tf_questions.append(q)
+            elif is_multi:
+                multi_questions.append(q)
+            elif is_single:
+                single_questions.append(q)
+
+        if len(tf_questions) < need_tf:
+            raise ValueError(
+                "LLM nie zwrócił wymaganej liczby pytań Prawda/Fałsz."
+            )
+        if len(single_questions) < need_single:
+            raise ValueError(
+                "LLM nie zwrócił wymaganej liczby pytań jednokrotnego wyboru."
+            )
+        if len(multi_questions) < need_multi:
+            raise ValueError(
+                "LLM nie zwrócił wymaganej liczby pytań wielokrotnego wyboru "
+                "(co najmniej 2 poprawne odpowiedzi)."
+            )
+        if len(open_questions) < need_open:
+            raise ValueError("LLM nie zwrócił wymaganej liczby pytań otwartych.")
+
+        return (
+            tf_questions[:need_tf]
+            + single_questions[:need_single]
+            + multi_questions[:need_multi]
+            + open_questions[:need_open]
+        )
 
     @staticmethod
     def _parse_and_validate(raw: str) -> LLMResponse:
@@ -286,9 +361,8 @@ class GeminiQuestionGenerator(QuestionGenerator):
         try:
             return LLMResponse.model_validate(parsed)
         except ValidationError as exc:
-            raise ValueError(
-                "Odpowiedź LLM nie spełnia wymaganego schematu. " f"Szczegóły: {exc}"
-            ) from exc
+            msg = f"Odpowiedź LLM nie spełnia wymaganego schematu. Szczegóły: {exc}"
+            raise ValueError(msg) from exc
 
     def _attempt_repair(
         self,
@@ -324,12 +398,19 @@ class GeminiQuestionGenerator(QuestionGenerator):
             return None
 
     @staticmethod
-    def _build_repair_prompt(bad_json: str, params: GenerateParams) -> str:
-        closed_total = (
-            params.closed.true_false
-            + params.closed.single_choice
-            + params.closed.multi_choice
+    def _build_retry_prompt(
+        text: str, params: GenerateParams, reason: str
+    ) -> str:
+        return (
+            "Poprzednia odpowiedź nie spełniała konfiguracji. "
+            f"Powód: {reason}\n"
+            "Wygeneruj test PONOWNIE, ściśle według konfiguracji.\n\n"
+            + _build_prompt(text, params)
         )
+
+    @staticmethod
+    def _build_repair_prompt(bad_json: str, params: GenerateParams) -> str:
+        c = params.closed
         return (
             "Napraw poniższą odpowiedź LLM tak, aby była poprawnym JSON "
             "zgodnym ze schematem. "
@@ -345,8 +426,11 @@ class GeminiQuestionGenerator(QuestionGenerator):
             '"correct_choices": ["..."] (co najmniej jedna dla is_closed=true) '
             "} ] "
             "}\n"
-            f"Wymagane liczby pytań: zamknięte={closed_total}, "
-            f"otwarte={params.num_open}. "
+            "Wymagane liczby pytań:\n"
+            f"- Prawda/Fałsz: {c.true_false}\n"
+            f"- Jednokrotny wybór: {c.single_choice}\n"
+            f"- Wielokrotny wybór (min. 2 poprawne): {c.multi_choice}\n"
+            f"- Otwarte: {params.num_open}\n\n"
             "Wejściowa odpowiedź do naprawy:\n"
             f"{bad_json}"
         )
