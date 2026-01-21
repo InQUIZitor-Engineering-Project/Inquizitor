@@ -172,10 +172,8 @@ class PromptBuilder:
 
         if instruction:
             parts.append(
-                "### KRYTYCZNE INSTRUKCJE UŻYTKOWNIKA (NAJWYŻSZY PRIORYTET):\n"
+                "### KRYTYCZNE INSTRUKCJE UŻYTKOWNIKA (WYSOKI PRIORYTET):\n"
                 f"{instruction}\n"
-                "Te instrukcje nadpisują wszelkie inne reguły generowania. "
-                "Zastosuj się do nich w pierwszej kolejności.\n"
             )
 
         parts.append(
