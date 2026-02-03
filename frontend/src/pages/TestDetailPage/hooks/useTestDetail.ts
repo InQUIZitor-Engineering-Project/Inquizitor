@@ -104,7 +104,9 @@ type UseTestDetailResult = {
 
 const useTestDetail = (): UseTestDetailResult => {
   const navigate = useNavigate();
-  const { refreshSidebarTests } = useOutletContext<LayoutCtx>();
+  // const { refreshSidebarTests } = useOutletContext<LayoutCtx>();
+  const context = useOutletContext<LayoutCtx | null>();
+  const refreshSidebarTests = context?.refreshSidebarTests || (async () => {});
   const { withLoader, startLoading, stopLoading } = useLoader();
   const { data, loading, error, refresh, deleteCurrent, setData } = useTestData();
   const {
