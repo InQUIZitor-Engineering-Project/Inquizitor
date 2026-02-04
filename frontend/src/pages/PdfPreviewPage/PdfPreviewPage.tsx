@@ -99,29 +99,16 @@ const PdfPreviewPage: React.FC = () => {
           </Box>
         </Box>
 
-        {/* --- PRAWY PANEL: PODGLĄD PDF --- */}
         <Box 
           $flex={1} 
           $bg="#525659" 
-          $overflow="auto" // Scroll tylko tutaj
+          $overflow="auto" 
           $p="2xl" 
           style={{ position: "relative", height: "100%" }}
         >
           <Flex $justify="center" $align="flex-start" $minHeight="100%">
-            <Box 
-              $p="xl"
-              style={{ 
-                width: "210mm", 
-                minHeight: "297mm", 
-                background: "white", 
-                boxShadow: "0 4px 15px rgba(0,0,0,0.3)", 
-                transition: "all 0.2s ease",
-                boxSizing: "border-box", 
-                overflow: "hidden" 
-              }}
-            >
+            <Box>
               <LiveTestPreview 
-                // Klucz wymusza przerysowanie przy zmianie configu
                 key={JSON.stringify(state.pdfConfig)}
                 data={state.data} 
                 config={state.pdfConfig} 
