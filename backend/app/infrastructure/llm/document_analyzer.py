@@ -207,7 +207,8 @@ class GeminiDocumentAnalyzer(DocumentAnalyzer):
 
             cached_entry = ocr_cache_repository.get_by_key(cache_key)
             if cached_entry:
-                # Parse cached result (result_ref contains JSON with markdown_twin, routing_tier, suggested_title)
+                # Parse cached result (result_ref contains JSON with markdown_twin,
+                # routing_tier, suggested_title)
                 try:
                     cached_data = json.loads(cached_entry.result_ref)
                     markdown_twin = cached_data.get("markdown_twin", "")
@@ -216,7 +217,8 @@ class GeminiDocumentAnalyzer(DocumentAnalyzer):
 
                     # Convert routing_tier string to enum
                     routing_tier = RoutingTier.FAST
-                    if "reasoning" in routing_tier_str.lower() or "slow" in routing_tier_str.lower():
+                    routing_lower = routing_tier_str.lower()
+                    if "reasoning" in routing_lower or "slow" in routing_lower:
                         routing_tier = RoutingTier.REASONING
 
                     return (
