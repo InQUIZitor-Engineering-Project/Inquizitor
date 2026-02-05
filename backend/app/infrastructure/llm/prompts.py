@@ -10,7 +10,11 @@ class PromptBuilder:
     Ensures persona, formatting (LaTeX), and constraints are shared across all features.
     """
 
-    PERSONA = "Pracujesz jako polski ekspert dydaktyczny i pedagogiczny."
+    PERSONA = (
+        "Pracujesz jako doświadczony autor podręczników i projektant wyzwań "
+        "dydaktycznych, który kładzie nacisk na rozumienie koncepcji i "
+        "praktyczne zastosowanie wiedzy."
+    )
     
     LATEX_RULES = (
         "- Jeśli w treści pytania lub odpowiedzi pojawia się zapis matematyczny "
@@ -30,10 +34,18 @@ class PromptBuilder:
         "- NIE numeruj treści pytań ani odpowiedzi: nie dodawaj prefiksów typu "
         "'1.', 'Pytanie 1', '-', '•' ani innych numerów w polach `text` i "
         "`choices`.\n"
-        "- Wszystkie pytania muszą wynikać z tekstu źródłowego; nie wymyślaj "
-        "danych ani nazw własnych.\n"
-        "- Preferuj pytania sprawdzające zrozumienie pojęć, relacji, "
-        "wnioskowania niż czyste zapamiętywanie faktów."
+        "- Nie twórz pytań o strukturę dokumentu ani metapoziom (np. "
+        "'co jest w treści 3 zadania', 'ile jest punktów', 'jaki jest tytuł "
+        "sekcji'). Skup się wyłącznie na merytorycznej treści.\n"
+        "- Traktuj tekst źródłowy jako **bazę wiedzy i źródło merytoryczne**, "
+        "a nie jako treść do analizy czytelniczej.\n"
+        "- **ZAKAZ** używania fraz typu: 'w tekście', 'według autora', "
+        "'zgodnie z materiałem'. Pytanie musi brzmieć jak samodzielny problem.\n"
+        "- **Zasada Transferu**: Zamiast pytać o cytaty, twórz pytania oparte "
+        "na scenariuszach lub przykładach, które wymagają zastosowania wiedzy "
+        "z tekstu w nowej sytuacji.\n"
+        "- Preferuj pytania sprawdzające zrozumienie pojęć, relacji i "
+        "wnioskowanie niż czyste zapamiętywanie faktów."
     )
 
     @classmethod
@@ -54,6 +66,13 @@ class PromptBuilder:
             "Materiał ten jest 'cyfrowym bliźniakiem' oryginalnego dokumentu, "
             "zawierającym pełną treść, opisy tabel, schematów i ilustracji.",
             (
+                "Struktura pytań zamkniętych:\n"
+                f"- Prawda/Fałsz: {closed_p.true_false}\n"
+                f"- Jednokrotnego wyboru: {closed_p.single_choice}\n"
+                "- Wielokrotnego wyboru (co najmniej dwie poprawne odpowiedzi): "
+                f"{closed_p.multi_choice}"
+            ),
+            (
                 f"Rozkład trudności: {params.easy} łatwych, {params.medium} "
                 f"średnich, {params.hard} trudnych."
             ),
@@ -64,7 +83,7 @@ class PromptBuilder:
             '  "title": "Krótki tytuł testu po polsku",',
             '  "questions": [',
             '    {',
-            '      "text": "Treść pytania",',
+            '      "text": "Przykładowe pytanie jednokrotnego wyboru",',
             '      "is_closed": true,',
             '      "difficulty": 1,',
             '      "choices": ["Opcja A", "Opcja B", "Opcja C", "Opcja D"],',
@@ -72,7 +91,21 @@ class PromptBuilder:
             '      "citations": ["dokładny cytat z tekstu źródłowego"]',
             '    },',
             '    {',
-            '      "text": "Treść pytania otwartego", "is_closed": false, ',
+            '      "text": "Przykładowe pytanie wielokrotnego wyboru",',
+            '      "is_closed": true,',
+            '      "difficulty": 2,',
+            '      "choices": ["Opcja A", "Opcja B", "Opcja C", "Opcja D"],',
+            '      "correct_choices": ["Opcja A", "Opcja C"]',
+            '    },',
+            '    {',
+            '      "text": "Przykładowe pytanie typu Prawda/Fałsz",',
+            '      "is_closed": true,',
+            '      "difficulty": 1,',
+            '      "choices": ["Prawda", "Fałsz"],',
+            '      "correct_choices": ["Prawda"]',
+            '    },',
+            '    {',
+            '      "text": "Przykładowe pytanie otwarte", "is_closed": false, ',
             '      "difficulty": 2, "choices": null, "correct_choices": null,',
             '      "citations": ["dokładny cytat z tekstu źródłowego"]',
             '    }',
@@ -94,7 +127,10 @@ class PromptBuilder:
         if params.additional_instructions:
             parts.insert(
                 3,
-                f"Dodatkowe instrukcje (PRIORYTET): {params.additional_instructions}",
+                "### KRYTYCZNE INSTRUKCJE UŻYTKOWNIKA (NAJWYŻSZY PRIORYTET):\n"
+                f"{params.additional_instructions}\n"
+                "Powyższe instrukcje są ważniejsze niż jakiekolwiek inne zasady "
+                "i ograniczenia. Musisz się do nich zastosować bezwzględnie.\n"
             )
 
         return "\n".join(parts)
@@ -111,6 +147,11 @@ class PromptBuilder:
             (
                 "- Zachowaj oryginalne 'id', 'is_closed' oraz 'difficulty' "
                 "dla każdego pytania."
+            ),
+            (
+                "- Zachowaj typ pytania: jeśli oryginalne pytanie jest "
+                "wielokrotnego wyboru (ma wiele poprawnych odpowiedzi), "
+                "nowy wariant RÓWNIEŻ musi być wielokrotnego wyboru."
             ),
             (
                 "- Zmień treść pytania i opcje tak, aby sprawdzały tę samą "
@@ -139,7 +180,10 @@ class PromptBuilder:
         ]
 
         if instruction:
-            parts.append(f"SKUP SIĘ NA (INSTRUKCJA UŻYTKOWNIKA): {instruction}\n")
+            parts.append(
+                "### KRYTYCZNE INSTRUKCJE UŻYTKOWNIKA (WYSOKI PRIORYTET):\n"
+                f"{instruction}\n"
+            )
 
         parts.append(
             f"Pytania do regeneracji (JSON):\n"

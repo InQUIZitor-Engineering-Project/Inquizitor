@@ -108,21 +108,30 @@ const useQuestionDraft = () => {
 
   const updateDraftChoice = (index: number, value: string) => {
     setDraft((d) => {
-      const choices = ensureChoices(d.choices);
-      choices[index] = value;
-      return { ...d, choices };
+      const oldChoices = ensureChoices(d.choices);
+      const oldVal = oldChoices[index];
+      const newChoices = [...oldChoices];
+      newChoices[index] = value;
+
+      // Jeśli edytowana opcja była na liście poprawnych, aktualizujemy jej treść również tam
+      const newCorrect = (d.correct_choices || []).map((c) =>
+        c === oldVal ? value : c
+      );
+
+      return { ...d, choices: newChoices, correct_choices: newCorrect };
     });
     setEditorError(null);
   };
 
   const toggleDraftCorrect = (value: string, checked: boolean) => {
     setDraft((d) => {
+      const v = (value || "").trim();
       const current = d.correct_choices || [];
       let next = [...current];
       if (checked) {
-        if (value && !next.includes(value)) next.push(value);
+        if (v && !next.includes(v)) next.push(v);
       } else {
-        next = next.filter((c) => c !== value);
+        next = next.filter((c) => c !== v);
       }
       return { ...d, correct_choices: next };
     });
@@ -157,9 +166,11 @@ const useQuestionDraft = () => {
       const cleanedChoices = (payload.choices || [])
         .map((c: string) => (c || "").trim())
         .filter((c: string) => c);
-      const cleanedCorrect = (payload.correct_choices || []).filter((c: string) =>
-        cleanedChoices.includes(c)
-      );
+
+      // Czyścimy i sprawdzamy poprawne odpowiedzi względem oczyszczonych opcji
+      const cleanedCorrect = (payload.correct_choices || [])
+        .map((c: string) => (c || "").trim())
+        .filter((c: string) => cleanedChoices.includes(c));
 
       if (cleanedChoices.length === 0) {
         setEditorError("Dodaj przynajmniej jedną odpowiedź.");
