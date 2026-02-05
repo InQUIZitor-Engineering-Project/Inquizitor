@@ -24,6 +24,7 @@ class Material:
     routing_tier: RoutingTier | None = None
     analysis_version: str | None = None
     markdown_twin: str | None = None
+    thumbnail_path: str | None = None
 
     def mark_processed(self, text: str) -> None:
         self.status = ProcessingStatus.DONE

@@ -177,6 +177,7 @@ class Material(SQLModel, table=True):
     )
     analysis_version: str | None = Field(default=None, max_length=50)
     markdown_twin: str | None = Field(default=None, sa_column=Column(Text))
+    thumbnail_path: str | None = Field(default=None)
     created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
 
     owner: User | None = Relationship(back_populates="materials")

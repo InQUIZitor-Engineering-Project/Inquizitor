@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 from typing import Annotated
 
@@ -12,7 +13,7 @@ from fastapi import (
     status,
 )
 
-from app.api.dependencies import get_job_service, get_material_service
+from app.api.dependencies import get_job_service, get_material_service, get_materials_storage
 from app.api.schemas.materials import (
     MaterialAnalyzeRequest,
     MaterialAnalyzeResponse,
@@ -29,6 +30,7 @@ from app.application.services import JobService, MaterialService
 from app.core.limiter import limiter
 from app.core.security import get_current_user
 from app.db.models import User
+from app.domain.services import FileStorage
 from app.domain.models.enums import JobType
 from app.infrastructure.monitoring.posthog_client import analytics
 from app.tasks.materials import analyze_material_task, process_material_task
@@ -311,6 +313,101 @@ def list_materials(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="User ID is missing"
         )
     return material_service.list_materials(owner_id=current_user.id)
+
+
+@router.get("/{material_id}/thumbnail")
+def get_material_thumbnail(
+    material_id: int,
+    current_user: Annotated[User, Depends(get_current_user)],
+    material_service: Annotated[MaterialService, Depends(get_material_service)],
+    storage: Annotated[FileStorage, Depends(get_materials_storage)],
+) -> Response:
+    """Get thumbnail image for a material."""
+    from app.infrastructure.storage import R2FileStorage
+    from fastapi.responses import FileResponse, RedirectResponse
+    
+    logger = logging.getLogger(__name__)
+    logger.info(f"Getting thumbnail for material {material_id}, user {current_user.id}")
+    
+    if current_user.id is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="User ID is missing"
+        )
+    try:
+        material = material_service.get_material(
+            owner_id=current_user.id, material_id=material_id
+        )
+        logger.info(f"Material {material_id} found, thumbnail_path: {material.thumbnail_path}")
+        if not material.thumbnail_path:
+            logger.warning(f"Material {material_id} has no thumbnail_path")
+            raise HTTPException(status_code=404, detail="Thumbnail not available")
+        
+        # For R2, proxy through API to avoid CORS
+        if isinstance(storage, R2FileStorage):
+            try:
+                obj = storage._client.get_object(
+                    Bucket=storage._bucket, Key=material.thumbnail_path
+                )
+                data = obj["Body"].read()
+                return Response(
+                    content=data,
+                    media_type="image/jpeg",
+                    headers={"Cache-Control": "public, max-age=31536000"},
+                )
+            except Exception:
+                # Fallback to URL if direct fetch fails
+                url = storage.get_url(stored_path=material.thumbnail_path)
+                if url.startswith("http"):
+                    return RedirectResponse(url=url)
+        
+        # For local storage
+        # storage.save() returns full path like "uploads/materials/xxx.jpg"
+        # We need to handle it correctly - if it already contains base_dir, use it directly
+        if hasattr(storage, "_base_dir"):
+            thumb_path_str = material.thumbnail_path
+            base_dir_path = Path(storage._base_dir)
+            base_dir_str = str(base_dir_path)
+            
+            logger.info(f"Resolving thumbnail path: {thumb_path_str}, base_dir: {base_dir_str}")
+            
+            # Check if thumbnail_path already starts with base_dir
+            # If yes, use it directly (it's already a full path from save())
+            # If no, it might be just a filename, so join with base_dir
+            if thumb_path_str.startswith(base_dir_str):
+                # Already contains base_dir, use directly
+                thumb_path = Path(thumb_path_str)
+                logger.info(f"Using direct path (contains base_dir): {thumb_path}")
+            else:
+                # Might be just filename or relative path, use _resolve
+                if hasattr(storage, "_resolve"):
+                    thumb_path = storage._resolve(thumb_path_str)
+                    logger.info(f"Using _resolve: {thumb_path}")
+                else:
+                    thumb_path = base_dir_path / thumb_path_str
+                    logger.info(f"Using base_dir join: {thumb_path}")
+            
+            # Resolve to absolute path for FileResponse
+            thumb_path_abs = thumb_path.resolve()
+            logger.info(f"Resolved absolute path: {thumb_path_abs}")
+            
+            if thumb_path_abs.exists():
+                logger.info(f"Thumbnail file found at {thumb_path_abs}, returning FileResponse")
+                return FileResponse(
+                    path=thumb_path_abs,
+                    media_type="image/jpeg",
+                    headers={"Cache-Control": "public, max-age=31536000"},
+                )
+            else:
+                # Log for debugging
+                logger.warning(
+                    f"Thumbnail file not found at {thumb_path_abs} "
+                    f"(base_dir: {base_dir_path}, thumbnail_path: {material.thumbnail_path}, "
+                    f"original path: {thumb_path})"
+                )
+        
+        raise HTTPException(status_code=404, detail="Thumbnail file not found")
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
 @router.get("/{material_id}", response_model=MaterialOut)

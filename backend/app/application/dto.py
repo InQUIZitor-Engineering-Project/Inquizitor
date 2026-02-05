@@ -118,6 +118,7 @@ def to_material_out(
         processing_error=material.processing_error,
         cache_hit=cache_hit,
         duration_ocr_sec=duration_ocr_sec,
+        thumbnail_path=material.thumbnail_path,
     )
 
 

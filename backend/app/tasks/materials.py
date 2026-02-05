@@ -4,6 +4,7 @@ import logging
 import time
 from typing import Any
 
+from app.api.schemas.materials import MaterialUpdate
 from app.celery_app import celery_app
 from app.domain.models.enums import JobStatus
 from app.infrastructure.monitoring.posthog_client import analytics
@@ -43,20 +44,62 @@ def process_material_task(
         # MaterialOut has processing_status as string, but we need to check the actual status
         # The DTO converts domain model's status.value to processing_status string
         status_value = material.processing_status.lower() if material.processing_status else ""
+        analysis_status_value = (material.analysis_status or "").lower()
+        
+        # If material has a thumbnail, we consider it partially successful
+        # (thumbnail was generated even if text extraction failed)
+        has_thumbnail = bool(material.thumbnail_path)
+        # If Gemini analysis succeeded, material is usable even if text extraction failed
+        has_markdown_twin = bool(material.markdown_twin)
+        analysis_succeeded = analysis_status_value == JobStatus.DONE.value
+        
         if status_value != JobStatus.DONE.value:
             error_msg = material.processing_error or "Could not extract text"
-            job_service.update_job_status(
-                job_id=job_id,
-                status=JobStatus.FAILED,
-                error=error_msg,
-                result={
-                    "material_id": material.id,
-                    "processing_status": material.processing_status,
-                    "processing_error": error_msg,
-                    "filename": material.filename,
-                },
-            )
-            raise ValueError(error_msg)
+            
+            # If thumbnail was generated OR Gemini analysis succeeded, mark job as done
+            # (material is usable for viewing even without text extraction)
+            # Also update material status to DONE if it has thumbnail or markdown_twin
+            if has_thumbnail or analysis_succeeded:
+                # Update material status to DONE since it has thumbnail or markdown_twin
+                # (it's usable even without text extraction)
+                material_service.update_material(
+                    owner_id=owner_id,
+                    material_id=material.id,
+                    payload=MaterialUpdate(processing_status="done"),
+                )
+                # Refresh material to get updated status
+                material = material_service.get_material(
+                    owner_id=owner_id, material_id=material.id
+                )
+                
+                job_service.update_job_status(
+                    job_id=job_id,
+                    status=JobStatus.DONE,
+                    error=None,  # No error, just a warning
+                    result={
+                        "material_id": material.id,
+                        "processing_status": "done",  # Updated status
+                        "processing_warning": error_msg if not analysis_succeeded else None,
+                        "filename": material.filename,
+                        "has_thumbnail": has_thumbnail,
+                        "has_markdown_twin": has_markdown_twin,
+                    },
+                )
+                # Don't raise error - material is usable with thumbnail or markdown_twin
+            else:
+                # No thumbnail and no text - complete failure
+                job_service.update_job_status(
+                    job_id=job_id,
+                    status=JobStatus.FAILED,
+                    error=error_msg,
+                    result={
+                        "material_id": material.id,
+                        "processing_status": material.processing_status,
+                        "processing_error": error_msg,
+                        "filename": material.filename,
+                    },
+                )
+                raise ValueError(error_msg)
 
         job_service.update_job_status(
             job_id=job_id,

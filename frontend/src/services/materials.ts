@@ -16,6 +16,7 @@ export interface MaterialUploadResponse {
   extracted_text?: string | null;
   markdown_twin?: string | null;
   processing_error?: string | null;
+  thumbnail_path?: string | null;
 }
 
 export interface MaterialUploadEnqueueResponse {

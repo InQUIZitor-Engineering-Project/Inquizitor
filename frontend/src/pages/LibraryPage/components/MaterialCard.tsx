@@ -31,6 +31,26 @@ const FileIcon = styled(Box)`
   flex-shrink: 0;
 `;
 
+const ThumbnailContainer = styled(Box)`
+  width: 250px;
+  height: 354px; /* A4 ratio: 250 * sqrt(2) ≈ 354px */
+  border-radius: ${({ theme }) => theme.radii.md};
+  overflow: hidden;
+  background: ${({ theme }) => theme.colors.tint.t5};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+`;
+
+const ThumbnailImage = styled.img`
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: white;
+`;
+
 const FileIconSvg = () => (
   <svg
     width="24"
@@ -126,12 +146,82 @@ const getStatusBadge = (status: string) => {
 };
 
 const MaterialCard: React.FC<MaterialCardProps> = ({ material, onDelete }) => {
+  const [thumbnailError, setThumbnailError] = React.useState(false);
+  const [thumbnailBlobUrl, setThumbnailBlobUrl] = React.useState<string | null>(null);
+  const hasThumbnail = material.thumbnail_path && !thumbnailError;
+
+  // Load thumbnail with authentication
+  React.useEffect(() => {
+    if (!hasThumbnail) {
+      setThumbnailBlobUrl(null);
+      return;
+    }
+
+    const loadThumbnail = async () => {
+      try {
+        const token = localStorage.getItem("access_token");
+        const apiBase = import.meta.env.VITE_API_URL || "";
+        const url = `${apiBase}/materials/${material.id}/thumbnail`;
+
+        const response = await fetch(url, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to load thumbnail: ${response.status}`);
+        }
+
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        setThumbnailBlobUrl(blobUrl);
+        console.log(`Successfully loaded thumbnail for material ${material.id}`);
+      } catch (error) {
+        console.error(`Failed to load thumbnail for material ${material.id}:`, error);
+        setThumbnailError(true);
+        setThumbnailBlobUrl(null);
+      }
+    };
+
+    loadThumbnail();
+
+    // Cleanup blob URL on unmount or when thumbnail changes
+    return () => {
+      if (thumbnailBlobUrl) {
+        URL.revokeObjectURL(thumbnailBlobUrl);
+      }
+    };
+  }, [material.id, hasThumbnail]);
+
+  // Debug: log thumbnail_path to console
+  React.useEffect(() => {
+    if (material.thumbnail_path) {
+      console.log(`Material ${material.id} has thumbnail_path:`, material.thumbnail_path);
+    } else {
+      console.log(`Material ${material.id} has NO thumbnail_path`);
+    }
+  }, [material.id, material.thumbnail_path]);
+
   return (
     <CardContent $p="md" $shadow="md" $variant="elevated" style={{ position: "relative" }}>
-      <Stack $gap="sm">
-        <Flex $align="flex-start" $justify="space-between" $gap="sm">
+      <Stack $gap="md">
+        {/* Thumbnail - only show if available */}
+        {thumbnailBlobUrl && (
+          <ThumbnailContainer>
+            <ThumbnailImage
+              src={thumbnailBlobUrl}
+              alt={material.filename}
+              onError={(e) => {
+                console.error(`Failed to display thumbnail for material ${material.id}:`, e);
+                setThumbnailError(true);
+              }}
+            />
+          </ThumbnailContainer>
+        )}
+
+        <Flex $align="flex-start" $justify="space-between" $gap="sm" style={{ position: "relative" }}>
           <Flex $align="center" $gap="sm" style={{ flex: 1, minWidth: 0, paddingRight: "32px" }}>
-            <FileIcon>{getFileIcon(material.mime_type)}</FileIcon>
+            {/* Show icon only if no thumbnail */}
+            {!hasThumbnail && <FileIcon>{getFileIcon(material.mime_type)}</FileIcon>}
             <Box style={{ flex: 1, minWidth: 0 }}>
               <Text
                 $variant="body2"
@@ -147,17 +237,17 @@ const MaterialCard: React.FC<MaterialCardProps> = ({ material, onDelete }) => {
               </Text>
             </Box>
           </Flex>
+          <CloseButton
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              onDelete(material.id);
+            }}
+            aria-label="Usuń materiał"
+            $top={8}
+            $right={8}
+          />
         </Flex>
-        <CloseButton
-          onClick={(e) => {
-            e.stopPropagation();
-            e.preventDefault();
-            onDelete(material.id);
-          }}
-          aria-label="Usuń materiał"
-          $top={8}
-          $right={8}
-        />
 
         <Flex $align="center" $justify="space-between" $gap="xs" $wrap="wrap">
           {getStatusBadge(material.processing_status)}

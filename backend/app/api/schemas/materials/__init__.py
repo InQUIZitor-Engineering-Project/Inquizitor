@@ -23,6 +23,7 @@ class MaterialOut(BaseModel):
     processing_error: str | None = None
     cache_hit: bool | None = None
     duration_ocr_sec: float | None = None
+    thumbnail_path: str | None = None
 
     class Config:
         from_attributes = True

@@ -179,6 +179,20 @@ class SqlModelMaterialRepository(MaterialRepository):
         row = cast(Any, self._session).exec(stmt).first()
         return mappers.material_to_domain(row) if row else None
 
+    def get_by_checksum(self, owner_id: int, checksum: str) -> Material | None:
+        """Find a material by checksum for the given owner."""
+        stmt = (
+            select(db_models.Material)
+            .where(
+                db_models.Material.owner_id == owner_id,
+                db_models.Material.checksum == checksum,
+            )
+            .options(joinedload(db_models.Material.file))
+            .order_by(cast(Any, db_models.Material.created_at).desc())
+        )
+        row = cast(Any, self._session).exec(stmt).first()
+        return mappers.material_to_domain(row) if row else None
+
     def list_for_user(self, user_id: int) -> Iterable[Material]:
         stmt = (
             select(db_models.Material)
@@ -222,6 +236,7 @@ class SqlModelMaterialRepository(MaterialRepository):
         )
         db_material.analysis_version = material.analysis_version
         db_material.markdown_twin = material.markdown_twin
+        db_material.thumbnail_path = material.thumbnail_path
 
         self._session.add(db_material)
         self._session.commit()

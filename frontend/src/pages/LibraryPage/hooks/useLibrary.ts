@@ -62,12 +62,29 @@ const useLibrary = (): UseLibraryResult => {
           (m) => m.processing_status === "pending"
         );
 
-        // Zaktualizuj stan
+        // Zaktualizuj stan (zawsze, nawet jeśli nie ma już pending)
+        // To zapewnia, że otrzymamy zaktualizowane dane (np. thumbnail_path)
         setMaterials(updatedList);
 
         // Kontynuuj polling jeśli są jeszcze pending materiały
+        // Ale wykonaj jeszcze jedno odświeżenie po zakończeniu przetwarzania
         if (stillPending.length > 0 && !cancelled) {
           timeoutId = window.setTimeout(pollMaterials, 1500);
+        } else if (stillPending.length === 0 && pendingMaterials.length > 0) {
+          // Jeśli były pending materiały, ale teraz już nie ma,
+          // wykonaj jeszcze jedno odświeżenie po krótkim opóźnieniu
+          // żeby upewnić się, że otrzymamy wszystkie zaktualizowane dane
+          timeoutId = window.setTimeout(async () => {
+            if (cancelled) return;
+            try {
+              const finalList = await listMaterials();
+              if (!cancelled) {
+                setMaterials(finalList);
+              }
+            } catch (err) {
+              console.error("Failed to final refresh materials", err);
+            }
+          }, 500);
         }
       } catch (err) {
         console.error("Failed to poll materials", err);

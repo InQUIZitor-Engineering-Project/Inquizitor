@@ -31,5 +31,10 @@ class MaterialRepository(ABC):
     def get_by_file_id(self, file_id: int) -> Material | None:
         raise NotImplementedError
 
+    @abstractmethod
+    def get_by_checksum(self, owner_id: int, checksum: str) -> Material | None:
+        """Find a material by checksum for the given owner."""
+        raise NotImplementedError
+
 
 __all__ = ["MaterialRepository"]
