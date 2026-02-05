@@ -4,11 +4,11 @@ import { Box, Flex, Input, Checkbox, Button, Stack, Text } from "../../../design
 import { FormField, CustomSelect } from "../../../design-system/patterns";
 import type { PdfExportConfig } from "../../../services/test";
 
-// Grid dla pierwszych dwóch pól (Styl i Wysokość)
 const ConfigGrid = styled(Box)`
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: ${({ theme }) => theme.spacing.sm};
+  margin-bottom: ${({ theme }) => theme.spacing.sm};
   
   ${({ theme }) => theme.media.down("sm")} {
     grid-template-columns: 1fr;
@@ -18,7 +18,7 @@ const ConfigGrid = styled(Box)`
 const ErrorText = styled.span`
   position: absolute;
   left: 0;
-  bottom: -18px; // Przesunięte niżej, aby nie nachodziło na input
+  bottom: -18px;
   font-size: 11px;
   line-height: 12px;
   color: ${({ theme }) => theme.colors.danger.main};
@@ -28,22 +28,53 @@ const ErrorText = styled.span`
 const FieldWrapper = styled.div`
   position: relative;
   display: block;
-  margin-bottom: 10px; // Miejsce na ewentualny błąd
+  margin-bottom: 10px;
 `;
 
-// Specjalny wrapper dla opcji wariantu, żeby był lekko wcięty
 const VariantModeWrapper = styled(Box)`
   width: 100%;
   max-width: 50%;
+  margin-left: 28px;
+  margin-top: 8px;
 
   ${({ theme }) => theme.media.down("sm")} {
     max-width: 100%;
+    margin-left: 0;
   }
 `;
 
+const SectionHeader: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <Text 
+    $variant="body2" 
+    $tone="muted" 
+    style={{ marginBottom: 12, display: 'block', fontWeight: 500 }}
+  >
+    {children}
+  </Text>
+);
+
+interface ConfigCheckboxProps {
+  id: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  label: string;
+}
+
+const ConfigCheckbox: React.FC<ConfigCheckboxProps> = ({ id, checked, onChange, label }) => (
+  <Flex $align="center" $gap="sm">
+    <Checkbox
+      id={id}
+      checked={checked}
+      onChange={(e) => onChange(e.target.checked)}
+    />
+    <label htmlFor={id} style={{ cursor: "pointer", fontSize: 14 }}>
+      {label}
+    </label>
+  </Flex>
+);
+
 export interface PdfConfigSectionProps {
   config: PdfExportConfig;
-  // Usunięto isOpen i onToggle - nie są już potrzebne
   onChange: (updater: (cfg: PdfExportConfig) => PdfExportConfig) => void;
   onReset: () => void;
   onValidityChange?: (isValid: boolean) => void;
@@ -78,20 +109,14 @@ const ConfigSection: React.FC<PdfConfigSectionProps> = ({
     return null;
   };
 
-  const commitSpaceHeight = (raw: string) => {
-    const error = validateSpaceHeight(raw);
-    if (error) {
-      setSpaceHeightError(error);
-      return;
-    }
-    setSpaceHeightError(null);
-    const num = Number(raw);
-    onChange((cfg) => ({ ...cfg, space_height_cm: num }));
-  };
-
   const handleSpaceHeightChange = (raw: string) => {
     setSpaceHeight(raw);
-    setSpaceHeightError(validateSpaceHeight(raw));
+    const error = validateSpaceHeight(raw);
+    setSpaceHeightError(error);
+    
+    if (!error && raw !== "") {
+      onChange((cfg) => ({ ...cfg, space_height_cm: Number(raw) }));
+    }
   };
 
   const handleSpaceHeightBlur = () => {
@@ -99,13 +124,16 @@ const ConfigSection: React.FC<PdfConfigSectionProps> = ({
       setSpaceHeightError("Podaj liczbę od 1 do 10.");
       return;
     }
-    commitSpaceHeight(spaceHeight);
+    const error = validateSpaceHeight(spaceHeight);
+    if (!error) {
+       onChange((cfg) => ({ ...cfg, space_height_cm: Number(spaceHeight) }));
+    }
   };
 
   const handleSpaceHeightKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
-      commitSpaceHeight(spaceHeight);
-      (e.target as HTMLInputElement).blur();
+       handleSpaceHeightBlur();
+       (e.target as HTMLInputElement).blur();
     }
   };
 
@@ -113,9 +141,8 @@ const ConfigSection: React.FC<PdfConfigSectionProps> = ({
     <Stack $gap="xl">
       
       <Box>
-        <Text $variant="body2" $tone="muted" style={{ marginBottom: 12, display: 'block' }}>
-          Wygląd arkusza
-        </Text>
+        <SectionHeader>Wygląd arkusza</SectionHeader>
+        
         <ConfigGrid>
           <FormField label="Styl pola" fullWidth>
             <CustomSelect
@@ -127,106 +154,68 @@ const ConfigSection: React.FC<PdfConfigSectionProps> = ({
                 { value: "grid", label: "Kratka" },
               ]}
               onChange={(value) =>
-                onChange((cfg) => ({
-                  ...cfg,
-                  answer_space_style: value as PdfExportConfig["answer_space_style"],
-                }))
+                onChange((cfg) => ({ ...cfg, answer_space_style: value as any }))
               }
             />
           </FormField>
 
-          <FormField label="Wysokość pola odpowiedzi (cm)" fullWidth>
+          <FormField label="Wysokość pola (cm)" fullWidth>
             <FieldWrapper style={spaceHeightError ? { paddingBottom: 14 } : undefined}>
                 <Input
-                    $size="md"
-                    $fullWidth
-                    type="number"
-                    inputMode="decimal"
-                    step="any"
-                    min={MIN_SPACE_HEIGHT}
-                    max={MAX_SPACE_HEIGHT}
-                    placeholder="1-10"
+                    $size="md" $fullWidth type="number" inputMode="decimal" step="any"
+                    min={MIN_SPACE_HEIGHT} max={MAX_SPACE_HEIGHT} placeholder="1-10"
                     style={{ minHeight: 41.6 }}
                     value={spaceHeight}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                    handleSpaceHeightChange(e.target.value)
-                    }
+                    onChange={(e) => handleSpaceHeightChange(e.target.value)}
                     onBlur={handleSpaceHeightBlur}
                     onKeyDown={handleSpaceHeightKeyDown}
                 />
             {spaceHeightError && <ErrorText>{spaceHeightError}</ErrorText>}
             </FieldWrapper>
-        </FormField>
+          </FormField>
         </ConfigGrid>
+
+        <ConfigCheckbox 
+          id="pdf-mark-multi-choice"
+          label="Oznacz graficznie pytania wielokrotnego wyboru"
+          checked={config.mark_multi_choice}
+          onChange={(checked) => onChange(cfg => ({ ...cfg, mark_multi_choice: checked }))}
+        />
       </Box>
 
-      {/* Sekcja 2: Opcje dodatkowe */}
       <Box>
-        <Text $variant="body2" $tone="muted" style={{ marginBottom: 12, display: 'block' }}>
-          Dodatki
-        </Text>
+        <SectionHeader>Ustawienia ogólne</SectionHeader>
         <Stack $gap="md">
-          <Flex $align="center" $gap="sm">
-            <Checkbox
-              id="pdf-student-header"
-              checked={config.student_header}
-              onChange={(e) => onChange((cfg) => ({ ...cfg, student_header: e.target.checked }))}
-            />
-            <label htmlFor="pdf-student-header" style={{ cursor: "pointer", fontSize: 14 }}>
-              Nagłówek na imię i nazwisko
-            </label>
-          </Flex>
-
-          <Flex $align="center" $gap="sm">
-            <Checkbox
-              id="pdf-scratchpad"
-              checked={config.use_scratchpad}
-              onChange={(e) => onChange((cfg) => ({ ...cfg, use_scratchpad: e.target.checked }))}
-            />
-            <label htmlFor="pdf-scratchpad" style={{ cursor: "pointer", fontSize: 14 }}>
-              Brudnopis na końcu
-            </label>
-          </Flex>
-
-           <Flex $align="center" $gap="sm">
-            <Checkbox
-              id="pdf-mark-multi-choice"
-              checked={config.mark_multi_choice}
-              onChange={(e) => onChange((cfg) => ({ ...cfg, mark_multi_choice: e.target.checked }))}
-            />
-            <label htmlFor="pdf-mark-multi-choice" style={{ cursor: "pointer", fontSize: 14 }}>
-              Oznacz pytania wielokrotnego wyboru
-            </label>
-          </Flex>
-
-          <Flex $align="center" $gap="sm">
-            <Checkbox
-              id="pdf-include-answer-key"
-              checked={config.include_answer_key}
-              onChange={(e) => onChange((cfg) => ({ ...cfg, include_answer_key: e.target.checked }))}
-            />
-            <label htmlFor="pdf-include-answer-key" style={{ cursor: "pointer", fontSize: 14 }}>
-              Dołącz klucz odpowiedzi
-            </label>
-          </Flex>
+          <ConfigCheckbox 
+             id="pdf-student-header"
+             label="Dodaj linię na imię i nazwisko ucznia"
+             checked={config.student_header}
+             onChange={(checked) => onChange(cfg => ({ ...cfg, student_header: checked }))}
+          />
+          <ConfigCheckbox 
+             id="pdf-scratchpad"
+             label="Dodaj brudnopis na końcu testu"
+             checked={config.use_scratchpad}
+             onChange={(checked) => onChange(cfg => ({ ...cfg, use_scratchpad: checked }))}
+          />
+          <ConfigCheckbox 
+             id="pdf-include-answer-key"
+             label="Dołącz klucz odpowiedzi do pytań zamkniętych"
+             checked={config.include_answer_key}
+             onChange={(checked) => onChange(cfg => ({ ...cfg, include_answer_key: checked }))}
+          />
         </Stack>
       </Box>
 
       <Box>
-        <Text $variant="body2" $tone="muted" style={{ marginBottom: 12, display: 'block' }}>
-          Warianty
-        </Text>
+        <SectionHeader>Warianty</SectionHeader>
         <Stack $gap="xs">
-          <Flex $align="center" $gap="sm">
-            <Checkbox
-              id="pdf-generate-variants"
-              checked={config.generate_variants}
-              onChange={(e) => onChange((cfg) => ({ ...cfg, generate_variants: e.target.checked }))}
-            />
-            <label htmlFor="pdf-generate-variants" style={{ cursor: "pointer", fontSize: 14, fontWeight: 500 }}>
-              Generuj Grupę A i B
-            </label>
-          </Flex>
+          <ConfigCheckbox 
+             id="pdf-generate-variants"
+             label="Generuj Grupę A i B"
+             checked={config.generate_variants}
+             onChange={(checked) => onChange(cfg => ({ ...cfg, generate_variants: checked }))}
+          />
 
           {config.generate_variants && (
             <VariantModeWrapper>
@@ -235,15 +224,10 @@ const ConfigSection: React.FC<PdfConfigSectionProps> = ({
                     value={config.variant_mode || "shuffle"}
                     $fullWidth
                     options={[
-                    { value: "shuffle", label: "Zamień kolejność pytań i odpowiedzi" },
-                    { value: "llm_variant", label: "Nowe pytania o tej samej trudności" },
+                      { value: "shuffle", label: "Zamień kolejność pytań i odpowiedzi" },
+                      { value: "llm_variant", label: "Nowe pytania o tej samej trudności" },
                     ]}
-                    onChange={(value) =>
-                    onChange((cfg) => ({
-                        ...cfg,
-                        variant_mode: value as PdfExportConfig["variant_mode"],
-                    }))
-                    }
+                    onChange={(value) => onChange((cfg) => ({ ...cfg, variant_mode: value as any }))}
                 />
                 </FormField>
             </VariantModeWrapper>
@@ -251,7 +235,6 @@ const ConfigSection: React.FC<PdfConfigSectionProps> = ({
         </Stack>
       </Box>
 
-      {/* Reset */}
       <Box $mt="sm">
         <Button 
           $size="sm" 

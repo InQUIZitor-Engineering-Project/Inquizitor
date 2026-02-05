@@ -205,17 +205,17 @@ const PdfConfigSection: React.FC<PdfConfigSectionProps> = ({
         <FormField fullWidth>
           <Flex $align="center" $gap="xs">
             <Checkbox
-              id="pdf-include-answer-key"
-              checked={config.include_answer_key}
+              id="pdf-mark-multi-choice"
+              checked={config.mark_multi_choice}
               onChange={(e) =>
                 onChange((cfg) => ({
                   ...cfg,
-                  include_answer_key: e.target.checked,
+                  mark_multi_choice: e.target.checked,
                 }))
               }
             />
-            <label htmlFor="pdf-include-answer-key" style={{ cursor: "pointer" }}>
-              Dołącz klucz odpowiedzi do pytań zamkniętych
+            <label htmlFor="pdf-mark-multi-choice" style={{ cursor: "pointer" }}>
+              Oznacz graficznie pytania wielokrotnego wyboru
             </label>
           </Flex>
         </FormField>
@@ -234,6 +234,24 @@ const PdfConfigSection: React.FC<PdfConfigSectionProps> = ({
             />
             <label htmlFor="pdf-scratchpad" style={{ cursor: "pointer" }}>
               Dodaj brudnopis na końcu testu
+            </label>
+          </Flex>
+        </FormField>
+
+        <FormField fullWidth>
+          <Flex $align="center" $gap="xs">
+            <Checkbox
+              id="pdf-include-answer-key"
+              checked={config.include_answer_key}
+              onChange={(e) =>
+                onChange((cfg) => ({
+                  ...cfg,
+                  include_answer_key: e.target.checked,
+                }))
+              }
+            />
+            <label htmlFor="pdf-include-answer-key" style={{ cursor: "pointer" }}>
+              Dołącz klucz odpowiedzi do pytań zamkniętych
             </label>
           </Flex>
         </FormField>
@@ -276,24 +294,6 @@ const PdfConfigSection: React.FC<PdfConfigSectionProps> = ({
             </FormField>
           </VariantModeWrapper>
         )}
-
-        <FormField fullWidth>
-          <Flex $align="center" $gap="xs">
-            <Checkbox
-              id="pdf-mark-multi-choice"
-              checked={config.mark_multi_choice}
-              onChange={(e) =>
-                onChange((cfg) => ({
-                  ...cfg,
-                  mark_multi_choice: e.target.checked,
-                }))
-              }
-            />
-            <label htmlFor="pdf-mark-multi-choice" style={{ cursor: "pointer" }}>
-              Oznacz graficznie pytania wielokrotnego wyboru
-            </label>
-          </Flex>
-        </FormField>
 
        <Flex $justify="space-between" $align="center" $gap="sm" $wrap="wrap" $mt="sm">
           <Button 
