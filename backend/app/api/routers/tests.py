@@ -54,13 +54,18 @@ def generate_test(
         payload=req.model_dump(),
     )
     try:
+        if job.id is None:
+            raise HTTPException(
+                status_code=500, detail="Nie udało się utworzyć zadania"
+            )
         generate_test_task.delay(job.id, current_user.id, req.model_dump())
     except Exception as exc:
-        job_service.update_job_status(
-            job_id=job.id,
-            status=JobStatus.FAILED,
-            error=f"Nie udało się uruchomić zadania: {exc}",
-        )
+        if job.id is not None:
+            job_service.update_job_status(
+                job_id=job.id,
+                status=JobStatus.FAILED,
+                error=f"Nie udało się uruchomić zadania: {exc}",
+            )
         raise HTTPException(
             status_code=503,
             detail="Nie udało się uruchomić zadania generowania testu.",

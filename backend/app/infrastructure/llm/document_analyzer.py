@@ -112,6 +112,14 @@ class GeminiDocumentAnalyzer(DocumentAnalyzer):
             parsed_data = response.parsed
             if not parsed_data:
                 # Rezerwowe parsowanie ręczne
+                if response.text is None:
+                    raise ValueError("Odpowiedź modelu jest pusta")
+                parsed_data = AnalysisPayload.model_validate_json(response.text)
+            
+            # Upewniamy się, że parsed_data to AnalysisPayload
+            if not isinstance(parsed_data, AnalysisPayload):
+                if response.text is None:
+                    raise ValueError("Odpowiedź modelu jest pusta")
                 parsed_data = AnalysisPayload.model_validate_json(response.text)
         except Exception as exc:
             logger.error("Błąd walidacji odpowiedzi: %s", response.text)

@@ -30,7 +30,6 @@ from app.api.schemas.tests import (
 from app.application import dto
 from app.application.interfaces import (
     FileStorage,
-    OCRService,
     QuestionGenerator,
     UnitOfWork,
 )
@@ -326,7 +325,8 @@ class TestService:
 
                 if not texts:
                     raise ValueError(
-                        "Materiał nie jest gotowy. Poczekaj na zakończenie przetwarzania."
+                        "Materiał nie jest gotowy. "
+                        "Poczekaj na zakończenie przetwarzania."
                     )
 
                 source_text = "\n\n".join(texts)

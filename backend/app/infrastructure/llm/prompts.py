@@ -115,8 +115,9 @@ class PromptBuilder:
             "Wymagania i formatowanie:",
             cls.LATEX_RULES,
             cls.GENERAL_CONSTRAINTS,
-            "- Tytuł (`title`) musi być krótką, autonomiczną nazwą testu sformułowaną na podstawie "
-            "głównego tematu dokumentu. NIE kopiuj bezkrytycznie pierwszego nagłówka z tekstu "
+            "- Tytuł (`title`) musi być krótką, autonomiczną nazwą testu "
+            "sformułowaną na podstawie głównego tematu dokumentu. "
+            "NIE kopiuj bezkrytycznie pierwszego nagłówka z tekstu "
             "źródłowego, jeśli nie oddaje on esencji całego materiału.",
             "- Każde pytanie MUSI zawierać pole `citations` z 1-3 krótkimi, "
             "dosłownymi cytatami z tekstu źródłowego (bez parafrazy).",
@@ -313,7 +314,8 @@ class PromptBuilder:
             cls.LATEX_RULES,
             "",
             "Zasady:",
-            "- Tytuł (`suggested_title`) musi być zwięzły (2-5 słów) i oddawać główny temat materiału.",
+            "- Tytuł (`suggested_title`) musi być zwięzły (2-5 słów) "
+            "i oddawać główny temat materiału.",
             "- Zachowaj kolejność treści z dokumentu.",
             "- Opisuj diagramy/rysunki tekstowo, zachowując relacje.",
             "- Nie dodawaj informacji spoza materiału.",
