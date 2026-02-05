@@ -19,10 +19,12 @@ from app.domain.models import (
     User,
 )
 from app.domain.models.enums import (
+    AnalysisStatus,
     JobStatus,
     JobType,
     ProcessingStatus,
     QuestionDifficulty,
+    RoutingTier,
 )
 
 
@@ -74,6 +76,7 @@ def question_to_domain(row: db_models.Question) -> Question:
         difficulty=QuestionDifficulty(row.difficulty),
         choices=choices,
         correct_choices=correct_choices,
+        citations=row.citations or [],
     )
 
 
@@ -86,6 +89,7 @@ def question_to_row(question: Question, test_id: int) -> db_models.Question:
         difficulty=question.difficulty.value,
         choices=question.choices or None,
         correct_choices=question.correct_choices or None,
+        citations=question.citations or None,
     )
 
 
@@ -157,6 +161,22 @@ def material_to_domain(
         status=ProcessingStatus(status_value),
         extracted_text=row.extracted_text,
         processing_error=row.processing_error,
+        analysis_status=AnalysisStatus(
+            row.analysis_status.value
+            if isinstance(row.analysis_status, db_models.AnalysisStatus)
+            else str(row.analysis_status)
+        ),
+        routing_tier=(
+            RoutingTier(row.routing_tier.value)
+            if isinstance(row.routing_tier, db_models.RoutingTier)
+            else (
+                RoutingTier(str(row.routing_tier))
+                if row.routing_tier
+                else None
+            )
+        ),
+        analysis_version=row.analysis_version,
+        markdown_twin=row.markdown_twin,
     )
 
 
@@ -175,6 +195,10 @@ def material_to_row(material: Material) -> db_models.Material:
         extracted_text=material.extracted_text,
         processing_status=material.status.value,
         processing_error=material.processing_error,
+        analysis_status=material.analysis_status.value,
+        routing_tier=material.routing_tier.value if material.routing_tier else None,
+        analysis_version=material.analysis_version,
+        markdown_twin=material.markdown_twin,
     )
 
 

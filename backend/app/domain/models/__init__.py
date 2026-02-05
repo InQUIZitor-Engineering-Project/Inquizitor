@@ -1,4 +1,11 @@
-from .enums import JobStatus, JobType, ProcessingStatus, QuestionDifficulty
+from .enums import (
+    AnalysisStatus,
+    JobStatus,
+    JobType,
+    ProcessingStatus,
+    QuestionDifficulty,
+    RoutingTier,
+)
 from .file import File
 from .job import Job
 from .material import Material
@@ -12,6 +19,7 @@ from .test import Test
 from .user import User
 
 __all__ = [
+    "AnalysisStatus",
     "File",
     "Job",
     "JobStatus",
@@ -25,6 +33,7 @@ __all__ = [
     "Question",
     "QuestionDifficulty",
     "RefreshToken",
+    "RoutingTier",
     "Test",
     "User",
 ]

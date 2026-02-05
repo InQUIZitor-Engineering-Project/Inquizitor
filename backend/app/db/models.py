@@ -1,8 +1,8 @@
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from typing import Optional
 
-from sqlalchemy import Column, ForeignKey, Integer
+from sqlalchemy import Column, ForeignKey, Integer, Text, text
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Field, Relationship, SQLModel
@@ -89,6 +89,9 @@ class Question(SQLModel, table=True):
     correct_choices: list[str] | None = Field(
         default=None, sa_column=Column(JSONB)
     )
+    citations: list[str] | None = Field(
+        default=None, sa_column=Column(JSONB)
+    )
 
     test: Test | None = Relationship(back_populates="questions")
 
@@ -103,36 +106,46 @@ class File(SQLModel, table=True):
     material: Optional["Material"] = Relationship(back_populates="file")
 
 
-class FilePurpose(str, Enum):
+class FilePurpose(StrEnum):
     generic = "generic"
     material = "material"
 
-class ProcessingStatus(str, Enum):
+class ProcessingStatus(StrEnum):
     pending = "pending"
     done = "done"
     failed = "failed"
 
-class JobStatus(str, Enum):
+class JobStatus(StrEnum):
     pending = "pending"
     running = "running"
     done = "done"
     failed = "failed"
 
-class JobType(str, Enum):
+class JobType(StrEnum):
     test_generation = "test_generation"
     pdf_export = "pdf_export"
     material_processing = "material_processing"
+    material_analysis = "material_analysis"
     questions_regeneration = "questions_regeneration"
     questions_conversion = "questions_conversion"
 
-class SupportCategory(str, Enum):
+class AnalysisStatus(StrEnum):
+    pending = "pending"
+    done = "done"
+    failed = "failed"
+
+class RoutingTier(StrEnum):
+    fast = "fast"
+    reasoning = "reasoning"
+
+class SupportCategory(StrEnum):
     general = "general"
     bug = "bug"
     feature_request = "feature_request"
     account = "account"
     other = "other"
 
-class SupportStatus(str, Enum):
+class SupportStatus(StrEnum):
     new = "new"
     read = "read"
     resolved = "resolved"
@@ -150,6 +163,20 @@ class Material(SQLModel, table=True):
         default=ProcessingStatus.done, index=True
     )
     processing_error: str | None = None
+    analysis_status: AnalysisStatus = Field(
+        default=AnalysisStatus.pending,
+        sa_column=Column(
+            SAEnum(AnalysisStatus),
+            index=True,
+            nullable=False,
+            server_default=text("'pending'"),
+        ),
+    )
+    routing_tier: RoutingTier | None = Field(
+        default=None, sa_column=Column(SAEnum(RoutingTier), index=True)
+    )
+    analysis_version: str | None = Field(default=None, max_length=50)
+    markdown_twin: str | None = Field(default=None, sa_column=Column(Text))
     created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
 
     owner: User | None = Relationship(back_populates="materials")

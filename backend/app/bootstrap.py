@@ -30,6 +30,7 @@ from app.application.services import (
     AuthService,
     FileService,
     JobService,
+    MaterialAnalysisService,
     MaterialService,
     NotificationService,
     SupportService,
@@ -44,6 +45,7 @@ from app.db.session import get_engine, get_session_factory, init_db
 from app.domain.services import FileStorage
 from app.infrastructure import (
     DefaultOCRService,
+    GeminiDocumentAnalyzer,
     GeminiQuestionGenerator,
     LocalFileStorage,
     R2FileStorage,
@@ -64,7 +66,15 @@ class AppContainer:
 
     def __init__(self, settings: Settings):
         self._settings = settings
-        self._question_generator = GeminiQuestionGenerator()
+        self._question_generator_fast = GeminiQuestionGenerator(
+            model_name=settings.GEMINI_QUIZ_FAST_MODEL
+        )
+        self._question_generator_reasoning = GeminiQuestionGenerator(
+            model_name=settings.GEMINI_QUIZ_REASONING_MODEL
+        )
+        self._document_analyzer = GeminiDocumentAnalyzer(
+            model_name=settings.GEMINI_ANALYSIS_MODEL
+        )
         self._ocr_service = DefaultOCRService()
         self._file_storage = self._create_storage(base_dir=Path("uploads"))
         self._materials_storage = self._create_storage(
@@ -87,7 +97,7 @@ class AppContainer:
         return get_session
 
     def provide_question_generator(self) -> GeminiQuestionGenerator:
-        return self._question_generator
+        return self._question_generator_fast
 
     def provide_ocr_service(self) -> DefaultOCRService:
         return self._ocr_service
@@ -122,8 +132,8 @@ class AppContainer:
     def provide_test_service(self) -> TestService:
         return TestService(
             lambda: self.provide_unit_of_work(),
-            question_generator=self._question_generator,
-            ocr_service=self._ocr_service,
+            question_generator_fast=self._question_generator_fast,
+            question_generator_reasoning=self._question_generator_reasoning,
             storage=self._file_storage,
         )
 
@@ -150,6 +160,15 @@ class AppContainer:
             lambda: self.provide_unit_of_work(),
             storage=self._materials_storage,
             text_extractor=composite_text_extractor,
+            analyzer=self._document_analyzer,
+            mime_detector=self._detect_mime,
+        )
+
+    def provide_material_analysis_service(self) -> MaterialAnalysisService:
+        return MaterialAnalysisService(
+            lambda: self.provide_unit_of_work(),
+            storage=self._materials_storage,
+            analyzer=self._document_analyzer,
             mime_detector=self._detect_mime,
         )
 

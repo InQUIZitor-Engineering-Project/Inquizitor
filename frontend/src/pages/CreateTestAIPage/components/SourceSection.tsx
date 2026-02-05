@@ -283,8 +283,9 @@ const SourceSection: React.FC<SourceSectionProps> = ({
                   ))}
 
                 {materials.map((material) => {
-                  const isFailed = material.processing_status === "failed";
-                  const isDone = material.processing_status === "done";
+                  const status = material.analysis_status || material.processing_status;
+                  const isFailed = status === "failed";
+                  const isDone = status === "done";
                   return (
                     <Flex
                       key={material.id}
@@ -317,7 +318,7 @@ const SourceSection: React.FC<SourceSectionProps> = ({
                             </Box>
                           )}
                           {isFailed && (
-                            <Tooltip content={material.processing_error || "Błąd przetwarzania pliku"}>
+                            <Tooltip content={material.processing_error || "Błąd analizy pliku"}>
                               <Box style={{ display: "flex", alignItems: "center", color: "#e53e3e" }}>
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                   <circle cx="12" cy="12" r="10" />
@@ -353,6 +354,7 @@ const SourceSection: React.FC<SourceSectionProps> = ({
                 </Flex>
               </Stack>
             )}
+
           </Stack>
         )}
 

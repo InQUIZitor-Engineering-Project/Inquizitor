@@ -10,6 +10,7 @@ from app.application.services import (
     AuthService,
     FileService,
     JobService,
+    MaterialAnalysisService,
     MaterialService,
     NotificationService,
     SupportService,
@@ -57,6 +58,12 @@ def get_material_service(
     return container.provide_material_service()
 
 
+def get_material_analysis_service(
+    container: Annotated[Any, Depends(get_app_container)],
+) -> MaterialAnalysisService:
+    return container.provide_material_analysis_service()
+
+
 def get_job_service(
     container: Annotated[Any, Depends(get_app_container)],
 ) -> JobService:
@@ -93,6 +100,7 @@ __all__ = [
     "get_export_storage",
     "get_file_service",
     "get_job_service",
+    "get_material_analysis_service",
     "get_material_service",
     "get_notification_service",
     "get_support_service",

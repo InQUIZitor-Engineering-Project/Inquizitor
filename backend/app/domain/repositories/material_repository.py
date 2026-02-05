@@ -33,4 +33,3 @@ class MaterialRepository(ABC):
 
 
 __all__ = ["MaterialRepository"]
-

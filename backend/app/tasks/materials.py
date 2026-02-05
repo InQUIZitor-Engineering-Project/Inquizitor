@@ -11,13 +11,14 @@ from app.infrastructure.monitoring.posthog_client import analytics
 logger = logging.getLogger(__name__)
 
 
-def _get_services() -> tuple[Any, Any]:
+def _get_services() -> tuple[Any, Any, Any]:
     # Lazy import to avoid circular imports during app startup
     from app.bootstrap import get_container
 
     container = get_container()
     return (
         container.provide_material_service(),
+        container.provide_material_analysis_service(),
         container.provide_job_service(),
     )
 
@@ -28,7 +29,7 @@ def process_material_task(
 ) -> int:
     _ = self
     start_time = time.time()
-    material_service, job_service = _get_services()
+    material_service, _, job_service = _get_services()
 
     try:
         job_service.update_job_status(job_id=job_id, status=JobStatus.RUNNING)
@@ -95,6 +96,85 @@ def process_material_task(
         return material.id
     except Exception as exc:
         logger.exception("Material processing job %s failed: %s", job_id, exc)
+        job_service.update_job_status(
+            job_id=job_id,
+            status=JobStatus.FAILED,
+            error=str(exc),
+        )
+        raise
+
+
+@celery_app.task(name="app.tasks.analyze_material", bind=True)
+def analyze_material_task(
+    self: Any, job_id: int, owner_id: int, material_id: int
+) -> int:
+    _ = self
+    start_time = time.time()
+    _, analysis_service, job_service = _get_services()
+
+    try:
+        job_service.update_job_status(job_id=job_id, status=JobStatus.RUNNING)
+    except Exception as exc:
+        logger.exception("Failed to mark job %s as running: %s", job_id, exc)
+
+    try:
+        material = analysis_service.analyze_material(
+            owner_id=owner_id, material_id=material_id
+        )
+        status_value = (material.analysis_status or "").lower()
+        if status_value != JobStatus.DONE.value:
+            error_msg = material.processing_error or "Could not analyze material"
+            job_service.update_job_status(
+                job_id=job_id,
+                status=JobStatus.FAILED,
+                error=error_msg,
+                result={
+                    "material_id": material.id,
+                    "analysis_status": material.analysis_status,
+                    "analysis_error": error_msg,
+                    "filename": material.filename,
+                },
+            )
+            raise ValueError(error_msg)
+
+        job_service.update_job_status(
+            job_id=job_id,
+            status=JobStatus.DONE,
+            result={
+                "material_id": material.id,
+                "analysis_status": material.analysis_status,
+                "routing_tier": material.routing_tier,
+                "analysis_version": material.analysis_version,
+                "markdown_twin": material.markdown_twin,
+                "filename": material.filename,
+            },
+        )
+
+        duration_sec = time.time() - start_time
+        analytics.capture(
+            user_id=owner_id,
+            event="material_analysis_completed",
+            properties={
+                "material_id": material.id,
+                "job_id": job_id,
+                "duration_total_sec": duration_sec,
+                "status": "success",
+                "routing_tier": material.routing_tier,
+                "analysis_version": material.analysis_version,
+                "mime_type": material.mime_type,
+                "size_mb": (
+                    round(material.size_bytes / (1024 * 1024), 2)
+                    if material.size_bytes
+                    else 0
+                ),
+                "page_count": material.page_count,
+            },
+        )
+
+        analytics.flush()
+        return material.id
+    except Exception as exc:
+        logger.exception("Material analysis job %s failed: %s", job_id, exc)
         job_service.update_job_status(
             job_id=job_id,
             status=JobStatus.FAILED,

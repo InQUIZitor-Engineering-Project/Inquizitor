@@ -141,7 +141,7 @@ const useGenerateTestForm = (): UseGenerateTestFormResult => {
               setMaterials(materialData);
               // Odtwarzamy połączony tekst
               const combinedText = materialData
-                .map(m => m.extracted_text)
+                .map(m => m.markdown_twin)
                 .filter(Boolean)
                 .join("\n\n");
               setSourceContent(combinedText);
@@ -346,7 +346,7 @@ const useGenerateTestForm = (): UseGenerateTestFormResult => {
 
   const buildSourceFromMaterials = (items: MaterialUploadResponse[]) =>
     items
-      .map((item) => item.extracted_text)
+      .map((item) => item.markdown_twin)
       .filter(Boolean)
       .join("\n\n");
 
@@ -415,8 +415,8 @@ const useGenerateTestForm = (): UseGenerateTestFormResult => {
         easy: easyCount,
         medium: mediumCount,
         hard: hardCount,
-        text: textPayload || undefined,
-        material_ids: sourceType === "material" ? materials.map(m => m.id) : undefined,
+        text: sourceType === "text" ? textPayload || undefined : undefined,
+        material_ids: sourceType === "material" ? materials.map((m) => m.id) : undefined,
         additional_instructions: instructions.trim() || undefined,
       });
 
@@ -474,47 +474,42 @@ const useGenerateTestForm = (): UseGenerateTestFormResult => {
         );
         if (cancelled) return;
 
-        const statuses = results.map((job) => (job.status || "").toLowerCase());
-        const allFinished = statuses.every(
-          (status) => status === "done" || status === "failed"
-        );
+        const finishedJobs: { mId: number; result: any; status: string; error?: string }[] = [];
+        const pendingJobs: MaterialAnalyzeJob[] = [];
 
-        if (allFinished) {
-          const failures = results.filter(
-            (job) => (job.status || "").toLowerCase() === "failed"
-          );
-          if (failures.length) {
-            setMaterialError(
-              failures[0].error ||
-                "Nie udało się wyodrębnić tekstu z części plików."
-            );
-          }
-
-          const statusUpdateByMaterialId = new Map<number, { status: string; error?: string; text?: string }>();
-          results.forEach((job, index) => {
-            const mId = materialJobs[index].material.id;
-            const res = job.result as any;
-            statusUpdateByMaterialId.set(mId, {
-              status: (job.status || "").toLowerCase(),
-              error: job.error || res?.processing_error || res?.error,
-              text: res?.extracted_text,
+        results.forEach((job, index) => {
+          const status = (job.status || "").toLowerCase();
+          const mId = materialJobs[index].material.id;
+          
+          if (status === "done" || status === "failed") {
+            finishedJobs.push({
+              mId,
+              status,
+              result: job.result,
+              error: job.error || (job.result as any)?.processing_error || (job.result as any)?.error,
             });
-          });
+          } else {
+            pendingJobs.push(materialJobs[index]);
+          }
+        });
 
+        if (finishedJobs.length > 0) {
           setMaterials((prev) => {
             const updated = prev.map((item) => {
-              const info = statusUpdateByMaterialId.get(item.id);
+              const info = finishedJobs.find(f => f.mId === item.id);
               if (!info) return item;
+              
               return {
                 ...item,
-                processing_status: info.status === "done" ? "done" : info.status === "failed" ? "failed" : item.processing_status,
-                extracted_text: info.text ?? item.extracted_text,
+                analysis_status: info.status === "done" ? "done" : "failed",
+                markdown_twin: info.result?.markdown_twin ?? item.markdown_twin,
                 processing_error: info.error ?? item.processing_error,
               };
             });
 
+            // Rebuild source content from all materials that have text
             const combinedText = updated
-              .map((item) => item.extracted_text)
+              .map((item) => item.markdown_twin)
               .filter(Boolean)
               .join("\n\n");
 
@@ -525,11 +520,20 @@ const useGenerateTestForm = (): UseGenerateTestFormResult => {
             return updated;
           });
 
+          // Check for global failures to show errors
+          const firstFailure = finishedJobs.find(f => f.status === "failed");
+          if (firstFailure) {
+            setMaterialError(firstFailure.error || "Nie udało się przeanalizować części plików.");
+          }
+        }
+
+        if (pendingJobs.length === 0) {
           setMaterialAnalyzing(false);
           setMaterialJobs([]);
           return;
         }
 
+        setMaterialJobs(pendingJobs);
         timeoutId = window.setTimeout(pollJobs, 1500);
       } catch (err: any) {
         if (cancelled) return;

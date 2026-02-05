@@ -16,6 +16,8 @@ from app.api.dependencies import get_job_service, get_material_service
 from app.api.schemas.materials import (
     MaterialAnalyzeRequest,
     MaterialAnalyzeResponse,
+    MaterialDeepAnalyzeRequest,
+    MaterialDeepAnalyzeResponse,
     MaterialOut,
     MaterialUpdate,
     MaterialUploadBatchResponse,
@@ -27,7 +29,7 @@ from app.core.security import get_current_user
 from app.db.models import User
 from app.domain.models.enums import JobType
 from app.infrastructure.monitoring.posthog_client import analytics
-from app.tasks.materials import process_material_task
+from app.tasks.materials import analyze_material_task, process_material_task
 
 router = APIRouter(prefix="/materials", tags=["materials"])
 
@@ -209,6 +211,81 @@ def analyze_materials(
         )
 
     return MaterialAnalyzeResponse(jobs=jobs, total_pages=total_pages)
+
+
+@router.post("/analyze-deep", response_model=MaterialDeepAnalyzeResponse)
+@limiter.limit("5/minute")
+def analyze_materials_deep(
+    request: Request,
+    payload: MaterialDeepAnalyzeRequest,
+    current_user: Annotated[User, Depends(get_current_user)],
+    material_service: Annotated[MaterialService, Depends(get_material_service)],
+    job_service: Annotated[JobService, Depends(get_job_service)],
+) -> MaterialDeepAnalyzeResponse:
+    if current_user.id is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="User ID is missing"
+        )
+
+    if not payload.material_ids:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No materials selected",
+        )
+
+    materials: list[MaterialOut] = []
+    for material_id in payload.material_ids:
+        try:
+            material = material_service.get_material(
+                owner_id=current_user.id, material_id=material_id
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        materials.append(material)
+
+    total_pages = sum((material.page_count or 1) for material in materials)
+    if total_pages > _MAX_TOTAL_PAGES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Limit stron przekroczony (max {_MAX_TOTAL_PAGES}).",
+        )
+
+    jobs = []
+    for material in materials:
+        job = job_service.create_job(
+            owner_id=current_user.id,
+            job_type=JobType.MATERIAL_ANALYSIS,
+            payload={"material_id": material.id},
+        )
+
+        analytics.capture(
+            user_id=current_user.id,
+            event="material_analysis_started",
+            properties={
+                "material_id": material.id,
+                "filename": material.filename,
+                "job_id": job.id,
+                "mime_type": material.mime_type,
+                "size_mb": (
+                    round(material.size_bytes / (1024 * 1024), 2)
+                    if material.size_bytes
+                    else 0
+                ),
+                "page_count": material.page_count,
+            },
+        )
+
+        analyze_material_task.delay(job.id, current_user.id, material.id)
+
+        jobs.append(
+            {
+                "job_id": job.id,
+                "status": job.status.value,
+                "material": material,
+            }
+        )
+
+    return MaterialDeepAnalyzeResponse(jobs=jobs, total_pages=total_pages)
 
 
 @router.get("", response_model=list[MaterialOut])
