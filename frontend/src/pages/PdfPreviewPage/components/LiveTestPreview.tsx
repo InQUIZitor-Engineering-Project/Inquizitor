@@ -57,14 +57,12 @@ const Header = styled.div` display: flex; justify-content: space-between; align-
 const HeaderTitle = styled.h1` font-size: 14pt; font-weight: 700; color: ${BRAND_COLOR}; margin: 0; text-align: right; width: 100%; `;
 const StudentBox = styled.div` border: 0.5pt solid #888; padding: 10px 15px; margin-bottom: 20px; display: flex; justify-content: space-between; font-size: 11pt; `;
 
-// --- TYPES & COMPONENTS ---
-
 interface PageLayout {
   questions: QuestionOut[];
   hasHeader: boolean;
   scratchpadHeightCm?: number; 
   isScratchpadOnly?: boolean;
-  isAnswerKey?: boolean; // <--- NOWE POLE
+  isAnswerKey?: boolean;
 }
 
 interface LiveTestPreviewProps {
@@ -129,7 +127,6 @@ const LiveTestPreview: React.FC<LiveTestPreviewProps> = ({ data, config }) => {
         
         let currentHeight = headerHeight; 
 
-        // 1. Rozmieszczanie pytań
         data.questions.forEach((q) => {
             const qEl = measureRef.current?.querySelector(`#measure-q-${q.id}`);
             if (qEl) {

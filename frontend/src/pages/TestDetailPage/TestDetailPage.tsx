@@ -79,6 +79,7 @@ const TestDetailPage: React.FC = () => {
                 <PdfConfigSection
                   config={state.pdfConfig}
                   isOpen={state.pdfConfigOpen}
+                  testId={data.test_id}
                   onToggle={() => actions.setPdfConfigOpen(!state.pdfConfigOpen)}
                   onChange={(updater) => actions.setPdfConfig((cfg) => updater(cfg))}
                   onReset={actions.resetPdfConfig}

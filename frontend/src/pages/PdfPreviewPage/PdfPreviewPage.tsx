@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Box, Flex, Stack, Text, Button } from "../../design-system/primitives";
 import useTestDetail from "../TestDetailPage/hooks/useTestDetail"; 
 import ConfigSection from "./components/ConfigSection"; 
-import DownloadActions from "./components/DownloadActions";
+import DownloadActions from "./components/DownloadPDF";
 import LiveTestPreview from "./components/LiveTestPreview"; 
 import { MathJaxContext } from "better-react-mathjax";
 

@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import { useParams } from "react-router-dom";
 import type { PdfExportConfig } from "../../../services/test";
 import { exportCustomPdf } from "../../../services/test";
 import { useLoader } from "../../../components/Loader/GlobalLoader";
@@ -34,11 +35,26 @@ export interface UsePdfConfigResult {
   };
 }
 
-const usePdfConfig = () => {
+const usePdfConfig = (): UsePdfConfigResult => {
+  const { testId } = useParams<{ testId: string }>();
   const { startLoading, stopLoading } = useLoader();
-  const [pdfConfig, setPdfConfig] = useState<PdfExportConfig>(defaultPdfConfig);
+
+  const [pdfConfig, setPdfConfig] = useState<PdfExportConfig>(() => {
+    if (!testId) return defaultPdfConfig;
+
+    try {
+      const savedKey = `pdf_config_${testId}`;
+      const saved = localStorage.getItem(savedKey);
+      return saved ? { ...defaultPdfConfig, ...JSON.parse(saved) } : defaultPdfConfig;
+    } catch (e) {
+      console.warn("Błąd odczytu konfiguracji PDF z localStorage", e);
+      return defaultPdfConfig;
+    }
+  });
+
   const [pdfConfigOpen, setPdfConfigOpen] = useState(false);
   const [pdfInProgress, setPdfInProgress] = useState(false);
+  
   const {
     jobId,
     status: jobStatus,
@@ -49,13 +65,24 @@ const usePdfConfig = () => {
     reset: resetJobPolling,
   } = useJobPolling();
 
-  const updatePdfConfig = (updater: (cfg: PdfExportConfig) => PdfExportConfig) => {
-    setPdfConfig((cfg) => updater(cfg));
-  };
+  useEffect(() => {
+    if (!testId) return;
+    const key = `pdf_config_${testId}`;
+    try {
+      localStorage.setItem(key, JSON.stringify(pdfConfig));
+    } catch (e) {
+      console.warn("Błąd zapisu konfiguracji PDF do localStorage", e);
+    }
+  }, [pdfConfig, testId]);
 
-  const resetPdfConfig = () => {
+  const updatePdfConfig = useCallback((updater: (cfg: PdfExportConfig) => PdfExportConfig) => {
+    setPdfConfig((prev) => updater(prev));
+  }, []);
+
+  const resetPdfConfig = useCallback(() => {
     setPdfConfig(defaultPdfConfig);
-  };
+  }, []);
+
 
   const resolveUrl = (pathOrUrl: string) => {
     if (!pathOrUrl) return "";
@@ -80,12 +107,12 @@ const usePdfConfig = () => {
     URL.revokeObjectURL(a.href);
   };
 
-  const downloadCustomPdf = async (testId: number) => {
-    if (!testId) return;
+  const downloadCustomPdf = async (targetTestId: number) => {
+    if (!targetTestId) return;
     setPdfInProgress(true);
     try {
       startLoading();
-      const enqueue = await exportCustomPdf(testId, pdfConfig);
+      const enqueue = await exportCustomPdf(targetTestId, pdfConfig);
       resetJobPolling();
       startPolling(enqueue.job_id);
     } catch (e: any) {
@@ -134,7 +161,12 @@ const usePdfConfig = () => {
       pdfJobId: jobId,
       pdfInProgress: pdfInProgress || isPolling,
     },
-    actions: { setPdfConfigOpen, updatePdfConfig, resetPdfConfig, downloadCustomPdf },
+    actions: { 
+      setPdfConfigOpen, 
+      updatePdfConfig, 
+      resetPdfConfig, 
+      downloadCustomPdf 
+    },
   };
 };
 
