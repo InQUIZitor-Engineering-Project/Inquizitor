@@ -74,6 +74,7 @@ export interface SourceSectionProps {
   onMaterialButtonClick: () => void;
   onRemoveMaterial: (materialId: number) => void;
   onRemoveUpload: (tempId: string) => void;
+  onSelectFromLibrary?: () => void;
 }
 
 const SourceSection: React.FC<SourceSectionProps> = ({
@@ -93,6 +94,7 @@ const SourceSection: React.FC<SourceSectionProps> = ({
   onMaterialButtonClick,
   onRemoveMaterial,
   onRemoveUpload,
+  onSelectFromLibrary,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
 
@@ -157,50 +159,64 @@ const SourceSection: React.FC<SourceSectionProps> = ({
             />
 
             {uploadingMaterials.length === 0 && materials.length === 0 ? (
-              <DropZone
-                $p="xl"
-                $direction="column"
-                $align="center"
-                $justify="center"
-                $bg="#f9fafb"
-                $radius="xl"
-                $border="2px dashed #e5e7eb"
-                $height="200px"
-                $isDragging={isDragging}
-                onClick={onMaterialButtonClick}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-              >
-                <Box $mb="sm" style={{ opacity: 0.5 }}>
-                  <svg
-                    width="32"
-                    height="32"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                    <polyline points="17 8 12 3 7 8" />
-                    <line x1="12" y1="3" x2="12" y2="15" />
-                  </svg>
-                </Box>
-              <Text $variant="body2" $weight="medium" $tone="default" $align="center">
-                <DesktopOnly>Kliknij lub przeciągnij, aby wgrać pliki</DesktopOnly>
-                <MobileOnly>Kliknij, aby wgrać pliki</MobileOnly>
-              </Text>
-              <Text $variant="body3" $tone="muted" $align="center">
-                PDF, Docx, TXT lub zdjęcia (maksymalnie 20 stron łącznie)
-              </Text>
-              </DropZone>
+              <Stack $gap="md">
+                <DropZone
+                  $p="xl"
+                  $direction="column"
+                  $align="center"
+                  $justify="center"
+                  $bg="#f9fafb"
+                  $radius="xl"
+                  $border="2px dashed #e5e7eb"
+                  $height="200px"
+                  $isDragging={isDragging}
+                  onClick={onMaterialButtonClick}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                >
+                  <Box $mb="sm" style={{ opacity: 0.5 }}>
+                    <svg
+                      width="32"
+                      height="32"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                      <polyline points="17 8 12 3 7 8" />
+                      <line x1="12" y1="3" x2="12" y2="15" />
+                    </svg>
+                  </Box>
+                <Text $variant="body2" $weight="medium" $tone="default" $align="center">
+                  <DesktopOnly>Kliknij lub przeciągnij, aby wgrać pliki</DesktopOnly>
+                  <MobileOnly>Kliknij, aby wgrać pliki</MobileOnly>
+                </Text>
+                <Text $variant="body3" $tone="muted" $align="center">
+                  PDF, Docx, TXT lub zdjęcia (maksymalnie 20 stron łącznie)
+                </Text>
+                </DropZone>
+                {onSelectFromLibrary && (
+                  <Flex $justify="center">
+                    <Button $variant="outline" onClick={onSelectFromLibrary}>
+                      Lub wybierz z biblioteki
+                    </Button>
+                  </Flex>
+                )}
+              </Stack>
             ) : (
-              <Box $display="inline-flex" style={{ gap: "12px" }}>
+              <Box $display="inline-flex" style={{ gap: "12px", flexWrap: "wrap" }}>
                 <Button $variant="info" onClick={onMaterialButtonClick}>
                   Dodaj kolejne pliki
                 </Button>
+                {onSelectFromLibrary && (
+                  <Button $variant="outline" onClick={onSelectFromLibrary}>
+                    Wybierz z biblioteki
+                  </Button>
+                )}
                 <DesktopOnly>
                   <DropZone
                     $px="lg"

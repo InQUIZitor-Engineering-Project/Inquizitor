@@ -23,6 +23,8 @@ from app.api.schemas.materials import (
     MaterialUploadBatchResponse,
     MaterialUploadEnqueueResponse,
 )
+from app.domain.models.enums import JobType
+from app.tasks.materials import process_material_task
 from app.application.services import JobService, MaterialService
 from app.core.limiter import limiter
 from app.core.security import get_current_user
@@ -105,6 +107,7 @@ def upload_material_batch(
     uploaded_files: Annotated[list[UploadFile], File(...)],
     current_user: Annotated[User, Depends(get_current_user)],
     material_service: Annotated[MaterialService, Depends(get_material_service)],
+    job_service: Annotated[JobService, Depends(get_job_service)],
 ) -> MaterialUploadBatchResponse:
     if current_user.id is None:
         raise HTTPException(
@@ -133,6 +136,16 @@ def upload_material_batch(
             content=content,
             allowed_extensions=_ALLOWED_EXTENSIONS,
         )
+        
+        # Create job and start celery task for processing
+        job = job_service.create_job(
+            owner_id=current_user.id,
+            job_type=JobType.MATERIAL_PROCESSING,
+            payload={"material_id": material.id},
+        )
+        
+        process_material_task.delay(job.id, current_user.id, material.id)
+        
         materials.append(material)
 
     return MaterialUploadBatchResponse(materials=materials)

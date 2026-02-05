@@ -180,10 +180,21 @@ class SqlModelMaterialRepository(MaterialRepository):
         return mappers.material_to_domain(row) if row else None
 
     def list_for_user(self, user_id: int) -> Iterable[Material]:
-        stmt = select(db_models.Material).where(db_models.Material.owner_id == user_id)
+        stmt = (
+            select(db_models.Material)
+            .where(db_models.Material.owner_id == user_id)
+            .options(joinedload(db_models.Material.file))
+            .order_by(cast(Any, db_models.Material.created_at).desc())
+        )
         rows = cast(Any, self._session).exec(stmt).all()
         materials: list[Material] = []
+        seen_checksums: set[str] = set()
         for row in rows:
+            # Jeśli materiał ma checksum i już widzieliśmy ten checksum, pomiń go
+            if row.checksum and row.checksum in seen_checksums:
+                continue
+            if row.checksum:
+                seen_checksums.add(row.checksum)
             materials.append(mappers.material_to_domain(row))
         return materials
 

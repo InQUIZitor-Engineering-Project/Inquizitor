@@ -139,13 +139,44 @@ class MaterialService:
             if not material or material.owner_id != owner_id:
                 raise ValueError("Materiał nie został znaleziony")
 
-            file_id = material.file.id
-            stored_path = str(material.file.stored_path)
+            # Jeśli materiał ma checksum, usuń wszystkie materiały z tym samym checksum
+            # (duplikaty tego samego pliku)
+            if material.checksum:
+                # Znajdź wszystkie materiały użytkownika z tym samym checksum
+                all_materials = list(uow.materials.list_for_user(owner_id))
+                duplicates = [
+                    m for m in all_materials
+                    if m.checksum == material.checksum and m.id is not None
+                ]
+                
+                # Usuń wszystkie duplikaty
+                stored_paths_to_delete = set()
+                file_ids_to_delete = set()
+                
+                for dup in duplicates:
+                    if dup.file and dup.file.id:
+                        stored_paths_to_delete.add(str(dup.file.stored_path))
+                        file_ids_to_delete.add(dup.file.id)
+                    if dup.id:
+                        uow.materials.remove(dup.id)
+                
+                # Usuń pliki z storage (tylko raz dla każdego unikalnego path)
+                for stored_path in stored_paths_to_delete:
+                    self._storage.delete(stored_path=stored_path)
+                
+                # Usuń rekordy File z bazy
+                for file_id in file_ids_to_delete:
+                    uow.files.remove(file_id)
+            else:
+                # Jeśli nie ma checksum, usuń tylko ten jeden materiał
+                file_id = material.file.id if material.file else None
+                stored_path = str(material.file.stored_path) if material.file else None
 
-            uow.materials.remove(material_id)
-            self._storage.delete(stored_path=stored_path)
-            if file_id is not None:
-                uow.files.remove(file_id)
+                uow.materials.remove(material_id)
+                if stored_path:
+                    self._storage.delete(stored_path=stored_path)
+                if file_id is not None:
+                    uow.files.remove(file_id)
 
     def _detect_mime(self, path: Path) -> str | None:
         if not self._mime_detector:
@@ -287,7 +318,15 @@ class MaterialService:
                 try:
                     raw_text = self._text_extractor(local, mime_type)
                     normalized_text = self._sanitize_text(raw_text)
-                    material.mark_processed(normalized_text or "")
+                    # If extraction returns empty text, treat it as failure
+                    if not normalized_text or not normalized_text.strip():
+                        error_msg = self._empty_extraction_error(
+                            local, mime_type, filename=file_record.filename
+                        )
+                        material.mark_failed(error_msg)
+                        normalized_text = ""
+                    else:
+                        material.mark_processed(normalized_text)
                 except Exception as exc:
                     material.mark_failed(str(exc))
                     normalized_text = ""

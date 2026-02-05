@@ -40,7 +40,9 @@ def process_material_task(
         material = material_service.process_material(
             owner_id=owner_id, material_id=material_id
         )
-        status_value = (material.processing_status or "").lower()
+        # MaterialOut has processing_status as string, but we need to check the actual status
+        # The DTO converts domain model's status.value to processing_status string
+        status_value = material.processing_status.lower() if material.processing_status else ""
         if status_value != JobStatus.DONE.value:
             error_msg = material.processing_error or "Could not extract text"
             job_service.update_job_status(

@@ -111,3 +111,12 @@ export async function getMaterial(materialId: number): Promise<MaterialUploadRes
   }
   return res.json();
 }
+
+export async function listMaterials(): Promise<MaterialUploadResponse[]> {
+  const res = await apiRequest(`/materials`);
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Nie udało się pobrać listy materiałów");
+  }
+  return res.json();
+}
