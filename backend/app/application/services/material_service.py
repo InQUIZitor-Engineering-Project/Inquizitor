@@ -307,6 +307,8 @@ class MaterialService:
                             filename=file_record.filename,
                             mime_type=mime_type,
                             file_path=str(local),
+                            user_id=owner_id,
+                            ocr_cache_repository=uow.ocr_cache,
                         )
                         material.markdown_twin = markdown_twin
                         material.routing_tier = routing
