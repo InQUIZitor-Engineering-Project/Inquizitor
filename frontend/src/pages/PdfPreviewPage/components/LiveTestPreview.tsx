@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import styled from "styled-components";
-import { MathJax } from "better-react-mathjax"; 
+import { MathText } from "../../../components/MathText/MathText";
 import { type TestDetail, type QuestionOut, type PdfExportConfig } from "../../../services/test";
 
 // --- STAŁE ---
@@ -85,14 +85,16 @@ const SingleQuestionBlock: React.FC<{ q: QuestionOut, idx: number, config: PdfEx
               <div style={{ fontWeight: 'bold', minWidth: '20px' }}>{idx + 1}.</div>
               <div style={{ flex: 1 }}>
                  <QuestionBox>
-                    <MathJax dynamic><QuestionText dangerouslySetInnerHTML={{ __html: q.text }} /></MathJax>
+                    <QuestionText>
+                      <MathText text={q.text} />
+                    </QuestionText>
                  </QuestionBox>
                  {q.is_closed && q.choices && q.choices.length > 0 ? (
                    <ChoicesGrid $cols={getColumns(q.choices)}>
                      {q.choices.map((choice, cIdx) => (
                        <ChoiceItem key={cIdx}>
                          <ChoiceLabel>{getLetter(cIdx)}</ChoiceLabel>
-                         <MathJax dynamic inline><span dangerouslySetInnerHTML={{ __html: choice }} /></MathJax>
+                         <MathText text={choice} />
                        </ChoiceItem>
                      ))}
                    </ChoicesGrid>

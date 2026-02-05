@@ -1,30 +1,23 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom"; 
 import { Box, Flex, Stack, Text, Button } from "../../design-system/primitives";
+import { AlertBar } from "../../design-system/patterns";
 import usePdfPreview from "./hooks/usePdfPreview"; 
 import ConfigSection from "./components/ConfigSection"; 
 import DownloadPDF from "./components/DownloadPDF";
-import LiveTestPreview from "./components/LiveTestPreview"; 
-import { MathJaxContext } from "better-react-mathjax";
-
-const mathJaxConfig = {
-  loader: { load: ["input/tex", "output/chtml"] },
-  tex: {
-    inlineMath: [["$", "$"], ["\\(", "\\)"]],
-    displayMath: [["$$", "$$"], ["\\[", "\\]"]],
-    packages: { "[+]": ["noerrors", "noundefined"] }
-  },
-  chtml: {
-    scale: 1.0,
-    displayAlign: 'center' 
-  }
-};
+import LiveTestPreview from "./components/LiveTestPreview";
 
 const PdfPreviewPage: React.FC = () => {
   const navigate = useNavigate();
   const { state, actions } = usePdfPreview();
 
   const NAVBAR_HEIGHT = "65px"; 
+
+  // Optimize key generation - only recalculate when relevant config values change
+  const previewKey = useMemo(() => {
+    const cfg = state.pdfConfig;
+    return `${cfg.answer_space_style}-${cfg.space_height_cm}-${cfg.generate_variants}-${cfg.variant_mode}-${cfg.student_header}-${cfg.use_scratchpad}-${cfg.include_answer_key}-${cfg.mark_multi_choice}`;
+  }, [state.pdfConfig]);
 
   useEffect(() => {
     const originalStyle = window.getComputedStyle(document.body).overflow;
@@ -40,7 +33,6 @@ const PdfPreviewPage: React.FC = () => {
   if (!state.data) return null;
 
   return (
-    <MathJaxContext config={mathJaxConfig} src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
       <Box 
         style={{
           position: "fixed",
@@ -91,11 +83,18 @@ const PdfPreviewPage: React.FC = () => {
           </Box>
           
           <Box $p="lg" $bg="#fafafa" style={{ borderTop: "1px solid #eee", flexShrink: 0 }}>
-             <DownloadPDF 
-                onDownloadPdf={actions.handleDownloadCustomPdf}
-                pdfDisabled={!state.pdfConfigValid}
-                pdfDisabledReason="Popraw błędy w konfiguracji powyżej."
-             />
+            {state.downloadError && (
+              <Box $mb="sm">
+                <AlertBar variant="danger">
+                  {state.downloadError}
+                </AlertBar>
+              </Box>
+            )}
+            <DownloadPDF 
+              onDownloadPdf={actions.handleDownloadCustomPdf}
+              pdfDisabled={!state.pdfConfigValid}
+              pdfDisabledReason="Popraw błędy w konfiguracji powyżej."
+            />
           </Box>
         </Box>
 
@@ -109,7 +108,7 @@ const PdfPreviewPage: React.FC = () => {
           <Flex $justify="center" $align="flex-start" $minHeight="100%">
             <Box>
               <LiveTestPreview 
-                key={JSON.stringify(state.pdfConfig)}
+                key={previewKey}
                 data={state.data} 
                 config={state.pdfConfig} 
               />
@@ -118,7 +117,6 @@ const PdfPreviewPage: React.FC = () => {
         </Box>
 
       </Box>
-    </MathJaxContext>
   );
 };
 
