@@ -214,7 +214,7 @@ const LiveTestPreview: React.FC<LiveTestPreviewProps> = ({ data, config }) => {
                             
                             <div style={{ columnCount: 4, columnGap: '1cm' }}>
                                 <ol style={{ marginTop: 0, paddingLeft: '1.5em', margin: 0 }}>
-                                    {data.questions.map((q, qIdx) => (
+                                    {data.questions.map((q) => (
                                         <li key={q.id} style={{ marginBottom: '4px', breakInside: 'avoid' }}>
                                             {q.is_closed ? (
                                                 <span style={{ fontWeight: 'bold', color: '#333' }}>

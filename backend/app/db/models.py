@@ -1,5 +1,5 @@
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from typing import Optional
 
 from sqlalchemy import Column, ForeignKey, Integer
@@ -103,36 +103,36 @@ class File(SQLModel, table=True):
     material: Optional["Material"] = Relationship(back_populates="file")
 
 
-class FilePurpose(str, Enum):
+class FilePurpose(StrEnum):
     generic = "generic"
     material = "material"
 
-class ProcessingStatus(str, Enum):
+class ProcessingStatus(StrEnum):
     pending = "pending"
     done = "done"
     failed = "failed"
 
-class JobStatus(str, Enum):
+class JobStatus(StrEnum):
     pending = "pending"
     running = "running"
     done = "done"
     failed = "failed"
 
-class JobType(str, Enum):
+class JobType(StrEnum):
     test_generation = "test_generation"
     pdf_export = "pdf_export"
     material_processing = "material_processing"
     questions_regeneration = "questions_regeneration"
     questions_conversion = "questions_conversion"
 
-class SupportCategory(str, Enum):
+class SupportCategory(StrEnum):
     general = "general"
     bug = "bug"
     feature_request = "feature_request"
     account = "account"
     other = "other"
 
-class SupportStatus(str, Enum):
+class SupportStatus(StrEnum):
     new = "new"
     read = "read"
     resolved = "resolved"

@@ -1,9 +1,9 @@
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom"; 
 import { Box, Flex, Stack, Text, Button } from "../../design-system/primitives";
-import useTestDetail from "../TestDetailPage/hooks/useTestDetail"; 
+import usePdfPreview from "./hooks/usePdfPreview"; 
 import ConfigSection from "./components/ConfigSection"; 
-import DownloadActions from "./components/DownloadPDF";
+import DownloadPDF from "./components/DownloadPDF";
 import LiveTestPreview from "./components/LiveTestPreview"; 
 import { MathJaxContext } from "better-react-mathjax";
 
@@ -22,7 +22,7 @@ const mathJaxConfig = {
 
 const PdfPreviewPage: React.FC = () => {
   const navigate = useNavigate();
-  const { state, actions } = useTestDetail();
+  const { state, actions } = usePdfPreview();
 
   const NAVBAR_HEIGHT = "65px"; 
 
@@ -91,7 +91,7 @@ const PdfPreviewPage: React.FC = () => {
           </Box>
           
           <Box $p="lg" $bg="#fafafa" style={{ borderTop: "1px solid #eee", flexShrink: 0 }}>
-             <DownloadActions 
+             <DownloadPDF 
                 onDownloadPdf={actions.handleDownloadCustomPdf}
                 pdfDisabled={!state.pdfConfigValid}
                 pdfDisabledReason="Popraw błędy w konfiguracji powyżej."
