@@ -205,6 +205,11 @@ class BulkConvertQuestionsRequest(BaseModel):
     question_ids: list[int]
     target_type: Literal["open", "closed"]
 
+
+class ReorderQuestionsRequest(BaseModel):
+    question_ids: list[int]
+
+
 class PdfExportConfig(BaseModel):
     """
     Configuration options for customized PDF export of a test.

@@ -246,6 +246,24 @@ export async function bulkDeleteQuestions(
   }
 }
 
+export interface ReorderQuestionsPayload {
+  question_ids: number[];
+}
+
+export async function reorderQuestions(
+  testId: number,
+  questionIds: number[]
+): Promise<void> {
+  const res = await apiRequest(`/tests/${testId}/questions/reorder`, {
+    method: "PUT",
+    body: JSON.stringify({ question_ids: questionIds }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.detail || "Nie udało się zmienić kolejności pytań");
+  }
+}
+
 export async function bulkRegenerateQuestions(
   testId: number,
   payload: BulkRegeneratePayload

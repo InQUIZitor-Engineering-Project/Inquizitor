@@ -20,6 +20,8 @@ export interface QuestionViewProps {
   choiceRenderer: () => React.ReactNode;
   isSelected?: boolean;
   onSelect?: (qid: number) => void;
+  /** Optional drag handle for reordering (from useSortable). */
+  dragHandle?: React.ReactNode;
 }
 
 const MetaRow = styled(Flex)`
@@ -38,12 +40,14 @@ const QuestionView: React.FC<QuestionViewProps> = ({
   choiceRenderer,
   isSelected,
   onSelect,
+  dragHandle,
 }) => {
   return (
     <QuestionCard
       className="ph-no-capture"
       index={
         <Flex $gap="sm" $align="center">
+          {dragHandle}
           {onSelect && (
             <Checkbox
               checked={isSelected}

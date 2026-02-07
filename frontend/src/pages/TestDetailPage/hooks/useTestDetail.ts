@@ -2,13 +2,19 @@ import { useState, useMemo, useEffect } from "react";
 import { useOutletContext, useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { useLoader } from "../../../components/Loader/GlobalLoader";
 import useDocumentTitle from "../../../hooks/useDocumentTitle";
-import useTestData, { sortQuestions } from "./useTestData";
+import useTestData from "./useTestData";
 import useQuestionDraft from "./useQuestionDraft";
 import useTitleEdit from "./useTitleEdit";
 import usePdfConfig from "./usePdfConfig";
 import useJobPolling from "../../../hooks/useJobPolling";
 import type { PdfExportConfig, TestDetail } from "../../../services/test";
-import { bulkDeleteQuestions, bulkUpdateQuestions, bulkRegenerateQuestions, bulkConvertQuestions } from "../../../services/test";
+import {
+  bulkDeleteQuestions,
+  bulkUpdateQuestions,
+  bulkRegenerateQuestions,
+  bulkConvertQuestions,
+  reorderQuestions,
+} from "../../../services/test";
 
 type LayoutCtx = { refreshSidebarTests: () => Promise<void> };
 
@@ -68,6 +74,7 @@ type UseTestDetailResult = {
     toggleSelect: (qid: number) => void;
     selectAll: () => void;
     clearSelection: () => void;
+    onReorderQuestions?: (questionIds: number[]) => Promise<void>;
     handleBulkDelete: () => Promise<void>;
     handleBulkUpdate: (fields: { difficulty?: number; is_closed?: boolean }) => Promise<void>;
     handleBulkRegenerate: () => Promise<void>;
@@ -159,13 +166,9 @@ const useTestDetail = (): UseTestDetailResult => {
     }
   }, [searchParams, data, draftState.isAdding, draftActions, setSearchParams]);
 
-  const setDataSorted = (next: TestDetail | null) => {
-    setData(next ? { ...next, questions: sortQuestions(next.questions) } : next);
-  };
-
   const handleSaveEdit = async () => {
     const next = await draftActions.handleSaveEdit(data);
-    if (next) setDataSorted(next);
+    if (next) setData(next);
   };
 
   const handleAdd = async () => {
@@ -309,7 +312,7 @@ const useTestDetail = (): UseTestDetailResult => {
 
   const beginTitleEdit = (title: string) => titleActions.begin(title);
   const saveTitle = async () => {
-    await titleActions.save(data, refreshSidebarTests, setDataSorted);
+    await titleActions.save(data, refreshSidebarTests, setData);
   };
   const cancelTitle = () => titleActions.cancel(data?.title);
   const setTitleDraft = (value: string) => titleActions.change(value);
@@ -348,6 +351,16 @@ const useTestDetail = (): UseTestDetailResult => {
   const handleEditConfig = () => {
     if (!data) return;
     navigate(`/tests/new/ai?from=${data.test_id}`);
+  };
+
+  const onReorderQuestions = async (questionIds: number[]) => {
+    if (!testIdNum) return;
+    try {
+      await reorderQuestions(testIdNum, questionIds);
+      await refresh();
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : "Nie udało się zmienić kolejności pytań");
+    }
   };
 
   const closedCount = data?.questions.filter((q) => q.is_closed).length || 0;
@@ -409,6 +422,7 @@ const useTestDetail = (): UseTestDetailResult => {
       toggleSelect,
       selectAll,
       clearSelection,
+      onReorderQuestions,
       handleBulkDelete,
       handleBulkUpdate,
       handleBulkRegenerate,

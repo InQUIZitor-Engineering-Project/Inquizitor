@@ -4,7 +4,7 @@ from collections.abc import Iterable
 from datetime import datetime
 from typing import Any, cast
 
-from sqlalchemy import delete
+from sqlalchemy import delete, func
 from sqlalchemy.orm import joinedload
 from sqlmodel import Session, select
 
@@ -93,6 +93,11 @@ class SqlModelTestRepository(TestRepository):
 
     def add_question(self, test_id: int, question: Question) -> Question:
         db_question = mappers.question_to_row(question, test_id=test_id)
+        # Append at end: position = current count for this test
+        count_stmt = select(func.count()).select_from(db_models.Question).where(
+            db_models.Question.test_id == test_id
+        )
+        db_question.position = (self._session.exec(count_stmt).one() or 0)
         self._session.add(db_question)
         self._session.commit()
         self._session.refresh(db_question)
@@ -126,6 +131,19 @@ class SqlModelTestRepository(TestRepository):
         if db_test:
             self._session.delete(db_test)
             self._session.commit()
+
+    def reorder_questions(self, test_id: int, question_ids: list[int]) -> None:
+        if not question_ids:
+            return
+        stmt = select(db_models.Question).where(db_models.Question.test_id == test_id)
+        rows = list(self._session.exec(stmt).all())
+        id_to_row = {r.id: r for r in rows}
+        if set(id_to_row) != set(question_ids):
+            raise ValueError("question_ids must match exactly the test's questions")
+        for position, qid in enumerate(question_ids):
+            id_to_row[qid].position = position
+            self._session.add(id_to_row[qid])
+        self._session.flush()
 
 
 class SqlModelFileRepository(FileRepository):

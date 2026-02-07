@@ -22,6 +22,7 @@ from app.api.schemas.tests import (
     QuestionCreate,
     QuestionOut,
     QuestionUpdate,
+    ReorderQuestionsRequest,
     TestDetailOut,
     TestGenerateRequest,
     TestGenerateResponse,
@@ -452,9 +453,7 @@ class TestService:
             test = uow.tests.get_with_questions(test_id)
             if not test or test.owner_id != owner_id:
                 raise ValueError("Test nie został znaleziony")
-                raise ValueError("Test nie został znaleziony")
-
-            test.questions = self._sort_questions(test.questions)
+            # Questions already in position order from repository
             return dto.to_test_detail(test)
 
     def list_tests_for_user(self, *, owner_id: int) -> list[TestOut]:
@@ -683,8 +682,8 @@ class TestService:
         Prepare context for the advanced PDF export template.
         Supports single-variant and A/B variants scenarios.
         """
+        # Use order from detail (custom order from UI)
         questions = [self._build_question_payload(q) for q in detail.questions]
-        questions = self._sort_questions(questions)
 
         if config.generate_variants and len(questions) > 0:
             variant_a = self._shuffle_within_difficulty(list(questions))
@@ -927,6 +926,19 @@ class TestService:
             )
             session.exec(statement)
             session.flush()
+
+    def reorder_questions(
+        self,
+        *,
+        owner_id: int,
+        test_id: int,
+        payload: ReorderQuestionsRequest,
+    ) -> None:
+        with self._uow_factory() as uow:
+            test = uow.tests.get_with_questions(test_id)
+            if not test or test.owner_id != owner_id:
+                raise ValueError("Test nie został znaleziony")
+            uow.tests.reorder_questions(test_id, payload.question_ids)
 
     def bulk_regenerate_questions(
         self,

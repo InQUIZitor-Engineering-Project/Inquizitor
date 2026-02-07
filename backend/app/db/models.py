@@ -64,9 +64,9 @@ class Test(SQLModel, table=True):
         back_populates="test",
         sa_relationship_kwargs={
             "cascade": "all, delete-orphan",
-            "order_by": "Question.id"
+            "order_by": "Question.position, Question.id",
         },
-        )
+    )
 
 class Question(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
@@ -79,6 +79,7 @@ class Question(SQLModel, table=True):
             nullable=False
         )
     )
+    position: int = Field(default=0)
     text: str
     is_closed: bool = Field(default=True)
     difficulty: int = Field(default=1)  # 1-easy, 2-medium, 3-hard

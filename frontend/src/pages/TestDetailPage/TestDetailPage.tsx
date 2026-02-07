@@ -66,6 +66,7 @@ const TestDetailPage: React.FC = () => {
                     toggleSelect: actions.toggleSelect,
                     selectAll: actions.selectAll,
                     clearSelection: actions.clearSelection,
+                    onReorderQuestions: actions.onReorderQuestions,
                   }}
                   stateFlags={{
                     savingEdit: state.savingEdit,

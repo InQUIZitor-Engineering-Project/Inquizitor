@@ -31,6 +31,11 @@ class TestRepository(ABC):
     def remove(self, test_id: int) -> None:
         raise NotImplementedError
 
+    @abstractmethod
+    def reorder_questions(self, test_id: int, question_ids: list[int]) -> None:
+        """Update question positions to match the order of question_ids."""
+        raise NotImplementedError
+
 
 __all__ = ["TestRepository"]
 

@@ -13,6 +13,7 @@ from app.api.schemas.tests import (
     QuestionCreate,
     QuestionOut,
     QuestionUpdate,
+    ReorderQuestionsRequest,
     TestDetailOut,
     TestGenerateRequest,
     TestOut,
@@ -222,6 +223,26 @@ def bulk_delete_questions(
         raise HTTPException(status_code=401, detail="User ID is missing")
     try:
         test_service.bulk_delete_questions(
+            owner_id=current_user.id,
+            test_id=test_id,
+            payload=payload,
+        )
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.put("/{test_id}/questions/reorder", status_code=status.HTTP_204_NO_CONTENT)
+def reorder_questions(
+    test_id: int,
+    payload: ReorderQuestionsRequest,
+    current_user: Annotated[User, Depends(get_current_user)],
+    test_service: Annotated[TestService, Depends(get_test_service)],
+) -> Response:
+    if current_user.id is None:
+        raise HTTPException(status_code=401, detail="User ID is missing")
+    try:
+        test_service.reorder_questions(
             owner_id=current_user.id,
             test_id=test_id,
             payload=payload,
