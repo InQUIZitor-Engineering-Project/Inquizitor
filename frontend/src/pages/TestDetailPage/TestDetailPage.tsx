@@ -67,6 +67,8 @@ const TestDetailPage: React.FC = () => {
                     selectAll: actions.selectAll,
                     clearSelection: actions.clearSelection,
                     onReorderQuestions: actions.onReorderQuestions,
+                    onRegenerateForQuestion: actions.selectAndOpenRegenerateModal,
+                    onSettingsForQuestion: actions.selectAndOpenTypeModal,
                   }}
                   stateFlags={{
                     savingEdit: state.savingEdit,
@@ -112,7 +114,7 @@ const TestDetailPage: React.FC = () => {
 
       <Modal
         isOpen={state.isRegenerateModalOpen}
-        title="✨ Regeneruj pytania z AI"
+        title={state.singleQuestionRegenerateId !== null ? "✨ Regeneruj to pytanie z AI" : "✨ Regeneruj pytania z AI"}
         onClose={actions.closeRegenerateModal}
         onConfirm={actions.handleBulkRegenerate}
         variant="info"
@@ -121,8 +123,9 @@ const TestDetailPage: React.FC = () => {
       >
         <Stack $gap="md">
           <Text>
-            Czy na pewno chcesz wygenerować nowe wersje dla zaznaczonych pytań? 
-            Obecna treść zostanie zastąpiona nowymi wariantami.
+            {state.singleQuestionRegenerateId !== null
+              ? "Czy na pewno chcesz wygenerować nową wersję tego pytania? Obecna treść zostanie zastąpiona nowym wariantem."
+              : "Czy na pewno chcesz wygenerować nowe wersje dla zaznaczonych pytań? Obecna treść zostanie zastąpiona nowymi wariantami."}
           </Text>
           <Stack $gap="xs">
             <Text $variant="body2" $weight="medium">Na czym AI ma się skupić? (opcjonalnie):</Text>
@@ -179,7 +182,7 @@ const TestDetailPage: React.FC = () => {
 
       <Modal
         isOpen={state.isTypeModalOpen}
-        title="🔄 Zmień typ pytań"
+        title={state.singleQuestionTypeChangeId !== null ? "🔄 Zmień typ pytania" : "🔄 Zmień typ pytań"}
         onClose={actions.closeTypeModal}
         onConfirm={() => state.tempType && actions.handleBulkTypeChange(state.tempType)}
         confirmLabel="Zastosuj"
@@ -187,7 +190,9 @@ const TestDetailPage: React.FC = () => {
       >
         <Stack $gap="sm">
           <Text $variant="body3" $tone="muted" style={{ marginBottom: 8 }}>
-            Na jaki typ chcesz zmienić zaznaczone pytania?
+            {state.singleQuestionTypeChangeId !== null
+              ? "Na jaki typ chcesz zmienić to pytanie?"
+              : "Na jaki typ chcesz zmienić zaznaczone pytania?"}
           </Text>
           <SelectableItem
             $active={state.tempType === "open"}

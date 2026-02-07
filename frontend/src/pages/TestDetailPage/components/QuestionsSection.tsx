@@ -71,6 +71,10 @@ export interface QuestionsSectionProps {
     selectAll: () => void;
     clearSelection: () => void;
     onReorderQuestions?: (questionIds: number[]) => Promise<void>;
+    /** Select this question and open regenerate modal. */
+    onRegenerateForQuestion?: (qId: number) => void;
+    /** Select this question and open type (open/closed) modal. */
+    onSettingsForQuestion?: (qId: number) => void;
   };
   stateFlags: {
     savingEdit: boolean;
@@ -262,6 +266,16 @@ const QuestionsSection: React.FC<QuestionsSectionProps> = ({
                       index={idx}
                       onEdit={() => actions.startEdit(q)}
                       onDelete={() => actions.handleDelete(q.id)}
+                      onRegenerate={
+                        actions.onRegenerateForQuestion
+                          ? () => actions.onRegenerateForQuestion!(q.id)
+                          : undefined
+                      }
+                      onSettings={
+                        actions.onSettingsForQuestion
+                          ? () => actions.onSettingsForQuestion!(q.id)
+                          : undefined
+                      }
                       choiceRenderer={() =>
                         q.is_closed
                           ? renderChoiceList(q)

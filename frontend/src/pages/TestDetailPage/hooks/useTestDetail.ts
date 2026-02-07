@@ -33,8 +33,12 @@ type UseTestDetailResult = {
     questionIdToDelete: number | null;
     isRegenerateModalOpen: boolean;
     regenerationInstruction: string;
+    /** Non-null when regenerate modal was opened for a single question (no bulk). */
+    singleQuestionRegenerateId: number | null;
     isDifficultyModalOpen: boolean;
     isTypeModalOpen: boolean;
+    /** Non-null when type modal was opened for a single question (no bulk). */
+    singleQuestionTypeChangeId: number | null;
     isBulkDeleteModalOpen: boolean;
     isMobileMenuOpen: boolean;
     tempDifficulty: number | null;
@@ -81,10 +85,14 @@ type UseTestDetailResult = {
     openRegenerateModal: () => void;
     closeRegenerateModal: () => void;
     setRegenerationInstruction: (s: string) => void;
+    /** Select single question and open regenerate modal. */
+    selectAndOpenRegenerateModal: (qId: number) => void;
     openDifficultyModal: () => void;
     closeDifficultyModal: () => void;
     openTypeModal: () => void;
     closeTypeModal: () => void;
+    /** Select single question and open type (open/closed) modal. */
+    selectAndOpenTypeModal: (qId: number) => void;
     openBulkDeleteModal: () => void;
     closeBulkDeleteModal: () => void;
     openMobileMenu: () => void;
@@ -145,8 +153,12 @@ const useTestDetail = (): UseTestDetailResult => {
   const [questionIdToDelete, setQuestionIdToDelete] = useState<number | null>(null);
   const [isRegenerateModalOpen, setIsRegenerateModalOpen] = useState(false);
   const [regenerationInstruction, setRegenerationInstruction] = useState("");
+  /** When set, regenerate modal applies to this one question only (no bulk selection). */
+  const [singleQuestionRegenerateId, setSingleQuestionRegenerateId] = useState<number | null>(null);
   const [isDifficultyModalOpen, setIsDifficultyModalOpen] = useState(false);
   const [isTypeModalOpen, setIsTypeModalOpen] = useState(false);
+  /** When set, type modal applies to this one question only (no bulk selection). */
+  const [singleQuestionTypeChangeId, setSingleQuestionTypeChangeId] = useState<number | null>(null);
   const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [tempDifficulty, setTempDifficulty] = useState<number | null>(null);
@@ -258,16 +270,21 @@ const useTestDetail = (): UseTestDetailResult => {
   };
 
   const handleBulkRegenerate = async () => {
-    if (selectedIds.length === 0 || !data) return;
+    const ids =
+      singleQuestionRegenerateId !== null
+        ? [singleQuestionRegenerateId]
+        : selectedIds;
+    if (ids.length === 0 || !data) return;
 
     const instruction = regenerationInstruction.trim();
     setIsRegenerateModalOpen(false);
-    setRegenerationInstruction(""); // Czyścimy po zamknięciu
+    setRegenerationInstruction("");
+    setSingleQuestionRegenerateId(null);
     startLoading();
 
     try {
       const res = await bulkRegenerateQuestions(data.test_id, {
-        question_ids: selectedIds,
+        question_ids: ids,
         instruction: instruction || undefined,
       });
       jobPolling.startPolling(res.job_id);
@@ -277,8 +294,18 @@ const useTestDetail = (): UseTestDetailResult => {
     }
   };
 
-  const openRegenerateModal = () => setIsRegenerateModalOpen(true);
-  const closeRegenerateModal = () => setIsRegenerateModalOpen(false);
+  const openRegenerateModal = () => {
+    setSingleQuestionRegenerateId(null);
+    setIsRegenerateModalOpen(true);
+  };
+  const closeRegenerateModal = () => {
+    setIsRegenerateModalOpen(false);
+    setSingleQuestionRegenerateId(null);
+  };
+  const selectAndOpenRegenerateModal = (qId: number) => {
+    setSingleQuestionRegenerateId(qId);
+    setIsRegenerateModalOpen(true);
+  };
 
   const openDifficultyModal = () => setIsDifficultyModalOpen(true);
   const closeDifficultyModal = () => {
@@ -286,21 +313,34 @@ const useTestDetail = (): UseTestDetailResult => {
     setTempDifficulty(null);
   };
 
-  const openTypeModal = () => setIsTypeModalOpen(true);
+  const openTypeModal = () => {
+    setSingleQuestionTypeChangeId(null);
+    setIsTypeModalOpen(true);
+  };
   const closeTypeModal = () => {
     setIsTypeModalOpen(false);
     setTempType(null);
+    setSingleQuestionTypeChangeId(null);
+  };
+  const selectAndOpenTypeModal = (qId: number) => {
+    setSingleQuestionTypeChangeId(qId);
+    setIsTypeModalOpen(true);
   };
 
   const handleBulkTypeChange = async (targetType: "open" | "closed") => {
-    if (selectedIds.length === 0 || !data) return;
+    const ids =
+      singleQuestionTypeChangeId !== null
+        ? [singleQuestionTypeChangeId]
+        : selectedIds;
+    if (ids.length === 0 || !data) return;
 
     closeTypeModal();
+    setSingleQuestionTypeChangeId(null);
     startLoading();
 
     try {
       const res = await bulkConvertQuestions(data.test_id, {
-        question_ids: selectedIds,
+        question_ids: ids,
         target_type: targetType,
       });
       jobPolling.startPolling(res.job_id);
@@ -381,8 +421,10 @@ const useTestDetail = (): UseTestDetailResult => {
       questionIdToDelete,
       isRegenerateModalOpen,
       regenerationInstruction,
+      singleQuestionRegenerateId,
       isDifficultyModalOpen,
       isTypeModalOpen,
+      singleQuestionTypeChangeId,
       isBulkDeleteModalOpen,
       isMobileMenuOpen,
       tempDifficulty,
@@ -429,10 +471,12 @@ const useTestDetail = (): UseTestDetailResult => {
       openRegenerateModal,
       closeRegenerateModal,
       setRegenerationInstruction,
+      selectAndOpenRegenerateModal,
       openDifficultyModal,
       closeDifficultyModal,
       openTypeModal,
       closeTypeModal,
+      selectAndOpenTypeModal,
       openBulkDeleteModal,
       closeBulkDeleteModal,
       openMobileMenu,
