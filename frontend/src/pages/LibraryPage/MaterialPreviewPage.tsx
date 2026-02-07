@@ -77,7 +77,7 @@ const MaterialPreviewPage: React.FC = () => {
             {error || "Nie znaleziono materiału"}
           </Text>
           <Box $mt="md" style={{ textAlign: "center" }}>
-            <Button $variant="secondary" $size="md" onClick={() => navigate("/biblioteka")}>
+            <Button $variant="outline" $size="md" onClick={() => navigate("/biblioteka")}>
               Wróć do biblioteki
             </Button>
           </Box>
@@ -94,7 +94,7 @@ const MaterialPreviewPage: React.FC = () => {
             {material.filename}
           </Text>
           <Box style={{ display: "flex", gap: "8px" }}>
-            <Button $variant="secondary" $size="md" onClick={() => navigate("/biblioteka")}>
+            <Button $variant="outline" $size="md" onClick={() => navigate("/biblioteka")}>
               Wróć do biblioteki
             </Button>
             <Button $variant="primary" $size="md" onClick={handleDownload}>
@@ -106,9 +106,11 @@ const MaterialPreviewPage: React.FC = () => {
           <TextContent>{text}</TextContent>
         ) : (
           <EmptyPreviewBox>
-            <Text $tone="muted" $mb="md">
-              Brak podglądu tekstu dla tego pliku. Pobierz plik, aby go otworzyć.
-            </Text>
+            <Box $mb="md">
+              <Text $tone="muted">
+                Brak podglądu tekstu dla tego pliku. Pobierz plik, aby go otworzyć.
+              </Text>
+            </Box>
             <Button $variant="primary" $size="md" onClick={handleDownload}>
               Pobierz plik
             </Button>

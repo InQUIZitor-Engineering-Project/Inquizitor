@@ -186,7 +186,7 @@ const PreviewModal: React.FC<PreviewModalProps> = ({
         </ContentArea>
 
         <Footer>
-          <Button $variant="secondary" $size="md" onClick={onClose}>
+          <Button $variant="outline" $size="md" onClick={onClose}>
             Zamknij
           </Button>
           <Button

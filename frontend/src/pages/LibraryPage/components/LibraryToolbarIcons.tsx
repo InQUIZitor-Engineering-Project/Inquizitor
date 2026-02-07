@@ -1,7 +1,15 @@
 /** Lucide-style inline SVGs (replace with lucide-react when added) */
 import React from "react";
 
-const iconProps = { width: 18, height: 18, strokeWidth: 2, stroke: "currentColor", fill: "none", strokeLinecap: "round", strokeLinejoin: "round" as const };
+const iconProps = {
+  width: 18,
+  height: 18,
+  strokeWidth: 2,
+  stroke: "currentColor",
+  fill: "none",
+  strokeLinecap: "round" as const,
+  strokeLinejoin: "round" as const,
+};
 
 export const SearchIcon: React.FC<React.SVGAttributes<SVGElement>> = (p) => (
   <svg {...iconProps} {...p} viewBox="0 0 24 24">

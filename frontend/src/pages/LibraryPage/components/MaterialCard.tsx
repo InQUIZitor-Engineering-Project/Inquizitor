@@ -85,7 +85,7 @@ const ThumbnailContainer = styled(Box)`
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  border: 1px solid ${({ theme }) => theme.colors.border};
+  border: 1px solid ${({ theme }) => theme.colors.neutral.greyBlue};
 `;
 
 /* Placeholder when no thumbnail: same size as thumbnail, icon centered */
@@ -94,7 +94,7 @@ const ThumbnailPlaceholder = styled(Box)`
   height: ${THUMB_HEIGHT}px;
   border-radius: ${({ theme }) => theme.radii.md};
   background: ${({ theme }) => theme.colors.tint.t5};
-  border: 1px solid ${({ theme }) => theme.colors.border};
+  border: 1px solid ${({ theme }) => theme.colors.neutral.greyBlue};
   display: flex;
   align-items: center;
   justify-content: center;

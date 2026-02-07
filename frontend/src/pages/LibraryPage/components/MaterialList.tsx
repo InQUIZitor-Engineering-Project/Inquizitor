@@ -21,7 +21,7 @@ const TableWrapper = styled(Box)`
   width: 100%;
   overflow-x: auto;
   border-radius: ${({ theme }) => theme.radii.md};
-  border: 1px solid ${({ theme }) => theme.colors.border};
+  border: 1px solid ${({ theme }) => theme.colors.neutral.greyBlue};
   background: ${({ theme }) => theme.colors.neutral.white};
 `;
 
@@ -37,14 +37,14 @@ const Th = styled.th<{ $align?: "left" | "center" | "right" }>`
   font-weight: 600;
   color: ${({ theme }) => theme.colors.neutral.dGrey};
   background: ${({ theme }) => theme.colors.tint.t5};
-  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
+  border-bottom: 1px solid ${({ theme }) => theme.colors.neutral.greyBlue};
   white-space: nowrap;
 `;
 
 const Td = styled.td<{ $align?: "left" | "center" | "right" }>`
   padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
   text-align: ${({ $align = "left" }) => $align};
-  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
+  border-bottom: 1px solid ${({ theme }) => theme.colors.neutral.greyBlue};
   vertical-align: middle;
 `;
 
