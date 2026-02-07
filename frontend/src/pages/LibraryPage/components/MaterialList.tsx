@@ -12,6 +12,8 @@ interface MaterialListProps {
   onDownload: (materialId: number, filename: string) => void;
   onUseInTest: (materialId: number) => void;
   onPreview?: (material: MaterialUploadResponse) => void;
+  selectedIds?: Set<number>;
+  onToggleSelect?: (materialId: number) => void;
 }
 
 const TableWrapper = styled(Box)`
@@ -78,20 +80,39 @@ const ActionsCell = styled(Box)`
   justify-content: center;
 `;
 
+const CheckboxCell = styled(Td)`
+  width: 40px;
+  padding: ${({ theme }) => theme.spacing.xs};
+`;
+
+const RowCheckbox = styled.input.attrs({ type: "checkbox" })`
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: ${({ theme }) => theme.colors.brand.primary};
+`;
+
 const MaterialList: React.FC<MaterialListProps> = ({
   materials,
   onDelete,
   onDownload,
   onUseInTest,
   onPreview,
+  selectedIds,
+  onToggleSelect,
 }) => {
   if (materials.length === 0) return null;
+
+  const showSelection = !!onToggleSelect;
 
   return (
     <TableWrapper>
       <StyledTable>
         <thead>
           <tr>
+            {showSelection && (
+              <Th style={{ width: 40 }} $align="center" scope="col" aria-label="Zaznacz" />
+            )}
             <Th style={{ width: 48 }} $align="center" scope="col" aria-label="Typ pliku" />
             <Th style={{ minWidth: 160 }} scope="col">
               Nazwa
@@ -114,6 +135,15 @@ const MaterialList: React.FC<MaterialListProps> = ({
         <tbody>
           {materials.map((material) => (
             <Tr key={material.id}>
+              {showSelection && (
+                <CheckboxCell $align="center">
+                  <RowCheckbox
+                    checked={selectedIds?.has(material.id)}
+                    onChange={() => onToggleSelect?.(material.id)}
+                    aria-label={selectedIds?.has(material.id) ? "Odznacz" : "Zaznacz"}
+                  />
+                </CheckboxCell>
+              )}
               <Td $align="center" style={{ width: 48 }}>
                 <IconCell as="span" style={{ display: "inline-flex" }}>
                   <MaterialFileTypeIcon mimeType={material.mime_type} />

@@ -11,9 +11,11 @@ interface MaterialCardProps {
   onDownload: (materialId: number, filename: string) => void;
   onUseInTest: (materialId: number) => void;
   onPreview?: (material: MaterialUploadResponse) => void;
+  selected?: boolean;
+  onToggleSelect?: (materialId: number) => void;
 }
 
-const CardContent = styled(Card)`
+const CardContent = styled(Card)<{ $selected?: boolean }>`
   position: relative;
   width: 100%;
   height: 100%;
@@ -22,12 +24,27 @@ const CardContent = styled(Card)`
   min-width: 0;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   cursor: default;
+  outline: ${({ theme, $selected }) => ($selected ? `2px solid ${theme.colors.brand.primary}` : "none")};
+  outline-offset: 2px;
 
   &:hover {
     transform: translateY(-2px);
     box-shadow: ${({ theme }) => theme.shadows["8px"]};
   }
+`;
 
+const SelectCheckboxWrap = styled(Box)`
+  position: absolute;
+  top: ${({ theme }) => theme.spacing.sm};
+  left: ${({ theme }) => theme.spacing.sm};
+  z-index: 2;
+`;
+
+const SelectCheckbox = styled.input.attrs({ type: "checkbox" })`
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: ${({ theme }) => theme.colors.brand.primary};
 `;
 
 const FileIcon = styled(Box)`
@@ -169,6 +186,8 @@ const MaterialCard: React.FC<MaterialCardProps> = ({
   onDownload,
   onUseInTest,
   onPreview,
+  selected = false,
+  onToggleSelect,
 }) => {
   const [thumbnailError, setThumbnailError] = React.useState(false);
   const [thumbnailBlobUrl, setThumbnailBlobUrl] = React.useState<string | null>(null);
@@ -221,7 +240,16 @@ const MaterialCard: React.FC<MaterialCardProps> = ({
   const metaTooltip = `Rozmiar: ${formatFileSize(material.size_bytes)}\nDodano: ${formatDate(material.created_at)}`;
 
   return (
-    <CardContent $p="sm" $shadow="md" $variant="elevated" style={{ position: "relative" }}>
+    <CardContent $p="sm" $shadow="md" $variant="elevated" $selected={selected} style={{ position: "relative" }}>
+      {onToggleSelect && (
+        <SelectCheckboxWrap onClick={(e) => e.stopPropagation()}>
+          <SelectCheckbox
+            checked={selected}
+            onChange={() => onToggleSelect(material.id)}
+            aria-label={selected ? "Odznacz" : "Zaznacz"}
+          />
+        </SelectCheckboxWrap>
+      )}
       <Stack $gap="xs" style={{ flex: 1, minHeight: 0 }}>
         {/* Block 1: thumbnail or placeholder – click opens preview */}
         <ThumbnailWrapper

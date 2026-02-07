@@ -1,17 +1,24 @@
-import React, { useState, useRef, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useRef, useCallback, useMemo, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import styled from "styled-components";
-import { Flex, Stack, Heading, Text, Box } from "../../design-system/primitives";
+import { Flex, Stack, Heading, Text, Box, Button } from "../../design-system/primitives";
 import { PageContainer, PageSection, Modal } from "../../design-system/patterns";
-import SegmentedToggle from "../../design-system/patterns/SegmentedToggle";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import useLibrary from "./hooks/useLibrary";
 import MaterialGrid from "./components/MaterialGrid";
 import MaterialList from "./components/MaterialList";
+import LibraryToolbar, { type ViewMode } from "./components/LibraryToolbar";
 import MaterialUploadZone, { type MaterialUploadZoneRef } from "../../components/MaterialUploadZone/MaterialUploadZone";
 import EmptyState from "../DashboardPage/components/EmptyState";
 import dashboardWelcome from "../../assets/dashboard_welcome.webp";
 import { getMaterialFileBlobUrl, downloadMaterial, type MaterialUploadResponse } from "../../services/materials";
+import {
+  filterAndSortMaterials,
+  DEFAULT_FILTER_STATE,
+  filterStateToSearchParams,
+  searchParamsToFilterState,
+  type LibraryFilterState,
+} from "./utils/libraryFilters";
 
 const BLOB_REVOKE_DELAY_MS = 15000;
 
@@ -27,8 +34,17 @@ const ErrorAlert = styled(Box)`
   color: ${({ theme }) => theme.colors.danger.main};
 `;
 
+const EmptyFiltersState = styled(Box)`
+  width: 100%;
+  box-sizing: border-box;
+  text-align: center;
+  padding: ${({ theme }) => theme.spacing.xl};
+  background: ${({ theme }) => theme.colors.neutral.white};
+  border-radius: ${({ theme }) => theme.radii.md};
+  border: 1px solid ${({ theme }) => theme.colors.neutral.greyBlue};
+`;
+
 const VIEW_MODE_KEY = "materials_library_view";
-type ViewMode = "grid" | "list";
 
 function getStoredViewMode(): ViewMode {
   try {
@@ -42,11 +58,35 @@ function getStoredViewMode(): ViewMode {
 
 const LibraryPage: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { materials, loading, uploading, error, handleUpload, handleDelete } = useLibrary();
   const [materialIdToDelete, setMaterialIdToDelete] = useState<number | null>(null);
+  const [bulkDeleteIds, setBulkDeleteIds] = useState<number[] | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>(getStoredViewMode);
+  const [selectedMaterialIds, setSelectedMaterialIds] = useState<Set<number>>(new Set());
+  const [filterState, setFilterState] = useState<LibraryFilterState>(() =>
+    searchParamsToFilterState(searchParams)
+  );
   const uploadZoneRef = useRef<MaterialUploadZoneRef>(null);
+
+  useEffect(() => {
+    const params = filterStateToSearchParams(filterState);
+    setSearchParams(params, { replace: true });
+  }, [filterState, setSearchParams]);
+
+  const filteredAndSortedMaterials = useMemo(
+    () => filterAndSortMaterials(materials, filterState),
+    [materials, filterState]
+  );
+
+  const clearFilters = useCallback(() => {
+    setFilterState(DEFAULT_FILTER_STATE);
+  }, []);
+
+  const handleFilterChange = useCallback((patch: Partial<LibraryFilterState>) => {
+    setFilterState((prev) => ({ ...prev, ...patch }));
+  }, []);
 
   const handleDownload = useCallback(async (materialId: number, filename: string) => {
     try {
@@ -90,6 +130,49 @@ const LibraryPage: React.FC = () => {
 
   const closeDeleteModal = () => {
     setMaterialIdToDelete(null);
+  };
+
+  const closeBulkDeleteModal = () => setBulkDeleteIds(null);
+
+  const toggleSelection = useCallback((id: number) => {
+    setSelectedMaterialIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const clearSelection = useCallback(() => setSelectedMaterialIds(new Set()), []);
+
+  const handleBulkDownload = useCallback(async () => {
+    const list = filteredAndSortedMaterials.filter((m) => selectedMaterialIds.has(m.id));
+    try {
+      setUploadError(null);
+      for (const m of list) {
+        await downloadMaterial(m.id, m.filename);
+      }
+    } catch (err: unknown) {
+      setUploadError(err instanceof Error ? err.message : "Nie udało się pobrać plików");
+    }
+  }, [filteredAndSortedMaterials, selectedMaterialIds]);
+
+  const handleBulkDelete = useCallback(() => {
+    setBulkDeleteIds(Array.from(selectedMaterialIds));
+  }, [selectedMaterialIds]);
+
+  const confirmBulkDelete = async () => {
+    if (!bulkDeleteIds?.length) return;
+    try {
+      for (const id of bulkDeleteIds) {
+        await handleDelete(id);
+      }
+      setSelectedMaterialIds(new Set());
+    } catch (err: any) {
+      alert("Nie udało się usunąć materiałów: " + (err?.message || err));
+    } finally {
+      closeBulkDeleteModal();
+    }
   };
 
   const handlePreview = useCallback(async (material: MaterialUploadResponse) => {
@@ -168,19 +251,9 @@ const LibraryPage: React.FC = () => {
       <PageSection $py="xl">
         <PageContainer>
           <Stack $gap="lg">
-            <Flex $align="center" $justify="space-between" $wrap="wrap" $gap="md">
-              <Heading as="h1" $level="h2">
-                Biblioteka materiałów
-              </Heading>
-              <SegmentedToggle<ViewMode>
-                options={[
-                  { label: "Siatka", value: "grid" },
-                  { label: "Lista", value: "list" },
-                ]}
-                value={viewMode}
-                onChange={handleViewModeChange}
-              />
-            </Flex>
+            <Heading as="h1" $level="h2">
+              Biblioteka materiałów
+            </Heading>
 
             {(error || uploadError) && (
               <ErrorAlert $p="md" $radius="md">
@@ -194,21 +267,48 @@ const LibraryPage: React.FC = () => {
               uploading={uploading}
             />
 
-            {viewMode === "grid" ? (
+            <LibraryToolbar
+              filterState={filterState}
+              onFilterChange={handleFilterChange}
+              onClearFilters={clearFilters}
+              viewMode={viewMode}
+              onViewModeChange={handleViewModeChange}
+              selectedCount={selectedMaterialIds.size}
+              onBulkDownload={handleBulkDownload}
+              onBulkDelete={handleBulkDelete}
+              onClearSelection={clearSelection}
+            />
+
+            {filteredAndSortedMaterials.length === 0 ? (
+              <EmptyFiltersState>
+                <Box $mb="md">
+                  <Text $tone="muted">
+                    Brak wyników dla podanych filtrów. Zmień kryteria lub wyczyść filtry.
+                  </Text>
+                </Box>
+                <Button $variant="outline" $size="md" onClick={clearFilters}>
+                  Wyczyść filtry
+                </Button>
+              </EmptyFiltersState>
+            ) : viewMode === "grid" ? (
               <MaterialGrid
-                materials={materials}
+                materials={filteredAndSortedMaterials}
                 onDelete={handleDeleteClick}
                 onDownload={handleDownload}
                 onUseInTest={handleUseInTest}
                 onPreview={handlePreview}
+                selectedIds={selectedMaterialIds}
+                onToggleSelect={toggleSelection}
               />
             ) : (
               <MaterialList
-                materials={materials}
+                materials={filteredAndSortedMaterials}
                 onDelete={handleDeleteClick}
                 onDownload={handleDownload}
                 onUseInTest={handleUseInTest}
                 onPreview={handlePreview}
+                selectedIds={selectedMaterialIds}
+                onToggleSelect={toggleSelection}
               />
             )}
           </Stack>
@@ -225,6 +325,19 @@ const LibraryPage: React.FC = () => {
           confirmLabel="Usuń"
         >
           Tej operacji nie można cofnąć. Materiał zostanie trwale usunięty.
+        </Modal>
+      )}
+
+      {bulkDeleteIds !== null && bulkDeleteIds.length > 0 && (
+        <Modal
+          isOpen={true}
+          title="Usuń materiały"
+          onClose={closeBulkDeleteModal}
+          onConfirm={confirmBulkDelete}
+          variant="danger"
+          confirmLabel="Usuń"
+        >
+          Czy na pewno chcesz usunąć {bulkDeleteIds.length} materiałów? Tej operacji nie można cofnąć.
         </Modal>
       )}
     </Flex>

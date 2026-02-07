@@ -10,6 +10,8 @@ interface MaterialGridProps {
   onDownload: (materialId: number, filename: string) => void;
   onUseInTest: (materialId: number) => void;
   onPreview?: (material: MaterialUploadResponse) => void;
+  selectedIds?: Set<number>;
+  onToggleSelect?: (materialId: number) => void;
 }
 
 /* Responsive grid: mobile 2 cols, tablet 3–4, desktop (≥1200) 5–6 cols; uniform card height per row */
@@ -40,6 +42,8 @@ const MaterialGrid: React.FC<MaterialGridProps> = ({
   onDownload,
   onUseInTest,
   onPreview,
+  selectedIds,
+  onToggleSelect,
 }) => {
   if (materials.length === 0) return null;
 
@@ -53,6 +57,8 @@ const MaterialGrid: React.FC<MaterialGridProps> = ({
           onDownload={onDownload}
           onUseInTest={onUseInTest}
           onPreview={onPreview}
+          selected={selectedIds?.has(material.id)}
+          onToggleSelect={onToggleSelect}
         />
       ))}
     </Grid>
