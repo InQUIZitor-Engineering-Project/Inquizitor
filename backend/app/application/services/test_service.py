@@ -1338,7 +1338,30 @@ class TestService:
             job = uow.jobs.get_generation_job_by_test_id(test_id)
             if not job or job.owner_id != owner_id:
                 raise ValueError("Nie znaleziono konfiguracji dla tego testu")
-            return job.payload
+            
+            config = job.payload.copy()
+            
+            # Jeśli config ma material_ids, sprawdź które materiały jeszcze istnieją
+            if config.get("material_ids"):
+                existing_material_ids = []
+                for material_id in config["material_ids"]:
+                    material = uow.materials.get(material_id)
+                    # Tylko dodaj jeśli materiał istnieje i należy do użytkownika
+                    if material and material.owner_id == owner_id:
+                        existing_material_ids.append(material_id)
+                
+                # Jeśli wszystkie materiały zostały usunięte, usuń material_ids z config
+                # (test nadal działa, ale nie można go edytować z materiałami)
+                if existing_material_ids:
+                    config["material_ids"] = existing_material_ids
+                else:
+                    config.pop("material_ids", None)
+                    # Jeśli nie ma już materiałów, użyj tekstu jeśli jest dostępny
+                    if "text" not in config or not config.get("text"):
+                        # Jeśli nie ma ani materiałów ani tekstu, użyj pustego tekstu
+                        config["text"] = ""
+            
+            return config
 
 
 __all__ = ["TestService"]

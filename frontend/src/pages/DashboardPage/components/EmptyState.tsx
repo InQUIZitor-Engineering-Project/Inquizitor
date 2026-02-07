@@ -27,7 +27,8 @@ const EmptyState: React.FC<EmptyStateProps> = ({
     style={{
       textAlign: "center",
       width: "100%",
-      minHeight: "calc(100dvh - 250px)",
+      height: "100%",
+      minHeight: isHub ? "calc(100dvh - 250px)" : "100%",
       padding: isHub ? 32 : undefined,
     }}
   >

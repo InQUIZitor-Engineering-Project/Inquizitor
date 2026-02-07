@@ -167,7 +167,12 @@ class SqlModelMaterialRepository(MaterialRepository):
         return mappers.material_to_domain(db_material)
 
     def get(self, material_id: int) -> Material | None:
-        db_material = self._session.get(db_models.Material, material_id)
+        stmt = (
+            select(db_models.Material)
+            .where(db_models.Material.id == material_id)
+            .options(joinedload(db_models.Material.file))
+        )
+        db_material = cast(Any, self._session).exec(stmt).first()
         return mappers.material_to_domain(db_material) if db_material else None
     
     def get_by_file_id(self, file_id: int) -> Material | None:
@@ -179,11 +184,36 @@ class SqlModelMaterialRepository(MaterialRepository):
         row = cast(Any, self._session).exec(stmt).first()
         return mappers.material_to_domain(row) if row else None
 
+    def get_by_checksum(self, owner_id: int, checksum: str) -> Material | None:
+        """Find a material by checksum for the given owner."""
+        stmt = (
+            select(db_models.Material)
+            .where(
+                db_models.Material.owner_id == owner_id,
+                db_models.Material.checksum == checksum,
+            )
+            .options(joinedload(db_models.Material.file))
+            .order_by(cast(Any, db_models.Material.created_at).desc())
+        )
+        row = cast(Any, self._session).exec(stmt).first()
+        return mappers.material_to_domain(row) if row else None
+
     def list_for_user(self, user_id: int) -> Iterable[Material]:
-        stmt = select(db_models.Material).where(db_models.Material.owner_id == user_id)
+        stmt = (
+            select(db_models.Material)
+            .where(db_models.Material.owner_id == user_id)
+            .options(joinedload(db_models.Material.file))
+            .order_by(cast(Any, db_models.Material.created_at).desc())
+        )
         rows = cast(Any, self._session).exec(stmt).all()
         materials: list[Material] = []
+        seen_checksums: set[str] = set()
         for row in rows:
+            # Jeśli materiał ma checksum i już widzieliśmy ten checksum, pomiń go
+            if row.checksum and row.checksum in seen_checksums:
+                continue
+            if row.checksum:
+                seen_checksums.add(row.checksum)
             materials.append(mappers.material_to_domain(row))
         return materials
 
@@ -191,6 +221,12 @@ class SqlModelMaterialRepository(MaterialRepository):
         db_material = self._session.get(db_models.Material, material.id)
         if not db_material:
             raise ValueError(f"Material {material.id} not found")
+
+        if material.file is not None and material.file.id is not None:
+            db_file = self._session.get(db_models.File, material.file.id)
+            if db_file is not None:
+                db_file.filename = material.file.filename
+                self._session.add(db_file)
 
         db_material.mime_type = material.mime_type
         db_material.size_bytes = material.size_bytes
@@ -211,6 +247,7 @@ class SqlModelMaterialRepository(MaterialRepository):
         )
         db_material.analysis_version = material.analysis_version
         db_material.markdown_twin = material.markdown_twin
+        db_material.thumbnail_path = material.thumbnail_path
 
         self._session.add(db_material)
         self._session.commit()

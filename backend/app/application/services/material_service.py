@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import logging
 import math
 from collections.abc import Callable, Sequence
 from datetime import datetime
@@ -14,6 +15,13 @@ from app.application.interfaces import DocumentAnalyzer, FileStorage, UnitOfWork
 from app.domain.models import File as FileDomain
 from app.domain.models import Material as MaterialDomain
 from app.domain.models.enums import AnalysisStatus, ProcessingStatus
+from app.infrastructure.thumbnails.generator import (
+    can_generate_thumbnail,
+    generate_thumbnail_from_image,
+    generate_thumbnail_from_pdf,
+)
+
+logger = logging.getLogger(__name__)
 
 
 class MaterialService:
@@ -77,6 +85,9 @@ class MaterialService:
         )
 
         with self._uow_factory() as uow:
+            # Check if material with same checksum already exists (cache hit)
+            existing_material = uow.materials.get_by_checksum(owner_id, checksum)
+            
             file_record = uow.files.add(file_domain)
 
             material = MaterialDomain(
@@ -92,7 +103,71 @@ class MaterialService:
                 processing_error=None,
             )
 
+            # If existing material has markdown_twin (from cache), copy to new material
+            if existing_material and existing_material.markdown_twin:
+                material.extracted_text = existing_material.extracted_text
+                material.markdown_twin = existing_material.markdown_twin
+                material.analysis_status = existing_material.analysis_status
+                material.routing_tier = existing_material.routing_tier
+                material.analysis_version = existing_material.analysis_version
+                material.status = ProcessingStatus.DONE
+                # Copy thumbnail if it exists, otherwise we'll generate it
+                material.thumbnail_path = existing_material.thumbnail_path
+
             material_record = uow.materials.add(material)
+            
+            # If we copied from cache but don't have thumbnail, generate it
+            no_thumb = not material_record.thumbnail_path
+            if existing_material and existing_material.markdown_twin and no_thumb:
+                # Generate thumbnail for the new material
+                import tempfile
+                with tempfile.NamedTemporaryFile(delete=True, suffix=extension) as tmp:
+                    tmp.write(content)
+                    tmp.flush()
+                    local_path = Path(tmp.name)
+                    
+                    from app.infrastructure.thumbnails.generator import (
+                        can_generate_thumbnail,
+                        generate_thumbnail_from_image,
+                        generate_thumbnail_from_pdf,
+                    )
+                    
+                    if can_generate_thumbnail(mime_type, filename):
+                        try:
+                            thumbnail_bytes: bytes | None = None
+                            if mime_type == "application/pdf" or (
+                                filename and filename.lower().endswith(".pdf")
+                            ):
+                                thumbnail_bytes = generate_thumbnail_from_pdf(
+                                    local_path
+                                )
+                            elif mime_type and mime_type.startswith("image/"):
+                                thumbnail_bytes = generate_thumbnail_from_image(
+                                    local_path
+                                )
+                            if thumbnail_bytes:
+                                thumb_id = (
+                                    material_record.id
+                                    if material_record.id
+                                    else file_record.id
+                                )
+                                thumbnail_filename = f"thumb_{thumb_id}.jpg"
+                                thumbnail_path = self._storage.save(
+                                    owner_id=owner_id,
+                                    filename=thumbnail_filename,
+                                    content=thumbnail_bytes,
+                                )
+                                material_record.thumbnail_path = thumbnail_path
+                                # Update material with thumbnail
+                                material_record = uow.materials.update(material_record)
+                        except Exception as exc:
+                            # Don't fail if thumbnail generation fails
+                            logger.warning(
+                                "Failed to generate thumbnail for cached material "
+                                "%s: %s",
+                                material_record.id,
+                                exc,
+                            )
 
         return dto.to_material_out(material_record)
 
@@ -108,6 +183,23 @@ class MaterialService:
             if not material or material.owner_id != owner_id:
                 raise ValueError("Materiał nie został znaleziony")
         return dto.to_material_out(material)
+
+    def get_material_file_for_download(
+        self, *, owner_id: int, material_id: int
+    ) -> tuple[str, str, str | None]:
+        """Return (filename, stored_path, mime_type) for download.
+        Raises ValueError if not found."""
+        with self._uow_factory() as uow:
+            material = uow.materials.get(material_id)
+            if not material or material.owner_id != owner_id:
+                raise ValueError("Materiał nie został znaleziony")
+            if not material.file:
+                raise ValueError("Plik nie został znaleziony")
+            return (
+                material.file.filename,
+                str(material.file.stored_path),
+                material.mime_type,
+            )
 
     def update_material(
         self,
@@ -129,6 +221,9 @@ class MaterialService:
             if payload.processing_status is not None:
                 material.status = ProcessingStatus(payload.processing_status)
 
+            if payload.filename is not None and payload.filename.strip():
+                material.file.rename(payload.filename.strip())
+
             updated = uow.materials.update(material)
 
         return dto.to_material_out(updated)
@@ -139,13 +234,48 @@ class MaterialService:
             if not material or material.owner_id != owner_id:
                 raise ValueError("Materiał nie został znaleziony")
 
-            file_id = material.file.id
-            stored_path = str(material.file.stored_path)
+            # Jeśli materiał ma checksum, usuń wszystkie materiały z tym samym checksum
+            # (duplikaty tego samego pliku)
+            if material.checksum:
+                # Znajdź wszystkie materiały użytkownika z tym samym checksum
+                all_materials = list(uow.materials.list_for_user(owner_id))
+                duplicates = [
+                    m for m in all_materials
+                    if m.checksum == material.checksum and m.id is not None
+                ]
+                
+                # Usuń wszystkie duplikaty
+                stored_paths_to_delete = set()
+                file_ids_to_delete = set()
+                
+                for dup in duplicates:
+                    if dup.file and dup.file.id:
+                        stored_paths_to_delete.add(str(dup.file.stored_path))
+                        file_ids_to_delete.add(dup.file.id)
+                    if dup.id:
+                        uow.materials.remove(dup.id)
+                
+                # Usuń pliki z storage (tylko raz dla każdego unikalnego path)
+                for stored_path in stored_paths_to_delete:
+                    self._storage.delete(stored_path=stored_path)
+                
+                # Usuń rekordy File z bazy
+                for file_id in file_ids_to_delete:
+                    uow.files.remove(file_id)
+            else:
+                # Jeśli nie ma checksum, usuń tylko ten jeden materiał
+                single_file_id: int | None = (
+                    material.file.id if material.file else None
+                )
+                single_stored_path: str | None = (
+                    str(material.file.stored_path) if material.file else None
+                )
 
-            uow.materials.remove(material_id)
-            self._storage.delete(stored_path=stored_path)
-            if file_id is not None:
-                uow.files.remove(file_id)
+                uow.materials.remove(material_id)
+                if single_stored_path:
+                    self._storage.delete(stored_path=single_stored_path)
+                if single_file_id is not None:
+                    uow.files.remove(single_file_id)
 
     def _detect_mime(self, path: Path) -> str | None:
         if not self._mime_detector:
@@ -283,27 +413,69 @@ class MaterialService:
                         local, mime_type, filename=file_record.filename
                     )
 
-                # 1. Local text extraction (fast)
-                try:
-                    raw_text = self._text_extractor(local, mime_type)
-                    normalized_text = self._sanitize_text(raw_text)
-                    material.mark_processed(normalized_text or "")
-                except Exception as exc:
-                    material.mark_failed(str(exc))
-                    normalized_text = ""
+                # 0. Generate thumbnail (if supported)
+                if can_generate_thumbnail(mime_type, file_record.filename):
+                    try:
+                        thumbnail_bytes: bytes | None = None
+                        fn = file_record.filename
+                        is_pdf = fn and fn.lower().endswith(".pdf")
+                        if mime_type == "application/pdf" or is_pdf:
+                            thumbnail_bytes = generate_thumbnail_from_pdf(local)
+                        elif mime_type and mime_type.startswith("image/"):
+                            thumbnail_bytes = generate_thumbnail_from_image(local)
+                        
+                        if thumbnail_bytes:
+                            # Save thumbnail; use material.id or file_id as fallback
+                            thumb_id = material.id if material.id else file_record.id
+                            thumbnail_filename = f"thumb_{thumb_id}.jpg"
+                            thumbnail_path = self._storage.save(
+                                owner_id=owner_id,
+                                filename=thumbnail_filename,
+                                content=thumbnail_bytes,
+                            )
+                            material.thumbnail_path = thumbnail_path
+                        else:
+                            logger.warning(
+                                "Thumbnail generation returned None for material "
+                                "%s, mime_type: %s",
+                                material.id,
+                                mime_type,
+                            )
+                    except Exception as exc:
+                        # Don't fail material processing if thumbnail generation fails
+                        logger.warning(
+                            "Failed to generate thumbnail for material %s: %s",
+                            material.id,
+                            exc,
+                            exc_info=True,
+                        )
 
-                # 2. LLM Analysis (Multi-modal)
-                # Always send to LLM unless it's a plain .txt file
+                # 1. LLM Analysis (Multi-modal) - Gemini extracts from files.
+                # We skip local text extraction and rely on Gemini.
                 is_txt = (file_record.filename or "").lower().endswith(".txt")
                 
                 if is_txt:
-                    # For .txt files, twin is just the text
-                    material.markdown_twin = normalized_text
-                    material.analysis_status = AnalysisStatus.DONE
+                    # For .txt files, read directly and use as markdown_twin
+                    try:
+                        raw_text: str | None = self._text_extractor(local, mime_type)
+                        normalized_text: str | None = self._sanitize_text(raw_text)
+                        if normalized_text and normalized_text.strip():
+                            material.markdown_twin = normalized_text
+                            material.extracted_text = normalized_text
+                            material.analysis_status = AnalysisStatus.DONE
+                            material.status = ProcessingStatus.DONE
+                        else:
+                            error_msg = self._empty_extraction_error(
+                                local, mime_type, filename=file_record.filename
+                            )
+                            material.mark_failed(error_msg)
+                    except Exception as exc:
+                        material.mark_failed(str(exc))
                 elif self._analyzer:
+                    # Use Gemini to extract and analyze text from file
                     try:
                         markdown_twin, routing, _usage, _title = self._analyzer.analyze(
-                            source_text=normalized_text or "",
+                            source_text="",  # Gemini extracts from file_path
                             filename=file_record.filename,
                             mime_type=mime_type,
                             file_path=str(local),
@@ -314,10 +486,32 @@ class MaterialService:
                         material.routing_tier = routing
                         material.analysis_status = AnalysisStatus.DONE
                         material.analysis_version = "v1"
+                        
+                        # Extract plain text from markdown for extracted_text
+                        if markdown_twin:
+                            import re
+                            # Remove markdown formatting to get plain text
+                            plain_text = re.sub(r'[#*_`\[\]()]', '', markdown_twin)
+                            plain_text = re.sub(r'\n+', '\n', plain_text).strip()
+                            if plain_text:
+                                material.extracted_text = plain_text
+                                material.status = ProcessingStatus.DONE
+                                material.processing_error = None
+                            else:
+                                # Empty markdown_twin - mark as failed
+                                material.mark_failed("Gemini returned empty content")
+                        else:
+                            material.mark_failed("Gemini returned no content")
                     except Exception as exc:
                         material.analysis_status = AnalysisStatus.FAILED
                         material.processing_error = f"LLM Analysis failed: {exc}"
+                        material.mark_failed(material.processing_error)
+                else:
+                    # No analyzer available - mark as failed
+                    error_msg = "No analyzer available for this file type"
+                    material.mark_failed(error_msg)
 
+            # Update material with all changes (including thumbnail_path)
             updated = uow.materials.update(material)
 
         return dto.to_material_out(

@@ -108,6 +108,9 @@ class AppContainer:
     def provide_export_storage(self) -> FileStorage:
         return self._exports_storage
 
+    def provide_materials_storage(self) -> FileStorage:
+        return self._materials_storage
+
     def provide_user_repository(self, session: Any) -> SqlModelUserRepository:
         return SqlModelUserRepository(session)
 

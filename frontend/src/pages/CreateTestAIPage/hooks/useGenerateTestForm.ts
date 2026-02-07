@@ -46,6 +46,9 @@ export interface UseGenerateTestFormResult {
     totalAll: number;
     totalDifficulty: number;
     easyPct: number;
+    libraryModalOpen: boolean;
+    onCloseLibraryModal: () => void;
+    onSelectMaterialsFromLibrary: (materialIds: number[]) => Promise<void>;
     medPct: number;
     hardPct: number;
     hasStructure: boolean;
@@ -88,6 +91,7 @@ export interface UseGenerateTestFormResult {
     handleRemoveMaterial: (materialId: number) => Promise<void>;
     handleRemoveUpload: (tempId: string) => void;
     handleGenerate: () => Promise<void>;
+    handleSelectFromLibrary: () => void;
   };
 }
 
@@ -95,6 +99,7 @@ const useGenerateTestForm = (): UseGenerateTestFormResult => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const fromTestId = searchParams.get("from");
+  const materialIdsParam = searchParams.get("materialIds");
   const { refreshSidebarTests } = useOutletContext<LayoutCtx>();
   const { startLoading, stopLoading } = useLoader();
   const {
@@ -182,6 +187,34 @@ const useGenerateTestForm = (): UseGenerateTestFormResult => {
   }, [fromTestId]);
 
   const [materials, setMaterials] = useState<MaterialUploadResponse[]>([]);
+
+  // Pre-fill from library: ?materialIds=1 or ?materialIds=1,2
+  useEffect(() => {
+    if (fromTestId || !materialIdsParam) return;
+    const ids = materialIdsParam
+      .split(",")
+      .map((s) => parseInt(s.trim(), 10))
+      .filter((n) => !Number.isNaN(n));
+    if (ids.length === 0) return;
+    const fetchMaterials = async () => {
+      try {
+        startLoading();
+        const materialData = await Promise.all(ids.map((id) => getMaterial(id)));
+        setMaterials(materialData);
+        setSourceType("material");
+        const combinedText = materialData
+          .map((m) => m.markdown_twin)
+          .filter(Boolean)
+          .join("\n\n");
+        setSourceContent(combinedText);
+      } catch (err) {
+        console.error("Failed to fetch materials from URL:", err);
+      } finally {
+        stopLoading();
+      }
+    };
+    fetchMaterials();
+  }, [fromTestId, materialIdsParam]);
   const [materialUploading, setMaterialUploading] = useState(false);
   const [materialError, setMaterialError] = useState<string | null>(null);
   const [materialAnalyzing, setMaterialAnalyzing] = useState(false);
@@ -195,6 +228,7 @@ const useGenerateTestForm = (): UseGenerateTestFormResult => {
       error?: string;
     }[]
   >([]);
+  const [libraryModalOpen, setLibraryModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useDocumentTitle("Stwórz nowy | Inquizitor");
@@ -368,6 +402,65 @@ const useGenerateTestForm = (): UseGenerateTestFormResult => {
 
   const handleRemoveUpload = (tempId: string) => {
     setUploadingMaterials((prev) => prev.filter((item) => item.tempId !== tempId));
+  };
+
+  const handleSelectMaterialsFromLibrary = async (selectedMaterialIds: number[]) => {
+    if (selectedMaterialIds.length === 0) {
+      setLibraryModalOpen(false);
+      return;
+    }
+
+    try {
+      setMaterialError(null);
+      // Pobierz szczegóły wybranych materiałów
+      const selectedMaterials = await Promise.all(
+        selectedMaterialIds.map((id) => getMaterial(id))
+      );
+
+      // Sprawdź czy materiały są gotowe
+      const notReady = selectedMaterials.filter(
+        (m) => m.processing_status !== "done"
+      );
+      if (notReady.length > 0) {
+        setMaterialError(
+          `Niektóre materiały nie są jeszcze gotowe: ${notReady.map((m) => m.filename).join(", ")}`
+        );
+        return;
+      }
+
+      // Sprawdź limit stron
+      const currentPages = materials.reduce(
+        (sum, m) => sum + (m.page_count ?? 1),
+        0
+      );
+      const newPages = selectedMaterials.reduce(
+        (sum, m) => sum + (m.page_count ?? 1),
+        0
+      );
+      if (currentPages + newPages > MAX_TOTAL_PAGES) {
+        setMaterialError(
+          `Przekroczono limit 20 stron. Obecnie: ${currentPages}, nowe: ${newPages}`
+        );
+        return;
+      }
+
+      // Dodaj wybrane materiały (unikaj duplikatów)
+      setMaterials((prev) => {
+        const existingIds = new Set(prev.map((m) => m.id));
+        const newMaterials = selectedMaterials.filter(
+          (m) => !existingIds.has(m.id)
+        );
+        const combined = [...prev, ...newMaterials];
+        if (sourceType === "material") {
+          setSourceContent(buildSourceFromMaterials(combined));
+        }
+        return combined;
+      });
+
+      setLibraryModalOpen(false);
+    } catch (error: any) {
+      setMaterialError(error.message || "Nie udało się dodać materiałów z biblioteki.");
+    }
   };
 
 
@@ -583,6 +676,9 @@ const useGenerateTestForm = (): UseGenerateTestFormResult => {
       materialLimitExceeded,
       canGenerate,
       primaryValidationError,
+      libraryModalOpen,
+      onCloseLibraryModal: () => setLibraryModalOpen(false),
+      onSelectMaterialsFromLibrary: handleSelectMaterialsFromLibrary,
     },
     status: { 
       genError, 
@@ -614,6 +710,9 @@ const useGenerateTestForm = (): UseGenerateTestFormResult => {
       handleRemoveMaterial,
       handleRemoveUpload,
       handleGenerate,
+      handleSelectFromLibrary: () => {
+        setLibraryModalOpen(true);
+      },
     },
   };
 };

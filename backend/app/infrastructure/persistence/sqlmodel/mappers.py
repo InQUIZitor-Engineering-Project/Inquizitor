@@ -177,6 +177,7 @@ def material_to_domain(
         ),
         analysis_version=row.analysis_version,
         markdown_twin=row.markdown_twin,
+        thumbnail_path=row.thumbnail_path,
     )
 
 
@@ -199,6 +200,7 @@ def material_to_row(material: Material) -> db_models.Material:
         routing_tier=material.routing_tier.value if material.routing_tier else None,
         analysis_version=material.analysis_version,
         markdown_twin=material.markdown_twin,
+        thumbnail_path=material.thumbnail_path,
     )
 
 

@@ -88,6 +88,19 @@ def get_export_storage(
     return container.provide_export_storage()
 
 
+def get_storage(
+    container: Annotated[Any, Depends(get_app_container)],
+) -> FileStorage:
+    return container.provide_file_storage()
+
+
+def get_materials_storage(
+    container: Annotated[Any, Depends(get_app_container)],
+) -> FileStorage:
+    """Get storage instance used for materials."""
+    return container.provide_materials_storage()
+
+
 def get_user_service(
     container: Annotated[Any, Depends(get_app_container)],
 ) -> UserService:
@@ -102,7 +115,9 @@ __all__ = [
     "get_job_service",
     "get_material_analysis_service",
     "get_material_service",
+    "get_materials_storage",
     "get_notification_service",
+    "get_storage",
     "get_support_service",
     "get_test_service",
     "get_user_service",

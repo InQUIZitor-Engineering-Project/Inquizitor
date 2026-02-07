@@ -8,6 +8,7 @@ import SourceSection from "./components/SourceSection";
 import PersonalizationSection from "./components/PersonalizationSection";
 import StructureCard from "./components/StructureCard";
 import DifficultyCard from "./components/DifficultyCard";
+import MaterialLibraryModal from "./components/MaterialLibraryModal";
 import { PageContainer, PageSection } from "../../design-system/patterns";
 
 const ActionButton = styled(Button)`
@@ -69,6 +70,14 @@ const CreateTestAIPage: React.FC = () => {
                 onMaterialButtonClick={actions.handleMaterialButtonClick}
                 onRemoveMaterial={actions.handleRemoveMaterial}
                 onRemoveUpload={actions.handleRemoveUpload}
+                onSelectFromLibrary={actions.handleSelectFromLibrary}
+              />
+
+              <MaterialLibraryModal
+                isOpen={derived.libraryModalOpen}
+                onClose={derived.onCloseLibraryModal}
+                onSelect={derived.onSelectMaterialsFromLibrary}
+                excludeMaterialIds={state.materials.map((m) => m.id)}
               />
 
               <PersonalizationSection

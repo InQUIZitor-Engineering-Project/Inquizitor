@@ -96,6 +96,12 @@ const Navbar: React.FC = () => {
               </StyledLink>
             )}
 
+            {user && (
+              <StyledLink to="/biblioteka" onClick={triggerQuickLoader}>
+                Biblioteka
+              </StyledLink>
+            )}
+
             <StyledLink to="/about" onClick={triggerQuickLoader}>
               O nas
             </StyledLink>
@@ -173,6 +179,12 @@ const Navbar: React.FC = () => {
             {user && (
               <StyledLink to="/dashboard" onClick={triggerQuickLoader}>
                 Panel główny
+              </StyledLink>
+            )}
+
+            {user && (
+              <StyledLink to="/biblioteka" onClick={triggerQuickLoader}>
+                Biblioteka
               </StyledLink>
             )}
 

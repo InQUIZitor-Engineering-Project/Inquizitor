@@ -23,6 +23,7 @@ class MaterialOut(BaseModel):
     processing_error: str | None = None
     cache_hit: bool | None = None
     duration_ocr_sec: float | None = None
+    thumbnail_path: str | None = None
 
     class Config:
         from_attributes = True
@@ -30,6 +31,7 @@ class MaterialOut(BaseModel):
 class MaterialUpdate(BaseModel):
     extracted_text: str | None = None
     processing_status: Literal["pending", "done", "failed"] | None = None
+    filename: str | None = None
 
 
 class MaterialUploadEnqueueResponse(BaseModel):
