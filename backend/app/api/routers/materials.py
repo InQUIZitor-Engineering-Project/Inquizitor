@@ -12,7 +12,11 @@ from fastapi import (
     status,
 )
 
-from app.api.dependencies import get_job_service, get_material_service, get_materials_storage
+from app.api.dependencies import (
+    get_job_service,
+    get_material_service,
+    get_materials_storage,
+)
 from app.api.schemas.materials import (
     MaterialAnalyzeRequest,
     MaterialAnalyzeResponse,
@@ -23,14 +27,12 @@ from app.api.schemas.materials import (
     MaterialUploadBatchResponse,
     MaterialUploadEnqueueResponse,
 )
-from app.domain.models.enums import JobType
-from app.tasks.materials import process_material_task
 from app.application.services import JobService, MaterialService
 from app.core.limiter import limiter
 from app.core.security import get_current_user
 from app.db.models import User
-from app.domain.services import FileStorage
 from app.domain.models.enums import JobType
+from app.domain.services import FileStorage
 from app.infrastructure.monitoring.posthog_client import analytics
 from app.tasks.materials import analyze_material_task, process_material_task
 
@@ -322,8 +324,9 @@ def get_material_thumbnail(
     storage: Annotated[FileStorage, Depends(get_materials_storage)],
 ) -> Response:
     """Get thumbnail image for a material."""
-    from app.infrastructure.storage import R2FileStorage
     from fastapi.responses import FileResponse, RedirectResponse
+
+    from app.infrastructure.storage import R2FileStorage
 
     if current_user.id is None:
         raise HTTPException(
@@ -354,9 +357,7 @@ def get_material_thumbnail(
                 if url.startswith("http"):
                     return RedirectResponse(url=url)
         
-        # For local storage
-        # storage.save() returns full path like "uploads/materials/xxx.jpg"
-        # We need to handle it correctly - if it already contains base_dir, use it directly
+        # If it already contains base_dir, use it directly.
         if hasattr(storage, "_base_dir"):
             thumb_path_str = material.thumbnail_path
             base_dir_path = Path(storage._base_dir)
@@ -401,8 +402,10 @@ def download_material(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="User ID is missing"
         )
     try:
-        filename, stored_path = material_service.get_material_file_for_download(
-            owner_id=current_user.id, material_id=material_id
+        (filename, stored_path, mime_type) = (
+            material_service.get_material_file_for_download(
+                owner_id=current_user.id, material_id=material_id
+            )
         )
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
@@ -416,7 +419,9 @@ def download_material(
         ) from None
 
     media_type = "application/octet-stream"
-    if filename:
+    if mime_type:
+        media_type = mime_type
+    elif filename:
         import mimetypes
         guessed, _ = mimetypes.guess_type(filename)
         if guessed:

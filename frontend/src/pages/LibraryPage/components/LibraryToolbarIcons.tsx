@@ -62,3 +62,14 @@ export const XIcon: React.FC<React.SVGAttributes<SVGElement>> = (p) => (
     <path d="m6 6 12 12" />
   </svg>
 );
+
+/** Clipboard / test / quiz – „Użyj do testu” */
+export const TestIcon: React.FC<React.SVGAttributes<SVGElement>> = (p) => (
+  <svg {...iconProps} {...p} viewBox="0 0 24 24">
+    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+    <rect width="8" height="4" x="8" y="2" rx="1" ry="1" />
+    <path d="M9 14h6" />
+    <path d="M9 18h6" />
+    <path d="M9 10h.01" />
+  </svg>
+);

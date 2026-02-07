@@ -17,7 +17,7 @@ THUMBNAIL_HEIGHT = int(THUMBNAIL_WIDTH * A4_RATIO)  # ~354px
 def generate_thumbnail_from_pdf(pdf_path: Path) -> bytes | None:
     """Generate thumbnail from first page of PDF."""
     try:
-        from pdf2image import convert_from_path
+        from pdf2image import convert_from_path  # type: ignore[attr-defined]
 
         # Convert first page to image
         images = convert_from_path(str(pdf_path), first_page=1, last_page=1, dpi=150)
@@ -39,7 +39,8 @@ def generate_thumbnail_from_image(image_path: Path) -> bytes | None:
                 rgb_img = Image.new("RGB", img.size, (255, 255, 255))
                 if img.mode == "P":
                     img = img.convert("RGBA")
-                rgb_img.paste(img, mask=img.split()[-1] if img.mode in ("RGBA", "LA") else None)
+                mask = img.split()[-1] if img.mode in ("RGBA", "LA") else None
+                rgb_img.paste(img, mask=mask)
                 img = rgb_img
             elif img.mode != "RGB":
                 img = img.convert("RGB")

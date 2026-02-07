@@ -6,7 +6,7 @@ import type { SelectOption } from "../../../design-system/patterns";
 import SegmentedToggle from "../../../design-system/patterns/SegmentedToggle";
 import type { LibraryFilterState, SortOption, SortDirection } from "../utils/libraryFilters";
 import { hasActiveFilters } from "../utils/libraryFilters";
-import { SearchIcon, DownloadIcon, TrashIcon, XIcon } from "./LibraryToolbarIcons";
+import { SearchIcon, DownloadIcon, TrashIcon, XIcon, TestIcon } from "./LibraryToolbarIcons";
 
 const SORT_COMBO_VALUES: { value: string; label: string; sortBy: SortOption; sortDirection: SortDirection }[] = [
   { value: "date_desc", label: "Data (najnowsze)", sortBy: "date", sortDirection: "desc" },
@@ -52,6 +52,7 @@ interface LibraryToolbarProps {
   selectedCount: number;
   onBulkDownload: () => void;
   onBulkDelete: () => void;
+  onBulkUseInTest: () => void;
   onClearSelection: () => void;
 }
 
@@ -65,6 +66,14 @@ const ToolbarRoot = styled(Flex)`
   padding: 0;
   gap: ${({ theme }) => theme.spacing.md};
   flex-wrap: nowrap;
+
+  ${({ theme }) => theme.media.down("md")} {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: ${({ theme }) => theme.spacing.sm};
+    min-height: auto;
+    padding: ${({ theme }) => theme.spacing.sm} 0;
+  }
 `;
 
 const SearchGroup = styled(Flex)`
@@ -72,6 +81,12 @@ const SearchGroup = styled(Flex)`
   min-width: 0;
   align-items: center;
   max-width: 400px;
+
+  ${({ theme }) => theme.media.down("md")} {
+    flex: 1 1 100%;
+    max-width: none;
+    order: 1;
+  }
 `;
 
 const SearchInput = styled(Input)<{ $focused?: boolean }>`
@@ -109,6 +124,11 @@ const SearchWrap = styled(Box)`
   flex: 1;
   min-width: 0;
   max-width: 320px;
+
+  ${({ theme }) => theme.media.down("md")} {
+    max-width: none;
+    width: 100%;
+  }
 `;
 
 const RightGroup = styled(Flex)`
@@ -116,21 +136,58 @@ const RightGroup = styled(Flex)`
   gap: ${({ theme }) => theme.spacing.md};
   flex-shrink: 0;
   margin-left: auto;
+
+  ${({ theme }) => theme.media.down("md")} {
+    flex: 1 1 100%;
+    margin-left: 0;
+    order: 2;
+    flex-wrap: wrap;
+    gap: ${({ theme }) => theme.spacing.sm};
+    align-items: flex-start;
+  }
 `;
 
 const FiltersGroup = styled(Flex)`
   align-items: center;
   gap: ${({ theme }) => theme.spacing.sm};
   flex-shrink: 0;
+
+  ${({ theme }) => theme.media.down("md")} {
+    flex: 1 1 auto;
+    flex-wrap: wrap;
+    min-width: 0;
+    gap: ${({ theme }) => theme.spacing.sm};
+  }
 `;
 
 const CompactSelectWrap = styled(Box)`
   min-width: 220px;
   width: auto;
+
+  ${({ theme }) => theme.media.down("md")} {
+    min-width: 0;
+    flex: 1 1 140px;
+    max-width: 100%;
+  }
 `;
 
 const ViewToggleWrap = styled(Box)`
   flex-shrink: 0;
+
+  ${({ theme }) => theme.media.down("md")} {
+    flex-shrink: 0;
+  }
+`;
+
+const BulkSelectionLabel = styled(Box)`
+  font-size: 14px;
+  color: ${({ theme }) => theme.colors.neutral.dGrey};
+  flex-shrink: 0;
+
+  ${({ theme }) => theme.media.down("md")} {
+    flex: 1 1 100%;
+    order: 1;
+  }
 `;
 
 const BulkBar = styled(Flex)`
@@ -139,6 +196,14 @@ const BulkBar = styled(Flex)`
   flex: 1;
   min-width: 0;
   justify-content: flex-end;
+
+  ${({ theme }) => theme.media.down("md")} {
+    flex-wrap: wrap;
+    flex: 1 1 100%;
+    justify-content: flex-start;
+    gap: ${({ theme }) => theme.spacing.sm};
+    order: 2;
+  }
 `;
 
 const BulkButton = styled(Button)`
@@ -146,6 +211,14 @@ const BulkButton = styled(Button)`
   align-items: center;
   gap: 6px;
   height: 40px;
+
+  ${({ theme }) => theme.media.down("md")} {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 13px;
+    padding-left: ${({ theme }) => theme.spacing.sm};
+    padding-right: ${({ theme }) => theme.spacing.sm};
+  }
 `;
 
 const LibraryToolbar: React.FC<LibraryToolbarProps> = ({
@@ -157,6 +230,7 @@ const LibraryToolbar: React.FC<LibraryToolbarProps> = ({
   selectedCount,
   onBulkDownload,
   onBulkDelete,
+  onBulkUseInTest,
   onClearSelection,
 }) => {
   const [searchFocused, setSearchFocused] = useState(false);
@@ -172,10 +246,13 @@ const LibraryToolbar: React.FC<LibraryToolbarProps> = ({
     <ToolbarRoot>
       {isSelectionMode ? (
         <>
-          <Box style={{ fontSize: 14, color: "var(--color-neutral-dGrey)" }}>
+          <BulkSelectionLabel>
             Zaznaczono: {selectedCount}
-          </Box>
+          </BulkSelectionLabel>
           <BulkBar>
+            <BulkButton $variant="primary" $size="md" onClick={onBulkUseInTest}>
+              <TestIcon /> Użyj do testu
+            </BulkButton>
             <BulkButton $variant="outline" $size="md" onClick={onBulkDownload}>
               <DownloadIcon /> Pobierz
             </BulkButton>

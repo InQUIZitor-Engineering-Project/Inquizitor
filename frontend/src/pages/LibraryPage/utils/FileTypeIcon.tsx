@@ -33,7 +33,7 @@ export interface FileTypeIconProps {
   size?: number;
 }
 
-const MaterialFileTypeIcon: React.FC<FileTypeIconProps> = ({ mimeType, size = 20 }) => {
+const MaterialFileTypeIcon: React.FC<FileTypeIconProps> = ({ mimeType }) => {
   if (!mimeType) return <DefaultFileSvg />;
   if (mimeType === "application/pdf") return <PdfSvg />;
   if (mimeType.startsWith("image/")) return <ImageSvg />;

@@ -7,11 +7,12 @@ import useDocumentTitle from "../../hooks/useDocumentTitle";
 import useLibrary from "./hooks/useLibrary";
 import MaterialGrid from "./components/MaterialGrid";
 import MaterialList from "./components/MaterialList";
+import RenameMaterialModal from "./components/RenameMaterialModal";
 import LibraryToolbar, { type ViewMode } from "./components/LibraryToolbar";
 import MaterialUploadZone, { type MaterialUploadZoneRef } from "../../components/MaterialUploadZone/MaterialUploadZone";
 import EmptyState from "../DashboardPage/components/EmptyState";
 import dashboardWelcome from "../../assets/dashboard_welcome.webp";
-import { getMaterialFileBlobUrl, downloadMaterial, type MaterialUploadResponse } from "../../services/materials";
+import { getMaterialFileBlobUrl, downloadMaterial, updateMaterial, type MaterialUploadResponse } from "../../services/materials";
 import {
   filterAndSortMaterials,
   DEFAULT_FILTER_STATE,
@@ -59,9 +60,10 @@ function getStoredViewMode(): ViewMode {
 const LibraryPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { materials, loading, uploading, error, handleUpload, handleDelete } = useLibrary();
+  const { materials, loading, uploading, error, handleUpload, handleDelete, refresh } = useLibrary();
   const [materialIdToDelete, setMaterialIdToDelete] = useState<number | null>(null);
   const [bulkDeleteIds, setBulkDeleteIds] = useState<number[] | null>(null);
+  const [materialToRename, setMaterialToRename] = useState<MaterialUploadResponse | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>(getStoredViewMode);
   const [selectedMaterialIds, setSelectedMaterialIds] = useState<Set<number>>(new Set());
@@ -104,6 +106,12 @@ const LibraryPage: React.FC = () => {
     [navigate]
   );
 
+  const handleBulkUseInTest = useCallback(() => {
+    const ids = Array.from(selectedMaterialIds);
+    if (ids.length === 0) return;
+    navigate(`/tests/new/ai?materialIds=${ids.join(",")}`);
+  }, [navigate, selectedMaterialIds]);
+
   const handleViewModeChange = useCallback((v: ViewMode) => {
     setViewMode(v);
     try {
@@ -112,6 +120,14 @@ const LibraryPage: React.FC = () => {
       /* ignore */
     }
   }, []);
+
+  const handleRenameSave = useCallback(
+    async (materialId: number, newFilename: string) => {
+      await updateMaterial(materialId, { filename: newFilename });
+      await refresh();
+    },
+    [refresh]
+  );
 
   useDocumentTitle("Biblioteka materiałów | Inquizitor");
 
@@ -276,6 +292,7 @@ const LibraryPage: React.FC = () => {
               selectedCount={selectedMaterialIds.size}
               onBulkDownload={handleBulkDownload}
               onBulkDelete={handleBulkDelete}
+              onBulkUseInTest={handleBulkUseInTest}
               onClearSelection={clearSelection}
             />
 
@@ -297,6 +314,7 @@ const LibraryPage: React.FC = () => {
                 onDownload={handleDownload}
                 onUseInTest={handleUseInTest}
                 onPreview={handlePreview}
+                onRename={(m) => setMaterialToRename(m)}
                 selectedIds={selectedMaterialIds}
                 onToggleSelect={toggleSelection}
               />
@@ -307,6 +325,7 @@ const LibraryPage: React.FC = () => {
                 onDownload={handleDownload}
                 onUseInTest={handleUseInTest}
                 onPreview={handlePreview}
+                onRename={(m) => setMaterialToRename(m)}
                 selectedIds={selectedMaterialIds}
                 onToggleSelect={toggleSelection}
               />
@@ -340,6 +359,12 @@ const LibraryPage: React.FC = () => {
           Czy na pewno chcesz usunąć {bulkDeleteIds.length} materiałów? Tej operacji nie można cofnąć.
         </Modal>
       )}
+
+      <RenameMaterialModal
+        material={materialToRename}
+        onClose={() => setMaterialToRename(null)}
+        onSave={handleRenameSave}
+      />
     </Flex>
   );
 };

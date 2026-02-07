@@ -1341,8 +1341,8 @@ class TestService:
             
             config = job.payload.copy()
             
-            # Jeśli config zawiera material_ids, sprawdź które materiały jeszcze istnieją
-            if "material_ids" in config and config["material_ids"]:
+            # Jeśli config ma material_ids, sprawdź które materiały jeszcze istnieją
+            if config.get("material_ids"):
                 existing_material_ids = []
                 for material_id in config["material_ids"]:
                     material = uow.materials.get(material_id)

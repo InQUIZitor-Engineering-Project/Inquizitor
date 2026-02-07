@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Box, Flex, Stack, Heading, Text, Button, Badge } from "../../../design-system/primitives";
+import { Box, Flex, Stack, Text, Badge } from "../../../design-system/primitives";
 import { Modal } from "../../../design-system/patterns";
 import { listMaterials, type MaterialUploadResponse } from "../../../services/materials";
 import styled from "styled-components";

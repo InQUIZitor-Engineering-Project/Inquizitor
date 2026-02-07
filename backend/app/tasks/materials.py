@@ -41,15 +41,15 @@ def process_material_task(
         material = material_service.process_material(
             owner_id=owner_id, material_id=material_id
         )
-        # MaterialOut has processing_status as string, but we need to check the actual status
-        # The DTO converts domain model's status.value to processing_status string
-        status_value = material.processing_status.lower() if material.processing_status else ""
+        # MaterialOut has processing_status as string; DTO maps domain status.
+        status_value = (
+            material.processing_status.lower()
+            if material.processing_status
+            else ""
+        )
         analysis_status_value = (material.analysis_status or "").lower()
-        
-        # If material has a thumbnail, we consider it partially successful
-        # (thumbnail was generated even if text extraction failed)
+        # Thumbnail = partially successful; markdown_twin = Gemini succeeded.
         has_thumbnail = bool(material.thumbnail_path)
-        # If Gemini analysis succeeded, material is usable even if text extraction failed
         has_markdown_twin = bool(material.markdown_twin)
         analysis_succeeded = analysis_status_value == JobStatus.DONE.value
         
@@ -78,8 +78,10 @@ def process_material_task(
                     error=None,  # No error, just a warning
                     result={
                         "material_id": material.id,
-                        "processing_status": "done",  # Updated status
-                        "processing_warning": error_msg if not analysis_succeeded else None,
+                        "processing_status": "done",
+                        "processing_warning": (
+                            error_msg if not analysis_succeeded else None
+                        ),
                         "filename": material.filename,
                         "has_thumbnail": has_thumbnail,
                         "has_markdown_twin": has_markdown_twin,

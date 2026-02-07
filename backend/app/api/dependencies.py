@@ -117,8 +117,8 @@ __all__ = [
     "get_material_service",
     "get_materials_storage",
     "get_notification_service",
-    "get_support_service",
     "get_storage",
+    "get_support_service",
     "get_test_service",
     "get_user_service",
 ]

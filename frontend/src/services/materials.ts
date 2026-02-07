@@ -74,6 +74,29 @@ export async function analyzeMaterials(
   return res.json();
 }
 
+export interface MaterialUpdatePayload {
+  filename?: string;
+}
+
+export async function updateMaterial(
+  materialId: number,
+  payload: MaterialUpdatePayload
+): Promise<MaterialUploadResponse> {
+  const res = await apiRequest(`/materials/${materialId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(
+      (err as { detail?: string }).detail || "Nie udało się zaktualizować materiału"
+    );
+  }
+  return res.json();
+}
+
 export async function deleteMaterial(materialId: number): Promise<void> {
   const res = await apiRequest(`/materials/${materialId}`, {
     method: "DELETE",

@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { Box } from "../../../design-system/primitives";
 import styled from "styled-components";
 import type { MaterialUploadResponse } from "../../../services/materials";
+import { TestIcon } from "./LibraryToolbarIcons";
 
 const DROPDOWN_MIN_WIDTH = 180;
 const DROPDOWN_ESTIMATE_HEIGHT = 130;
@@ -14,6 +15,7 @@ interface MaterialActionsMenuProps {
   onUseInTest: (materialId: number) => void;
   onDelete: (materialId: number) => void;
   onPreview?: (material: MaterialUploadResponse) => void;
+  onRename?: (material: MaterialUploadResponse) => void;
   /** Align dropdown to the right of the trigger (e.g. for card top-right) */
   $alignRight?: boolean;
 }
@@ -73,6 +75,18 @@ const MenuItemDanger = styled(MenuItem)`
   }
 `;
 
+const MenuItemWithIcon = styled(MenuItem)`
+  gap: 8px;
+`;
+
+const MenuItemIconWrap = styled(Box)`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: ${({ theme }) => theme.colors.brand.primary};
+`;
+
 const ThreeDotsIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
     <circle cx="12" cy="6" r="1.5" />
@@ -87,6 +101,7 @@ const MaterialActionsMenu: React.FC<MaterialActionsMenuProps> = ({
   onUseInTest,
   onDelete,
   onPreview,
+  onRename,
   $alignRight = false,
 }) => {
   const [open, setOpen] = useState(false);
@@ -171,11 +186,21 @@ const MaterialActionsMenu: React.FC<MaterialActionsMenuProps> = ({
     setOpen(false);
   };
 
+  const handleRename = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onRename?.(material);
+    setOpen(false);
+  };
+
   const dropdownContent =
     open &&
     createPortal(
       <div ref={dropdownRef} style={{ position: "fixed", zIndex: 1000, ...dropdownStyle }}>
         <MenuDropdown as="div">
+          <MenuItemWithIcon type="button" onClick={handleUseInTest}>
+            <MenuItemIconWrap><TestIcon /></MenuItemIconWrap>
+            Użyj do testu
+          </MenuItemWithIcon>
           {onPreview && (
             <MenuItem type="button" onClick={handlePreview}>
               Podgląd
@@ -184,9 +209,11 @@ const MaterialActionsMenu: React.FC<MaterialActionsMenuProps> = ({
           <MenuItem type="button" onClick={handleDownload}>
             Pobierz
           </MenuItem>
-          <MenuItem type="button" onClick={handleUseInTest}>
-            Użyj do testu
-          </MenuItem>
+          {onRename && (
+            <MenuItem type="button" onClick={handleRename}>
+              Zmień nazwę
+            </MenuItem>
+          )}
           <MenuItemDanger type="button" onClick={handleDelete}>
             Usuń
           </MenuItemDanger>

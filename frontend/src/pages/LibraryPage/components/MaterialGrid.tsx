@@ -10,6 +10,7 @@ interface MaterialGridProps {
   onDownload: (materialId: number, filename: string) => void;
   onUseInTest: (materialId: number) => void;
   onPreview?: (material: MaterialUploadResponse) => void;
+  onRename?: (material: MaterialUploadResponse) => void;
   selectedIds?: Set<number>;
   onToggleSelect?: (materialId: number) => void;
 }
@@ -42,6 +43,7 @@ const MaterialGrid: React.FC<MaterialGridProps> = ({
   onDownload,
   onUseInTest,
   onPreview,
+  onRename,
   selectedIds,
   onToggleSelect,
 }) => {
@@ -57,6 +59,7 @@ const MaterialGrid: React.FC<MaterialGridProps> = ({
           onDownload={onDownload}
           onUseInTest={onUseInTest}
           onPreview={onPreview}
+          onRename={onRename}
           selected={selectedIds?.has(material.id)}
           onToggleSelect={onToggleSelect}
         />

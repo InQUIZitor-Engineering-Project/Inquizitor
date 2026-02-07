@@ -11,6 +11,7 @@ interface MaterialCardProps {
   onDownload: (materialId: number, filename: string) => void;
   onUseInTest: (materialId: number) => void;
   onPreview?: (material: MaterialUploadResponse) => void;
+  onRename?: (material: MaterialUploadResponse) => void;
   selected?: boolean;
   onToggleSelect?: (materialId: number) => void;
 }
@@ -186,6 +187,7 @@ const MaterialCard: React.FC<MaterialCardProps> = ({
   onDownload,
   onUseInTest,
   onPreview,
+  onRename,
   selected = false,
   onToggleSelect,
 }) => {
@@ -322,6 +324,8 @@ const MaterialCard: React.FC<MaterialCardProps> = ({
               onDownload={onDownload}
               onUseInTest={onUseInTest}
               onDelete={onDelete}
+              onPreview={onPreview}
+              onRename={onRename}
               $alignRight
             />
           </Box>

@@ -31,6 +31,7 @@ class MaterialOut(BaseModel):
 class MaterialUpdate(BaseModel):
     extracted_text: str | None = None
     processing_status: Literal["pending", "done", "failed"] | None = None
+    filename: str | None = None
 
 
 class MaterialUploadEnqueueResponse(BaseModel):

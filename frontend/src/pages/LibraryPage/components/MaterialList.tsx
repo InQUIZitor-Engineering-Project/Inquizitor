@@ -12,6 +12,7 @@ interface MaterialListProps {
   onDownload: (materialId: number, filename: string) => void;
   onUseInTest: (materialId: number) => void;
   onPreview?: (material: MaterialUploadResponse) => void;
+  onRename?: (material: MaterialUploadResponse) => void;
   selectedIds?: Set<number>;
   onToggleSelect?: (materialId: number) => void;
 }
@@ -98,6 +99,7 @@ const MaterialList: React.FC<MaterialListProps> = ({
   onDownload,
   onUseInTest,
   onPreview,
+  onRename,
   selectedIds,
   onToggleSelect,
 }) => {
@@ -184,6 +186,7 @@ const MaterialList: React.FC<MaterialListProps> = ({
                     onUseInTest={onUseInTest}
                     onDelete={onDelete}
                     onPreview={onPreview}
+                    onRename={onRename}
                   />
                 </ActionsCell>
               </Td>

@@ -167,7 +167,12 @@ class SqlModelMaterialRepository(MaterialRepository):
         return mappers.material_to_domain(db_material)
 
     def get(self, material_id: int) -> Material | None:
-        db_material = self._session.get(db_models.Material, material_id)
+        stmt = (
+            select(db_models.Material)
+            .where(db_models.Material.id == material_id)
+            .options(joinedload(db_models.Material.file))
+        )
+        db_material = cast(Any, self._session).exec(stmt).first()
         return mappers.material_to_domain(db_material) if db_material else None
     
     def get_by_file_id(self, file_id: int) -> Material | None:
@@ -216,6 +221,12 @@ class SqlModelMaterialRepository(MaterialRepository):
         db_material = self._session.get(db_models.Material, material.id)
         if not db_material:
             raise ValueError(f"Material {material.id} not found")
+
+        if material.file is not None and material.file.id is not None:
+            db_file = self._session.get(db_models.File, material.file.id)
+            if db_file is not None:
+                db_file.filename = material.file.filename
+                self._session.add(db_file)
 
         db_material.mime_type = material.mime_type
         db_material.size_bytes = material.size_bytes
