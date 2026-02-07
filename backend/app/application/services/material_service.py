@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import logging
 import math
 from collections.abc import Callable, Sequence
 from datetime import datetime
@@ -19,6 +20,8 @@ from app.infrastructure.thumbnails.generator import (
     generate_thumbnail_from_image,
     generate_thumbnail_from_pdf,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class MaterialService:
@@ -152,9 +155,11 @@ class MaterialService:
                                 material_record = uow.materials.update(material_record)
                         except Exception as exc:
                             # Don't fail if thumbnail generation fails
-                            import logging
-                            logger = logging.getLogger(__name__)
-                            logger.warning(f"Failed to generate thumbnail for cached material {material_record.id}: {exc}")
+                            logger.warning(
+                                "Failed to generate thumbnail for cached material %s: %s",
+                                material_record.id,
+                                exc,
+                            )
 
         return dto.to_material_out(material_record)
 
@@ -170,6 +175,18 @@ class MaterialService:
             if not material or material.owner_id != owner_id:
                 raise ValueError("Materiał nie został znaleziony")
         return dto.to_material_out(material)
+
+    def get_material_file_for_download(
+        self, *, owner_id: int, material_id: int
+    ) -> tuple[str, str]:
+        """Return (filename, stored_path) for streaming download. Raises ValueError if not found."""
+        with self._uow_factory() as uow:
+            material = uow.materials.get(material_id)
+            if not material or material.owner_id != owner_id:
+                raise ValueError("Materiał nie został znaleziony")
+            if not material.file:
+                raise ValueError("Plik nie został znaleziony")
+            return (material.file.filename, str(material.file.stored_path))
 
     def update_material(
         self,
@@ -398,20 +415,20 @@ class MaterialService:
                                 content=thumbnail_bytes,
                             )
                             material.thumbnail_path = thumbnail_path
-                            import logging
-                            logger = logging.getLogger(__name__)
-                            logger.info(f"Generated thumbnail for material {material.id}: {thumbnail_path}")
-                            logger.info(f"Material {material.id} thumbnail_path set to: {material.thumbnail_path}")
                         else:
-                            import logging
-                            logger = logging.getLogger(__name__)
-                            logger.warning(f"Thumbnail generation returned None for material {material.id}, mime_type: {mime_type}")
+                            logger.warning(
+                                "Thumbnail generation returned None for material %s, mime_type: %s",
+                                material.id,
+                                mime_type,
+                            )
                     except Exception as exc:
                         # Don't fail material processing if thumbnail generation fails
-                        # Just log and continue
-                        import logging
-                        logger = logging.getLogger(__name__)
-                        logger.warning(f"Failed to generate thumbnail for material {material.id}: {exc}", exc_info=True)
+                        logger.warning(
+                            "Failed to generate thumbnail for material %s: %s",
+                            material.id,
+                            exc,
+                            exc_info=True,
+                        )
 
                 # 1. LLM Analysis (Multi-modal) - Gemini extracts text directly from files
                 # We skip local text extraction and rely entirely on Gemini
@@ -474,19 +491,8 @@ class MaterialService:
                     error_msg = "No analyzer available for this file type"
                     material.mark_failed(error_msg)
 
-            # Log thumbnail_path before update
-            import logging
-            logger = logging.getLogger(__name__)
-            logger.info(f"Before update - Material {material.id} thumbnail_path: {material.thumbnail_path}")
-            
             # Update material with all changes (including thumbnail_path)
             updated = uow.materials.update(material)
-            
-            # Log thumbnail_path after update to verify it was saved
-            if updated.thumbnail_path:
-                logger.info(f"After update - Material {updated.id} thumbnail_path: {updated.thumbnail_path}")
-            else:
-                logger.warning(f"After update - Material {updated.id} thumbnail_path is None (was: {material.thumbnail_path})")
 
         return dto.to_material_out(
             updated,

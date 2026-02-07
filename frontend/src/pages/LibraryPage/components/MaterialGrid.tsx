@@ -7,33 +7,53 @@ import type { MaterialUploadResponse } from "../../../services/materials";
 interface MaterialGridProps {
   materials: MaterialUploadResponse[];
   onDelete: (materialId: number) => void;
+  onDownload: (materialId: number, filename: string) => void;
+  onUseInTest: (materialId: number) => void;
+  onPreview?: (material: MaterialUploadResponse) => void;
 }
 
+/* Responsive grid: mobile 2 cols, tablet 3–4, desktop (≥1200) 5–6 cols; uniform card height per row */
 const Grid = styled(Box)`
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 24px;
-  align-items: start;
+  align-items: stretch;
 
-  ${({ theme }) => theme.media.down("md")} {
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 16px;
+  /* Mobile: 2 columns, moderate gap */
+  grid-template-columns: repeat(2, 1fr);
+  gap: ${({ theme }) => theme.spacing.md};
+
+  /* Tablet (≥768px): 3–4 columns */
+  ${({ theme }) => theme.media.up("md")} {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: ${({ theme }) => theme.spacing.md};
   }
 
-  @media (max-width: 640px) {
-    grid-template-columns: 1fr;
+  /* Desktop (≥1200px): 5–6 columns, slightly larger gap */
+  @media (min-width: 1200px) {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: ${({ theme }) => theme.spacing.lg};
   }
 `;
 
-const MaterialGrid: React.FC<MaterialGridProps> = ({ materials, onDelete }) => {
-  if (materials.length === 0) {
-    return null;
-  }
+const MaterialGrid: React.FC<MaterialGridProps> = ({
+  materials,
+  onDelete,
+  onDownload,
+  onUseInTest,
+  onPreview,
+}) => {
+  if (materials.length === 0) return null;
 
   return (
     <Grid>
       {materials.map((material) => (
-        <MaterialCard key={material.id} material={material} onDelete={onDelete} />
+        <MaterialCard
+          key={material.id}
+          material={material}
+          onDelete={onDelete}
+          onDownload={onDownload}
+          onUseInTest={onUseInTest}
+          onPreview={onPreview}
+        />
       ))}
     </Grid>
   );

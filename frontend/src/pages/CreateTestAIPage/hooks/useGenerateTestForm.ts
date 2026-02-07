@@ -99,6 +99,7 @@ const useGenerateTestForm = (): UseGenerateTestFormResult => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const fromTestId = searchParams.get("from");
+  const materialIdsParam = searchParams.get("materialIds");
   const { refreshSidebarTests } = useOutletContext<LayoutCtx>();
   const { startLoading, stopLoading } = useLoader();
   const {
@@ -186,6 +187,34 @@ const useGenerateTestForm = (): UseGenerateTestFormResult => {
   }, [fromTestId]);
 
   const [materials, setMaterials] = useState<MaterialUploadResponse[]>([]);
+
+  // Pre-fill from library: ?materialIds=1 or ?materialIds=1,2
+  useEffect(() => {
+    if (fromTestId || !materialIdsParam) return;
+    const ids = materialIdsParam
+      .split(",")
+      .map((s) => parseInt(s.trim(), 10))
+      .filter((n) => !Number.isNaN(n));
+    if (ids.length === 0) return;
+    const fetchMaterials = async () => {
+      try {
+        startLoading();
+        const materialData = await Promise.all(ids.map((id) => getMaterial(id)));
+        setMaterials(materialData);
+        setSourceType("material");
+        const combinedText = materialData
+          .map((m) => m.markdown_twin)
+          .filter(Boolean)
+          .join("\n\n");
+        setSourceContent(combinedText);
+      } catch (err) {
+        console.error("Failed to fetch materials from URL:", err);
+      } finally {
+        stopLoading();
+      }
+    };
+    fetchMaterials();
+  }, [fromTestId, materialIdsParam]);
   const [materialUploading, setMaterialUploading] = useState(false);
   const [materialError, setMaterialError] = useState<string | null>(null);
   const [materialAnalyzing, setMaterialAnalyzing] = useState(false);

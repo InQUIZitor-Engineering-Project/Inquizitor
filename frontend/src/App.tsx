@@ -17,6 +17,7 @@ import CreateTestSelectionPage from "./pages/CreateTestSelectionPage/CreateTestS
 import CreateTestAIPage from "./pages/CreateTestAIPage/CreateTestAIPage";
 import CreateManualTestPage from "./pages/CreateManualTestPage/CreateManualTestPage";
 import LibraryPage from "./pages/LibraryPage/LibraryPage";
+import MaterialPreviewPage from "./pages/LibraryPage/MaterialPreviewPage";
 import MainLayout from "./layouts/MainLayout";
 import PublicLayout from "./layouts/PublicLayout";
 import VerifyEmailPage from "./pages/VerifyEmailPage/VerifyEmailPage";
@@ -137,6 +138,14 @@ const App: React.FC = () => {
               element={
                 <ProtectedRoute>
                   <LibraryPage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/biblioteka/materials/:id/preview" 
+              element={
+                <ProtectedRoute>
+                  <MaterialPreviewPage />
                 </ProtectedRoute>
               } 
             />

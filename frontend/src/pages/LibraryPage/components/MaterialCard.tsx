@@ -1,16 +1,25 @@
 import React from "react";
-import { Card, Flex, Stack, Text, Badge, Box } from "../../../design-system/primitives";
-import { CloseButton } from "../../../design-system/primitives";
+import { Card, Flex, Stack, Text, Box, Badge } from "../../../design-system/primitives";
 import type { MaterialUploadResponse } from "../../../services/materials";
 import styled from "styled-components";
+import { formatFileSize, formatDate, getStatusLabel, getPageLabel, getStatusBadgeVariant } from "../utils/materialFormatters";
+import MaterialActionsMenu from "./MaterialActionsMenu";
 
 interface MaterialCardProps {
   material: MaterialUploadResponse;
   onDelete: (materialId: number) => void;
+  onDownload: (materialId: number, filename: string) => void;
+  onUseInTest: (materialId: number) => void;
+  onPreview?: (material: MaterialUploadResponse) => void;
 }
 
 const CardContent = styled(Card)`
   position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   cursor: default;
 
@@ -18,22 +27,39 @@ const CardContent = styled(Card)`
     transform: translateY(-2px);
     box-shadow: ${({ theme }) => theme.shadows["8px"]};
   }
+
 `;
 
 const FileIcon = styled(Box)`
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: ${({ theme }) => theme.colors.tint.t5};
-  border-radius: ${({ theme }) => theme.radii.md};
+  background: ${({ theme }) => theme.colors.tint.t4};
+  border-radius: ${({ theme }) => theme.radii.sm};
   flex-shrink: 0;
 `;
 
+/* A4 ratio: 130 * sqrt(2) ≈ 184px – compact thumbnail for grid density */
+const THUMB_WIDTH = 130;
+const THUMB_HEIGHT = 184;
+
+/* Wrapper: full width, fixed height, centers thumbnail/placeholder; clickable for preview */
+const ThumbnailWrapper = styled(Box)<{ $clickable?: boolean }>`
+  width: 100%;
+  height: ${THUMB_HEIGHT}px;
+  min-height: ${THUMB_HEIGHT}px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  cursor: ${(p) => (p.$clickable ? "pointer" : "default")};
+`;
+
 const ThumbnailContainer = styled(Box)`
-  width: 250px;
-  height: 354px; /* A4 ratio: 250 * sqrt(2) ≈ 354px */
+  width: ${THUMB_WIDTH}px;
+  height: ${THUMB_HEIGHT}px;
   border-radius: ${({ theme }) => theme.radii.md};
   overflow: hidden;
   background: ${({ theme }) => theme.colors.tint.t5};
@@ -42,6 +68,27 @@ const ThumbnailContainer = styled(Box)`
   justify-content: center;
   flex-shrink: 0;
   border: 1px solid ${({ theme }) => theme.colors.border};
+`;
+
+/* Placeholder when no thumbnail: same size as thumbnail, icon centered */
+const ThumbnailPlaceholder = styled(Box)`
+  width: ${THUMB_WIDTH}px;
+  height: ${THUMB_HEIGHT}px;
+  border-radius: ${({ theme }) => theme.radii.md};
+  background: ${({ theme }) => theme.colors.tint.t5};
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+`;
+
+/* Text block: fixed min-height so 1-line and 2-line titles give same card height (2 lines + status + meta) */
+const CardTextBlock = styled(Box)`
+  position: relative;
+  min-width: 0;
+  flex: 1;
+  min-height: 72px;
 `;
 
 const ThumbnailImage = styled.img`
@@ -116,36 +163,13 @@ const getFileIcon = (mimeType: string | null | undefined) => {
   return <FileIconSvg />;
 };
 
-const formatFileSize = (bytes: number | null | undefined): string => {
-  if (!bytes) return "—";
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
-};
-
-const formatDate = (dateString: string): string => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString("pl-PL", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-};
-
-const getStatusBadge = (status: string) => {
-  switch (status) {
-    case "done":
-      return <Badge $variant="success">Gotowy</Badge>;
-    case "pending":
-      return <Badge $variant="warning">Przetwarzanie</Badge>;
-    case "failed":
-      return <Badge $variant="danger">Błąd</Badge>;
-    default:
-      return <Badge $variant="neutral">{status}</Badge>;
-  }
-};
-
-const MaterialCard: React.FC<MaterialCardProps> = ({ material, onDelete }) => {
+const MaterialCard: React.FC<MaterialCardProps> = ({
+  material,
+  onDelete,
+  onDownload,
+  onUseInTest,
+  onPreview,
+}) => {
   const [thumbnailError, setThumbnailError] = React.useState(false);
   const [thumbnailBlobUrl, setThumbnailBlobUrl] = React.useState<string | null>(null);
   const hasThumbnail = material.thumbnail_path && !thumbnailError;
@@ -174,9 +198,7 @@ const MaterialCard: React.FC<MaterialCardProps> = ({ material, onDelete }) => {
         const blob = await response.blob();
         const blobUrl = URL.createObjectURL(blob);
         setThumbnailBlobUrl(blobUrl);
-        console.log(`Successfully loaded thumbnail for material ${material.id}`);
-      } catch (error) {
-        console.error(`Failed to load thumbnail for material ${material.id}:`, error);
+      } catch {
         setThumbnailError(true);
         setThumbnailBlobUrl(null);
       }
@@ -192,90 +214,90 @@ const MaterialCard: React.FC<MaterialCardProps> = ({ material, onDelete }) => {
     };
   }, [material.id, hasThumbnail]);
 
-  // Debug: log thumbnail_path to console
-  React.useEffect(() => {
-    if (material.thumbnail_path) {
-      console.log(`Material ${material.id} has thumbnail_path:`, material.thumbnail_path);
-    } else {
-      console.log(`Material ${material.id} has NO thumbnail_path`);
-    }
-  }, [material.id, material.thumbnail_path]);
+  const pageLabel = getPageLabel(material.page_count);
+  const metaLine = [formatFileSize(material.size_bytes), formatDate(material.created_at)]
+    .filter(Boolean)
+    .join(" · ");
+  const metaTooltip = `Rozmiar: ${formatFileSize(material.size_bytes)}\nDodano: ${formatDate(material.created_at)}`;
 
   return (
-    <CardContent $p="md" $shadow="md" $variant="elevated" style={{ position: "relative" }}>
-      <Stack $gap="md">
-        {/* Thumbnail - only show if available */}
-        {thumbnailBlobUrl && (
-          <ThumbnailContainer>
-            <ThumbnailImage
-              src={thumbnailBlobUrl}
-              alt={material.filename}
-              onError={(e) => {
-                console.error(`Failed to display thumbnail for material ${material.id}:`, e);
-                setThumbnailError(true);
+    <CardContent $p="sm" $shadow="md" $variant="elevated" style={{ position: "relative" }}>
+      <Stack $gap="xs" style={{ flex: 1, minHeight: 0 }}>
+        {/* Block 1: thumbnail or placeholder – click opens preview */}
+        <ThumbnailWrapper
+          $clickable={!!onPreview}
+          onClick={(e) => {
+            e.stopPropagation();
+            onPreview?.(material);
+          }}
+          role={onPreview ? "button" : undefined}
+          aria-label={onPreview ? "Podgląd pliku" : undefined}
+        >
+          {thumbnailBlobUrl ? (
+            <ThumbnailContainer>
+              <ThumbnailImage
+                src={thumbnailBlobUrl}
+                alt={material.filename}
+                onError={() => setThumbnailError(true)}
+              />
+            </ThumbnailContainer>
+          ) : (
+            <ThumbnailPlaceholder>
+              <FileIcon>{getFileIcon(material.mime_type)}</FileIcon>
+            </ThumbnailPlaceholder>
+          )}
+        </ThumbnailWrapper>
+
+        {/* Block 2: filename + status + meta – fixed min-height so all cards align */}
+        <CardTextBlock>
+          <Flex $align="center" $gap="xs" style={{ flex: 1, minWidth: 0, paddingRight: "28px" }}>
+            <Text
+              $variant="body2"
+              $weight="medium"
+              style={{
+                overflow: "hidden",
+                display: "-webkit-box",
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: "vertical",
+                wordBreak: "break-word",
+                flex: 1,
+                minWidth: 0,
               }}
-            />
-          </ThumbnailContainer>
-        )}
-
-        <Flex $align="flex-start" $justify="space-between" $gap="sm" style={{ position: "relative" }}>
-          <Flex $align="center" $gap="sm" style={{ flex: 1, minWidth: 0, paddingRight: "32px" }}>
-            {/* Show icon only if no thumbnail */}
-            {!hasThumbnail && <FileIcon>{getFileIcon(material.mime_type)}</FileIcon>}
-            <Box style={{ flex: 1, minWidth: 0 }}>
-              <Text
-                $variant="body2"
-                $weight="medium"
-                style={{
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}
-                title={material.filename}
-              >
-                {material.filename}
-              </Text>
-            </Box>
+              title={material.filename}
+            >
+              {material.filename}
+            </Text>
           </Flex>
-          <CloseButton
-            onClick={(e) => {
-              e.stopPropagation();
-              e.preventDefault();
-              onDelete(material.id);
-            }}
-            aria-label="Usuń materiał"
-            $top={8}
-            $right={8}
-          />
-        </Flex>
-
-        <Flex $align="center" $justify="space-between" $gap="xs" $wrap="wrap">
-          {getStatusBadge(material.processing_status)}
-          {material.page_count && (
-            <Text $variant="body3" $tone="muted">
-              {material.page_count} {material.page_count === 1 ? "strona" : "stron"}
+          <Flex $align="center" $gap="xs" style={{ marginTop: 2 }} $wrap="wrap">
+            <Badge $variant={getStatusBadgeVariant(material.processing_status)}>
+              {getStatusLabel(material.processing_status)}
+            </Badge>
+            {pageLabel ? (
+              <Text $variant="body3" $tone="muted">
+                · {pageLabel}
+              </Text>
+            ) : null}
+          </Flex>
+          {metaLine && (
+            <Text
+              $variant="body3"
+              $tone="muted"
+              style={{ marginTop: 2, fontSize: "0.75rem" }}
+              title={metaTooltip}
+            >
+              {metaLine}
             </Text>
           )}
-        </Flex>
-
-        <Stack $gap="xs">
-          <Flex $align="center" $justify="space-between" $gap="sm">
-            <Text $variant="body3" $tone="muted">
-              Rozmiar:
-            </Text>
-            <Text $variant="body3" $weight="medium">
-              {formatFileSize(material.size_bytes)}
-            </Text>
-          </Flex>
-          <Flex $align="center" $justify="space-between" $gap="sm">
-            <Text $variant="body3" $tone="muted">
-              Dodano:
-            </Text>
-            <Text $variant="body3" $weight="medium">
-              {formatDate(material.created_at)}
-            </Text>
-          </Flex>
-        </Stack>
+          <Box style={{ position: "absolute", top: 0, right: 0 }}>
+            <MaterialActionsMenu
+              material={material}
+              onDownload={onDownload}
+              onUseInTest={onUseInTest}
+              onDelete={onDelete}
+              $alignRight
+            />
+          </Box>
+        </CardTextBlock>
       </Stack>
     </CardContent>
   );

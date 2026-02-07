@@ -121,3 +121,35 @@ export async function listMaterials(): Promise<MaterialUploadResponse[]> {
   }
   return res.json();
 }
+
+/** Get blob URL of the file for preview (caller must revoke when done). */
+export async function getMaterialFileBlobUrl(materialId: number): Promise<string> {
+  const token = localStorage.getItem("access_token");
+  const apiBase = import.meta.env.VITE_API_URL || "";
+  const url = `${apiBase}/materials/${materialId}/download`;
+  const response = await fetch(url, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error((err as { detail?: string }).detail || "Nie udało się załadować pliku");
+  }
+  const blob = await response.blob();
+  return URL.createObjectURL(blob);
+}
+
+/** Trigger download of the original file. Uses auth token. */
+export async function downloadMaterial(
+  materialId: number,
+  filename: string
+): Promise<void> {
+  const blobUrl = await getMaterialFileBlobUrl(materialId);
+  try {
+    const a = document.createElement("a");
+    a.href = blobUrl;
+    a.download = filename || "material";
+    a.click();
+  } finally {
+    URL.revokeObjectURL(blobUrl);
+  }
+}

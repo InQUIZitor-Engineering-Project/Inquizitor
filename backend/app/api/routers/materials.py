@@ -1,4 +1,3 @@
-import logging
 from pathlib import Path
 from typing import Annotated
 
@@ -325,10 +324,7 @@ def get_material_thumbnail(
     """Get thumbnail image for a material."""
     from app.infrastructure.storage import R2FileStorage
     from fastapi.responses import FileResponse, RedirectResponse
-    
-    logger = logging.getLogger(__name__)
-    logger.info(f"Getting thumbnail for material {material_id}, user {current_user.id}")
-    
+
     if current_user.id is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="User ID is missing"
@@ -337,9 +333,7 @@ def get_material_thumbnail(
         material = material_service.get_material(
             owner_id=current_user.id, material_id=material_id
         )
-        logger.info(f"Material {material_id} found, thumbnail_path: {material.thumbnail_path}")
         if not material.thumbnail_path:
-            logger.warning(f"Material {material_id} has no thumbnail_path")
             raise HTTPException(status_code=404, detail="Thumbnail not available")
         
         # For R2, proxy through API to avoid CORS
@@ -367,47 +361,75 @@ def get_material_thumbnail(
             thumb_path_str = material.thumbnail_path
             base_dir_path = Path(storage._base_dir)
             base_dir_str = str(base_dir_path)
-            
-            logger.info(f"Resolving thumbnail path: {thumb_path_str}, base_dir: {base_dir_str}")
-            
+
             # Check if thumbnail_path already starts with base_dir
             # If yes, use it directly (it's already a full path from save())
             # If no, it might be just a filename, so join with base_dir
             if thumb_path_str.startswith(base_dir_str):
-                # Already contains base_dir, use directly
                 thumb_path = Path(thumb_path_str)
-                logger.info(f"Using direct path (contains base_dir): {thumb_path}")
             else:
-                # Might be just filename or relative path, use _resolve
                 if hasattr(storage, "_resolve"):
                     thumb_path = storage._resolve(thumb_path_str)
-                    logger.info(f"Using _resolve: {thumb_path}")
                 else:
                     thumb_path = base_dir_path / thumb_path_str
-                    logger.info(f"Using base_dir join: {thumb_path}")
-            
-            # Resolve to absolute path for FileResponse
+
             thumb_path_abs = thumb_path.resolve()
-            logger.info(f"Resolved absolute path: {thumb_path_abs}")
-            
             if thumb_path_abs.exists():
-                logger.info(f"Thumbnail file found at {thumb_path_abs}, returning FileResponse")
                 return FileResponse(
                     path=thumb_path_abs,
                     media_type="image/jpeg",
                     headers={"Cache-Control": "public, max-age=31536000"},
                 )
-            else:
-                # Log for debugging
-                logger.warning(
-                    f"Thumbnail file not found at {thumb_path_abs} "
-                    f"(base_dir: {base_dir_path}, thumbnail_path: {material.thumbnail_path}, "
-                    f"original path: {thumb_path})"
-                )
         
         raise HTTPException(status_code=404, detail="Thumbnail file not found")
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.get("/{material_id}/download")
+def download_material(
+    material_id: int,
+    current_user: Annotated[User, Depends(get_current_user)],
+    material_service: Annotated[MaterialService, Depends(get_material_service)],
+    storage: Annotated[FileStorage, Depends(get_materials_storage)],
+) -> Response:
+    """Download the original file for a material."""
+    from urllib.parse import quote
+
+    if current_user.id is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="User ID is missing"
+        )
+    try:
+        filename, stored_path = material_service.get_material_file_for_download(
+            owner_id=current_user.id, material_id=material_id
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    try:
+        with storage.download_to_temp(stored_path=stored_path) as local_path:
+            content = local_path.read_bytes()
+    except Exception:
+        raise HTTPException(
+            status_code=404, detail="File not found in storage"
+        ) from None
+
+    media_type = "application/octet-stream"
+    if filename:
+        import mimetypes
+        guessed, _ = mimetypes.guess_type(filename)
+        if guessed:
+            media_type = guessed
+
+    safe_filename = quote(filename, safe="")
+    return Response(
+        content=content,
+        media_type=media_type,
+        headers={
+            "Content-Disposition": f"attachment; filename*=UTF-8''{safe_filename}",
+        },
+    )
 
 
 @router.get("/{material_id}", response_model=MaterialOut)
