@@ -1,7 +1,9 @@
-import React from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { Box, Flex, Stack, Text, Textarea } from "../../design-system/primitives";
 import useTestDetail from "./hooks/useTestDetail";
 import TitleBar from "./components/TitleBar";
+import GroupTabs from "./components/GroupTabs";
+import type { GroupTabItem } from "./components/GroupTabs";
 import QuestionsSection from "./components/QuestionsSection";
 import PdfConfigSection from "./components/PdfConfigSection";
 import BulkActionBar from "./components/BulkActionBar";
@@ -10,15 +12,114 @@ import { SelectableItem } from "../../design-system/patterns/Modal";
 import { PageContainer, PageSection } from "../../design-system/patterns";
 import DownloadActions from "./components/DownloadActions"
 
+const DEFAULT_GROUPS: GroupTabItem[] = [
+  { id: "default", label: "Grupa A" },
+];
+
 const TestDetailPage: React.FC = () => {
   const { state, derived, actions } = useTestDetail();
+  const [groups, setGroups] = useState<GroupTabItem[]>(DEFAULT_GROUPS);
+  const [activeGroupId, setActiveGroupId] = useState<string>("default");
+  /** Które pytania należą do której grupy (dla „pusta grupa” = brak pytań w nowej grupie) */
+  const [groupQuestionIds, setGroupQuestionIds] = useState<Record<string, number[]>>({});
+  const prevQuestionIdsRef = useRef<number[]>([]);
+  const openAddAfterEmptyGroupRef = useRef(false);
+
+  useEffect(() => {
+    if (!state.data?.questions) return;
+    const ids = state.data.questions.map((q) => q.id);
+    prevQuestionIdsRef.current = ids;
+    setGroupQuestionIds((prev) => ({
+      ...prev,
+      default: ids,
+    }));
+  }, [state.data?.test_id]);
+
+  useEffect(() => {
+    if (!state.data?.questions) return;
+    const ids = state.data.questions.map((q) => q.id);
+    const prev = prevQuestionIdsRef.current;
+    const newIds = ids.filter((id) => !prev.includes(id));
+    prevQuestionIdsRef.current = ids;
+    if (newIds.length > 0) {
+      setGroupQuestionIds((g) => ({
+        ...g,
+        [activeGroupId]: [...(g[activeGroupId] ?? []), ...newIds],
+      }));
+    }
+  }, [state.data?.questions, activeGroupId]);
+
+  const questionsForActiveGroup = useMemo(() => {
+    if (!state.data?.questions) return [];
+    const ids = groupQuestionIds[activeGroupId];
+    if (!ids || ids.length === 0) return [];
+    return state.data.questions.filter((q) => ids.includes(q.id));
+  }, [state.data?.questions, groupQuestionIds, activeGroupId]);
+
+  useEffect(() => {
+    if (!openAddAfterEmptyGroupRef.current || questionsForActiveGroup.length > 0) return;
+    openAddAfterEmptyGroupRef.current = false;
+    actions.startAdd();
+  }, [activeGroupId, questionsForActiveGroup.length, actions]);
+
+  const handleAddGroup = () => {
+    const nextLetter = String.fromCharCode(65 + groups.length);
+    const newId = `group-${groups.length}`;
+    openAddAfterEmptyGroupRef.current = true;
+    setGroups((prev) => [...prev, { id: newId, label: `Grupa ${nextLetter}` }]);
+    setGroupQuestionIds((prev) => ({ ...prev, [newId]: [] }));
+    setActiveGroupId(newId);
+  };
+
+  const handleRenameGroup = (id: string) => {
+    const group = groups.find((g) => g.id === id);
+    if (!group) return;
+    const newLabel = window.prompt("Nazwa grupy:", group.label);
+    if (newLabel == null || newLabel.trim() === "") return;
+    setGroups((prev) =>
+      prev.map((g) => (g.id === id ? { ...g, label: newLabel.trim() } : g))
+    );
+  };
+
+  const handleRemoveGroup = (id: string) => {
+    if (groups.length <= 1) return;
+    setGroups((prev) => prev.filter((g) => g.id !== id));
+    setGroupQuestionIds((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+    setActiveGroupId((current) => {
+      const idx = groups.findIndex((g) => g.id === id);
+      const next = groups.filter((g) => g.id !== id);
+      if (current === id) return next[Math.min(idx, next.length - 1)]?.id ?? next[0]?.id ?? "default";
+      return current;
+    });
+  };
+
+  const handleDuplicateCurrentGroup = () => {
+    const current = groups.find((g) => g.id === activeGroupId);
+    if (!current) return;
+    const newId = `group-${groups.length}`;
+    setGroups((prev) => [...prev, { id: newId, label: `${current.label} (kopia)` }]);
+    setGroupQuestionIds((prev) => ({
+      ...prev,
+      [newId]: [...(prev[activeGroupId] ?? [])],
+    }));
+    setActiveGroupId(newId);
+  };
+
+  const handleGenerateAIVariant = () => {
+    // Placeholder: można później podpiąć generowanie wariantu AI
+    window.alert("Generowanie wariantu AI – funkcja wkrótce.");
+  };
 
   if (state.loading) return <div>Ładowanie…</div>;
   if (state.error) return <div>Błąd: {state.error}</div>;
   if (!state.data) return null;
 
   const { data } = state;
-  
+
   return (
     <Flex $direction="column" $height="100%" $bg="#f5f6f8" style={{ position: "relative" }}>
       <Box $flex={1} $width="100%">
@@ -36,18 +137,29 @@ const TestDetailPage: React.FC = () => {
                 onEditConfig={actions.handleEditConfig}
               />
 
+              <GroupTabs
+                groups={groups}
+                activeGroupId={activeGroupId}
+                onGroupChange={setActiveGroupId}
+                onAddGroup={handleAddGroup}
+                onDuplicateCurrentGroup={handleDuplicateCurrentGroup}
+                onGenerateAIVariant={handleGenerateAIVariant}
+                onRenameGroup={handleRenameGroup}
+                onRemoveGroup={handleRemoveGroup}
+              />
+
               <Stack $gap="lg">
                 <QuestionsSection
-                  questions={data.questions}
+                  questions={questionsForActiveGroup}
                   editingId={state.editingId}
                   isAdding={state.isAdding}
                   draft={state.draft}
                   selectedIds={state.selectedIds}
                   summary={{
-                    total: data.questions.length,
-                    easy: data.questions.filter((q) => q.difficulty === 1).length,
-                    medium: data.questions.filter((q) => q.difficulty === 2).length,
-                    hard: data.questions.filter((q) => q.difficulty === 3).length,
+                    total: questionsForActiveGroup.length,
+                    easy: questionsForActiveGroup.filter((q) => q.difficulty === 1).length,
+                    medium: questionsForActiveGroup.filter((q) => q.difficulty === 2).length,
+                    hard: questionsForActiveGroup.filter((q) => q.difficulty === 3).length,
                   }}
                   actions={{
                     startEdit: actions.startEdit,
