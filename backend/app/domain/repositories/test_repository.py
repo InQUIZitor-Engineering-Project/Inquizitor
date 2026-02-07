@@ -47,7 +47,9 @@ class TestRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def create_group(self, test_id: int, label: str, position: int = 0) -> QuestionGroup:
+    def create_group(
+        self, test_id: int, label: str, position: int = 0
+    ) -> QuestionGroup:
         raise NotImplementedError
 
     @abstractmethod
@@ -58,12 +60,14 @@ class TestRepository(ABC):
 
     @abstractmethod
     def delete_group(self, group_id: int) -> None:
-        """Delete all questions in the group, then the group. Does not move questions."""
+        """Delete all questions in the group, then the group. No move."""
         raise NotImplementedError
 
     @abstractmethod
-    def duplicate_group(self, test_id: int, group_id: int) -> tuple[QuestionGroup, list[Question]]:
-        """Create a new group with same label + ' (kopia)', copy all questions into it. Returns (new_group, new_questions)."""
+    def duplicate_group(
+        self, test_id: int, group_id: int
+    ) -> tuple[QuestionGroup, list[Question]]:
+        """New group with same label + ' (kopia)', copy all questions. Returns it."""
         raise NotImplementedError
 
     @abstractmethod

@@ -19,7 +19,6 @@ from app.api.schemas.tests import (
     BulkDeleteQuestionsRequest,
     BulkRegenerateQuestionsRequest,
     BulkUpdateQuestionsRequest,
-    GroupCreate,
     GroupOut,
     GroupUpdate,
     PdfExportConfig,
@@ -477,6 +476,8 @@ class TestService:
                 title=title,
             )
             persisted_test = uow.tests.create(test)
+            if persisted_test.id is None:
+                raise RuntimeError("Failed to create test")
             uow.tests.create_group(persisted_test.id, "Grupa A", 0)
             return dto.to_test_out(persisted_test)
 
@@ -534,7 +535,9 @@ class TestService:
             if not test or test.owner_id != owner_id:
                 raise ValueError("Test nie został znaleziony")
             new_group, new_questions = uow.tests.duplicate_group(test_id, group_id)
-            return dto.to_group_out(new_group), [dto.to_question_out(q) for q in new_questions]
+            return dto.to_group_out(new_group), [
+                dto.to_question_out(q) for q in new_questions
+            ]
 
     def create_shuffled_variant_group(
         self, *, owner_id: int, test_id: int, group_id: int
@@ -618,7 +621,7 @@ class TestService:
         group_id: int,
         instruction: str | None = None,
     ) -> GroupOut:
-        """Create a new group with AI-generated variants of the source group's questions."""
+        """Create a new group with AI-generated variants of the source group."""
         with self._uow_factory() as uow:
             test = uow.tests.get_with_questions(test_id)
             if not test or test.owner_id != owner_id:
@@ -626,7 +629,9 @@ class TestService:
             group = uow.tests.get_group(group_id)
             if not group or group.test_id != test_id:
                 raise ValueError("Grupa nie należy do tego testu")
-            source_questions = [q for q in test.questions if getattr(q, "group_id", None) == group_id]
+            source_questions = [
+                q for q in test.questions if getattr(q, "group_id", None) == group_id
+            ]
             if not source_questions:
                 raise ValueError("Grupa nie zawiera pytań do wygenerowania wariantu")
 
@@ -883,7 +888,6 @@ class TestService:
         groups = getattr(detail, "groups", None) or []
 
         if groups:
-            # Export by groups: one variant per group, in group position order; each starts on new page in template
             sorted_groups = sorted(groups, key=lambda g: (g.position, g.id))
             group_ids = {g.id for g in sorted_groups}
             questions_by_group: dict[int, list[dict[str, Any]]] = {
@@ -1071,6 +1075,7 @@ class TestService:
                 text=question_row.text,
                 is_closed=question_row.is_closed,
                 difficulty=question_row.difficulty,
+                group_id=getattr(question_row, "group_id", 0),
                 choices=question_row.choices,
                 correct_choices=question_row.correct_choices,
             )

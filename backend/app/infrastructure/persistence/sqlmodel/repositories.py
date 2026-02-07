@@ -161,7 +161,9 @@ class SqlModelTestRepository(TestRepository):
         row = self._session.get(db_models.QuestionGroup, group_id)
         return mappers.question_group_to_domain(row) if row else None
 
-    def create_group(self, test_id: int, label: str, position: int = 0) -> QuestionGroup:
+    def create_group(
+        self, test_id: int, label: str, position: int = 0
+    ) -> QuestionGroup:
         count_stmt = select(func.count()).select_from(db_models.QuestionGroup).where(
             db_models.QuestionGroup.test_id == test_id
         )
@@ -196,7 +198,7 @@ class SqlModelTestRepository(TestRepository):
 
     def delete_group(self, group_id: int) -> None:
         stmt = delete(db_models.Question).where(db_models.Question.group_id == group_id)
-        self._session.exec(stmt)
+        self._session.execute(stmt)
         group_row = self._session.get(db_models.QuestionGroup, group_id)
         if group_row:
             self._session.delete(group_row)

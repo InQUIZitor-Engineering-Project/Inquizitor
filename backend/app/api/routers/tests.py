@@ -7,10 +7,10 @@ from app.api.schemas.jobs import JobEnqueueResponse
 from app.api.schemas.tests import (
     AssignQuestionsToGroupRequest,
     BulkConvertQuestionsRequest,
-    GenerateGroupVariantRequest,
     BulkDeleteQuestionsRequest,
     BulkRegenerateQuestionsRequest,
     BulkUpdateQuestionsRequest,
+    GenerateGroupVariantRequest,
     GroupCreate,
     GroupOut,
     GroupUpdate,
@@ -34,8 +34,8 @@ from app.tasks.tests import (
     bulk_regenerate_questions_task,
     export_custom_test_pdf_task,
     export_test_pdf_task,
-    generate_test_task,
     generate_group_ai_variant_task,
+    generate_test_task,
 )
 
 router = APIRouter()
@@ -426,7 +426,9 @@ def update_test_title(
         raise HTTPException(status_code=500, detail="Failed to update title") from exc
 
 
-@router.post("/{test_id}/groups", response_model=GroupOut, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{test_id}/groups", response_model=GroupOut, status_code=status.HTTP_201_CREATED
+)
 def create_group(
     test_id: int,
     payload: GroupCreate,

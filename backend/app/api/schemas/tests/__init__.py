@@ -263,13 +263,13 @@ class PdfExportConfig(BaseModel):
 
 __all__ = [
     "AssignQuestionsToGroupRequest",
-    "GenerateGroupVariantRequest",
     "BulkConvertQuestionsRequest",
     "BulkDeleteQuestionsRequest",
     "BulkRegenerateQuestionsRequest",
     "BulkUpdateQuestionsRequest",
     "ClosedBreakdown",
     "FileUploadResponse",
+    "GenerateGroupVariantRequest",
     "GenerateParams",
     "GroupCreate",
     "GroupOut",

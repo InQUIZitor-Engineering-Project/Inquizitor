@@ -73,9 +73,20 @@ class Test(SQLModel, table=True):
 class QuestionGroup(SQLModel, table=True):
     __tablename__ = "question_group"
     id: int | None = Field(default=None, primary_key=True)
-    test_id: int = Field(foreign_key="test.id", index=True)
+    test_id: int = Field(
+        sa_column=Column(
+            "test_id",
+            Integer,
+            ForeignKey("test.id", ondelete="CASCADE"),
+            nullable=False,
+            index=True,
+        )
+    )
     label: str = Field(max_length=200)
-    position: int = Field(default=0)
+    position: int = Field(
+        default=0,
+        sa_column=Column("position", Integer, nullable=False, server_default=text("0")),
+    )
 
     test: Test | None = Relationship(back_populates="question_groups")
     questions: list["Question"] = Relationship(back_populates="group")
@@ -101,7 +112,10 @@ class Question(SQLModel, table=True):
             nullable=False
         )
     )
-    position: int = Field(default=0)
+    position: int = Field(
+        default=0,
+        sa_column=Column("position", Integer, nullable=False, server_default=text("0")),
+    )
     text: str
     is_closed: bool = Field(default=True)
     difficulty: int = Field(default=1)  # 1-easy, 2-medium, 3-hard
