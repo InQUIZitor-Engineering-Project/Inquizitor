@@ -102,11 +102,37 @@ class TestGenerateResponse(BaseModel):
     num_questions: int
 
 
+class GroupOut(BaseModel):
+    id: int
+    label: str
+    position: int = 0
+
+
+class GroupCreate(BaseModel):
+    label: str = Field(..., min_length=1, max_length=200)
+    position: int = 0
+
+
+class GroupUpdate(BaseModel):
+    label: str | None = Field(None, min_length=1, max_length=200)
+    position: int | None = None
+
+
+class AssignQuestionsToGroupRequest(BaseModel):
+    question_ids: list[int]
+    group_id: int
+
+
+class GenerateGroupVariantRequest(BaseModel):
+    instruction: str | None = None
+
+
 class QuestionOut(BaseModel):
     id: int
     text: str
     is_closed: bool
     difficulty: int
+    group_id: int
     choices: list[str] | None = None
     correct_choices: list[str] | None = None
     citations: list[str] | None = None
@@ -132,6 +158,7 @@ class QuestionCreate(BaseModel):
     text: str
     is_closed: bool = True
     difficulty: int = 1
+    group_id: int
     choices: list[str] | None = None
     correct_choices: list[str] | None = None
     citations: list[str] | None = None
@@ -184,6 +211,7 @@ class QuestionUpdate(BaseModel):
 class TestDetailOut(BaseModel):
     test_id: int
     title: str
+    groups: list[GroupOut]
     questions: list[QuestionOut]
 
 class TestTitleUpdate(BaseModel):
@@ -234,6 +262,8 @@ class PdfExportConfig(BaseModel):
         return self
 
 __all__ = [
+    "AssignQuestionsToGroupRequest",
+    "GenerateGroupVariantRequest",
     "BulkConvertQuestionsRequest",
     "BulkDeleteQuestionsRequest",
     "BulkRegenerateQuestionsRequest",
@@ -241,6 +271,9 @@ __all__ = [
     "ClosedBreakdown",
     "FileUploadResponse",
     "GenerateParams",
+    "GroupCreate",
+    "GroupOut",
+    "GroupUpdate",
     "PdfExportConfig",
     "QuestionCreate",
     "QuestionOut",

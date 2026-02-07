@@ -1,5 +1,6 @@
-import React, { useState, useMemo, useEffect, useRef } from "react";
-import { Box, Flex, Stack, Text, Textarea } from "../../design-system/primitives";
+import React, { useState, useMemo, useEffect } from "react";
+import styled from "styled-components";
+import { Box, Button, Flex, Input, Stack, Text, Textarea } from "../../design-system/primitives";
 import useTestDetail from "./hooks/useTestDetail";
 import TitleBar from "./components/TitleBar";
 import GroupTabs from "./components/GroupTabs";
@@ -12,106 +13,151 @@ import { SelectableItem } from "../../design-system/patterns/Modal";
 import { PageContainer, PageSection } from "../../design-system/patterns";
 import DownloadActions from "./components/DownloadActions"
 
-const DEFAULT_GROUPS: GroupTabItem[] = [
-  { id: "default", label: "Grupa A" },
-];
+const GENERATING_VARIANT_TAB_ID = "generating-variant";
+
+const VariantLoadingSpinner = styled(Box).attrs({ as: "span" })`
+  display: inline-flex;
+  width: 48px;
+  height: 48px;
+  animation: variant-spin 0.8s linear infinite;
+  @keyframes variant-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+`;
 
 const TestDetailPage: React.FC = () => {
   const { state, derived, actions } = useTestDetail();
-  const [groups, setGroups] = useState<GroupTabItem[]>(DEFAULT_GROUPS);
-  const [activeGroupId, setActiveGroupId] = useState<string>("default");
-  /** Które pytania należą do której grupy (dla „pusta grupa” = brak pytań w nowej grupie) */
-  const [groupQuestionIds, setGroupQuestionIds] = useState<Record<string, number[]>>({});
-  const prevQuestionIdsRef = useRef<number[]>([]);
-  const openAddAfterEmptyGroupRef = useRef(false);
+  const [activeGroupId, setActiveGroupId] = useState<string>("");
+  const [generatingVariantLabel, setGeneratingVariantLabel] = useState<string | null>(null);
+  const [renameGroupId, setRenameGroupId] = useState<string | null>(null);
+  const [renameGroupLabel, setRenameGroupLabel] = useState("");
+  const [groupIdToDelete, setGroupIdToDelete] = useState<string | null>(null);
+
+  const groupsFromApi: GroupTabItem[] = useMemo(() => {
+    const gs = state.data?.groups ?? [];
+    return gs.map((g) => ({ id: String(g.id), label: g.label }));
+  }, [state.data?.groups]);
+
+  const groups: GroupTabItem[] = useMemo(() => {
+    if (!generatingVariantLabel) return groupsFromApi;
+    return [
+      ...groupsFromApi,
+      { id: GENERATING_VARIANT_TAB_ID, label: generatingVariantLabel, loading: true },
+    ];
+  }, [groupsFromApi, generatingVariantLabel]);
 
   useEffect(() => {
-    if (!state.data?.questions) return;
-    const ids = state.data.questions.map((q) => q.id);
-    prevQuestionIdsRef.current = ids;
-    setGroupQuestionIds((prev) => ({
-      ...prev,
-      default: ids,
-    }));
-  }, [state.data?.test_id]);
-
-  useEffect(() => {
-    if (!state.data?.questions) return;
-    const ids = state.data.questions.map((q) => q.id);
-    const prev = prevQuestionIdsRef.current;
-    const newIds = ids.filter((id) => !prev.includes(id));
-    prevQuestionIdsRef.current = ids;
-    if (newIds.length > 0) {
-      setGroupQuestionIds((g) => ({
-        ...g,
-        [activeGroupId]: [...(g[activeGroupId] ?? []), ...newIds],
-      }));
-    }
-  }, [state.data?.questions, activeGroupId]);
+    if (!state.data?.groups?.length) return;
+    const firstId = String(state.data.groups[0].id);
+    setActiveGroupId((prev) => (prev && groups.some((g) => g.id === prev) ? prev : firstId));
+  }, [state.data?.groups, groups]);
 
   const questionsForActiveGroup = useMemo(() => {
-    if (!state.data?.questions) return [];
-    const ids = groupQuestionIds[activeGroupId];
-    if (!ids || ids.length === 0) return [];
-    return state.data.questions.filter((q) => ids.includes(q.id));
-  }, [state.data?.questions, groupQuestionIds, activeGroupId]);
+    if (!state.data?.questions || !activeGroupId || activeGroupId === GENERATING_VARIANT_TAB_ID)
+      return [];
+    const gid = Number(activeGroupId);
+    return state.data.questions.filter((q) => q.group_id === gid);
+  }, [state.data?.questions, activeGroupId]);
 
-  useEffect(() => {
-    if (!openAddAfterEmptyGroupRef.current || questionsForActiveGroup.length > 0) return;
-    openAddAfterEmptyGroupRef.current = false;
-    actions.startAdd();
-  }, [activeGroupId, questionsForActiveGroup.length, actions]);
+  const isGeneratingVariant = activeGroupId === GENERATING_VARIANT_TAB_ID;
 
-  const handleAddGroup = () => {
+  const handleAddGroup = async () => {
+    if (!state.data || (state.data.groups?.length ?? 0) >= 5) return;
     const nextLetter = String.fromCharCode(65 + groups.length);
-    const newId = `group-${groups.length}`;
-    openAddAfterEmptyGroupRef.current = true;
-    setGroups((prev) => [...prev, { id: newId, label: `Grupa ${nextLetter}` }]);
-    setGroupQuestionIds((prev) => ({ ...prev, [newId]: [] }));
-    setActiveGroupId(newId);
+    const newGroup = await actions.createGroup(state.data.test_id, `Grupa ${nextLetter}`);
+    if (newGroup) {
+      setActiveGroupId(String(newGroup.id));
+      actions.startAdd();
+    }
   };
 
-  const handleRenameGroup = (id: string) => {
+  const openRenameGroupModal = (id: string) => {
     const group = groups.find((g) => g.id === id);
     if (!group) return;
-    const newLabel = window.prompt("Nazwa grupy:", group.label);
-    if (newLabel == null || newLabel.trim() === "") return;
-    setGroups((prev) =>
-      prev.map((g) => (g.id === id ? { ...g, label: newLabel.trim() } : g))
-    );
+    setRenameGroupId(id);
+    setRenameGroupLabel(group.label);
   };
 
-  const handleRemoveGroup = (id: string) => {
+  const closeRenameGroupModal = () => {
+    setRenameGroupId(null);
+    setRenameGroupLabel("");
+  };
+
+  const handleRenameGroupSave = async () => {
+    const trimmed = renameGroupLabel.trim();
+    if (!trimmed || !renameGroupId || !state.data) return;
+    await actions.updateGroup(state.data.test_id, Number(renameGroupId), trimmed);
+    closeRenameGroupModal();
+  };
+
+  const openRemoveGroupModal = (id: string) => {
     if (groups.length <= 1) return;
-    setGroups((prev) => prev.filter((g) => g.id !== id));
-    setGroupQuestionIds((prev) => {
-      const next = { ...prev };
-      delete next[id];
-      return next;
-    });
-    setActiveGroupId((current) => {
-      const idx = groups.findIndex((g) => g.id === id);
-      const next = groups.filter((g) => g.id !== id);
-      if (current === id) return next[Math.min(idx, next.length - 1)]?.id ?? next[0]?.id ?? "default";
-      return current;
-    });
+    setGroupIdToDelete(id);
   };
 
-  const handleDuplicateCurrentGroup = () => {
-    const current = groups.find((g) => g.id === activeGroupId);
-    if (!current) return;
-    const newId = `group-${groups.length}`;
-    setGroups((prev) => [...prev, { id: newId, label: `${current.label} (kopia)` }]);
-    setGroupQuestionIds((prev) => ({
-      ...prev,
-      [newId]: [...(prev[activeGroupId] ?? [])],
-    }));
-    setActiveGroupId(newId);
+  const closeRemoveGroupModal = () => setGroupIdToDelete(null);
+
+  const handleConfirmRemoveGroup = async () => {
+    if (!groupIdToDelete || !state.data) return;
+    const nextGroups = groups.filter((g) => g.id !== groupIdToDelete);
+    if (activeGroupId === groupIdToDelete) {
+      setActiveGroupId(nextGroups[0]?.id ?? "");
+    }
+    await actions.deleteGroup(state.data.test_id, Number(groupIdToDelete));
+    closeRemoveGroupModal();
+  };
+
+  const handleDuplicateCurrentGroup = async () => {
+    if (!state.data || !activeGroupId) return;
+    const newGroup = await actions.duplicateGroup(state.data.test_id, Number(activeGroupId));
+    if (newGroup) {
+      actions.cancelEdit();
+      setActiveGroupId(String(newGroup.id));
+    }
+  };
+
+  const handleAddShuffledVariant = async () => {
+    if (!state.data || !activeGroupId || activeGroupId === GENERATING_VARIANT_TAB_ID) return;
+    const newGroup = await actions.createShuffledVariantGroup(
+      state.data.test_id,
+      Number(activeGroupId)
+    );
+    if (newGroup) {
+      actions.cancelEdit();
+      setActiveGroupId(String(newGroup.id));
+    }
   };
 
   const handleGenerateAIVariant = () => {
-    // Placeholder: można później podpiąć generowanie wariantu AI
-    window.alert("Generowanie wariantu AI – funkcja wkrótce.");
+    if (!activeGroupId || !state.data?.groups) return;
+    const sourceGroupId = activeGroupId;
+    const nextLetter = String.fromCharCode(65 + groupsFromApi.length);
+    const nextLabel = `Grupa ${nextLetter}`;
+    setGeneratingVariantLabel(nextLabel);
+    setActiveGroupId(GENERATING_VARIANT_TAB_ID);
+    actions.handleGenerateAIVariant(Number(sourceGroupId), (newGroupId) => {
+      setActiveGroupId(String(newGroupId));
+      setGeneratingVariantLabel(null);
+    });
+  };
+
+  const handleReorderQuestions = async (reorderedActiveIds: number[]) => {
+    if (!state.data?.questions || !state.data?.groups || !actions.onReorderQuestions) return;
+    const groupsOrdered = [...state.data.groups].sort((a, b) => a.position - b.position);
+    const activeGid = Number(activeGroupId);
+    const fullOrder: number[] = [];
+    for (const g of groupsOrdered) {
+      if (g.id === activeGid) {
+        fullOrder.push(...reorderedActiveIds);
+      } else {
+        const ids = state.data!.questions
+          .filter((q) => q.group_id === g.id)
+          .map((q) => q.id);
+        fullOrder.push(...ids);
+      }
+    }
+    await actions.onReorderQuestions(fullOrder);
   };
 
   if (state.loading) return <div>Ładowanie…</div>;
@@ -125,30 +171,70 @@ const TestDetailPage: React.FC = () => {
       <Box $flex={1} $width="100%">
         <PageSection $py="xl">
           <PageContainer>
-            <Stack style={{ width: "100%", maxWidth: 960, margin: "0 auto" }} $gap="3xl">
-              <TitleBar
-                title={data.title}
-                isEditing={state.isEditingTitle}
-                titleDraft={state.titleDraft}
-                onChangeDraft={actions.setTitleDraft}
-                onSave={actions.saveTitle}
-                onCancel={actions.cancelTitle}
-                onBeginEdit={() => actions.beginTitleEdit(data.title)}
-                onEditConfig={actions.handleEditConfig}
-              />
-
-              <GroupTabs
-                groups={groups}
-                activeGroupId={activeGroupId}
-                onGroupChange={setActiveGroupId}
-                onAddGroup={handleAddGroup}
-                onDuplicateCurrentGroup={handleDuplicateCurrentGroup}
-                onGenerateAIVariant={handleGenerateAIVariant}
-                onRenameGroup={handleRenameGroup}
-                onRemoveGroup={handleRemoveGroup}
-              />
+            <Stack style={{ width: "100%", maxWidth: 960, margin: "0 auto" }} $gap="lg">
+              <Box $mb="xl">
+                <TitleBar
+                  title={data.title}
+                  isEditing={state.isEditingTitle}
+                  titleDraft={state.titleDraft}
+                  onChangeDraft={actions.setTitleDraft}
+                  onSave={actions.saveTitle}
+                  onCancel={actions.cancelTitle}
+                  onBeginEdit={() => actions.beginTitleEdit(data.title)}
+                  onEditConfig={actions.handleEditConfig}
+                />
+              </Box>
 
               <Stack $gap="lg">
+                <GroupTabs
+                  groups={groups}
+                  activeGroupId={activeGroupId}
+                  onGroupChange={setActiveGroupId}
+                  onAddGroup={handleAddGroup}
+                  onDuplicateCurrentGroup={handleDuplicateCurrentGroup}
+                onGenerateAIVariant={handleGenerateAIVariant}
+                onAddShuffledVariant={handleAddShuffledVariant}
+                onRenameGroup={openRenameGroupModal}
+                  onRemoveGroup={openRemoveGroupModal}
+                  canAddGroup={(state.data?.groups?.length ?? 0) < 5}
+                  canRemoveGroup={(state.data?.groups?.length ?? 0) > 1}
+                />
+
+                <Stack $gap="lg">
+                {isGeneratingVariant ? (
+                  <Flex
+                    $direction="column"
+                    $align="center"
+                    $justify="center"
+                    $gap="md"
+                    style={{
+                      minHeight: 220,
+                      background: "var(--color-neutral-white, #fff)",
+                      borderRadius: "var(--radii-md, 8px)",
+                      padding: "var(--spacing-2xl, 32px)",
+                    }}
+                  >
+                    <VariantLoadingSpinner aria-hidden>
+                      <svg
+                        width="48"
+                        height="48"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="#4CAF4F"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                      >
+                        <path d="M21 12a9 9 0 1 1-6.22-8.56" />
+                      </svg>
+                    </VariantLoadingSpinner>
+                    <Text $weight="medium" $variant="body2">
+                      Trwa generowanie wariantu AI…
+                    </Text>
+                    <Text $variant="body3" $tone="muted">
+                      Nowa grupa z wariantami pytań pojawi się za chwilę.
+                    </Text>
+                  </Flex>
+                ) : (
                 <QuestionsSection
                   questions={questionsForActiveGroup}
                   editingId={state.editingId}
@@ -166,7 +252,7 @@ const TestDetailPage: React.FC = () => {
                     startAdd: actions.startAdd,
                     cancelEdit: actions.cancelEdit,
                     handleSaveEdit: actions.handleSaveEdit,
-                    handleAdd: actions.handleAdd,
+                    handleAdd: () => actions.handleAdd(Number(activeGroupId)),
                     handleDelete: actions.handleDelete,
                     toggleDraftClosed: actions.toggleDraftClosed,
                     setDraftDifficulty: actions.setDraftDifficulty,
@@ -178,7 +264,7 @@ const TestDetailPage: React.FC = () => {
                     toggleSelect: actions.toggleSelect,
                     selectAll: actions.selectAll,
                     clearSelection: actions.clearSelection,
-                    onReorderQuestions: actions.onReorderQuestions,
+                    onReorderQuestions: handleReorderQuestions,
                     onRegenerateForQuestion: actions.selectAndOpenRegenerateModal,
                     onSettingsForQuestion: actions.selectAndOpenTypeModal,
                   }}
@@ -190,6 +276,7 @@ const TestDetailPage: React.FC = () => {
                     ensureChoices: derived.ensureChoices,
                   }}
                 />
+                )}
 
                 <PdfConfigSection
                   config={state.pdfConfig}
@@ -206,6 +293,7 @@ const TestDetailPage: React.FC = () => {
                   pdfDisabled={!state.pdfConfigValid}
                   pdfDisabledReason="Ustaw poprawną wysokość pola odpowiedzi (1–10 cm), aby pobrać PDF."
                 />
+                </Stack>
               </Stack>
             </Stack>
           </PageContainer>
@@ -343,6 +431,51 @@ const TestDetailPage: React.FC = () => {
         <Text>
           Czy na pewno chcesz usunąć zaznaczone pytania? Tej operacji nie można cofnąć.
         </Text>
+      </Modal>
+
+      <Modal
+        isOpen={renameGroupId !== null}
+        title="Zmień nazwę grupy"
+        onClose={closeRenameGroupModal}
+        footer={
+          <Flex $justify="flex-end" $gap="sm">
+            <Button $variant="outline" onClick={closeRenameGroupModal}>
+              Anuluj
+            </Button>
+            <Button
+              $variant="primary"
+              onClick={handleRenameGroupSave}
+              disabled={!renameGroupLabel.trim()}
+            >
+              Zapisz
+            </Button>
+          </Flex>
+        }
+      >
+        <Stack $gap="sm">
+          <Text $variant="body3" $tone="muted">
+            Wpisz nową nazwę grupy:
+          </Text>
+          <Input
+            $fullWidth
+            value={renameGroupLabel}
+            onChange={(e) => setRenameGroupLabel(e.target.value)}
+            placeholder="np. Grupa A"
+            aria-label="Nazwa grupy"
+          />
+        </Stack>
+      </Modal>
+
+      <Modal
+        isOpen={groupIdToDelete !== null}
+        title="Usuń grupę"
+        onClose={closeRemoveGroupModal}
+        onConfirm={handleConfirmRemoveGroup}
+        variant="danger"
+        confirmLabel="Usuń"
+        cancelLabel="Anuluj"
+      >
+        Czy na pewno chcesz usunąć tę grupę? Wszystkie pytania w tej grupie zostaną trwale usunięte. Tej operacji nie można cofnąć.
       </Modal>
 
       <BulkActionBar

@@ -37,7 +37,7 @@ export interface UseQuestionDraftResult {
     addDraftChoiceRow: () => void;
     removeChoiceRow: (index: number) => void;
     handleSaveEdit: (test: TestDetail | null) => Promise<TestDetail | null>;
-    handleAdd: (test: TestDetail | null, refresh: () => Promise<void>) => Promise<void>;
+    handleAdd: (test: TestDetail | null, refresh: () => Promise<void>, groupId: number) => Promise<void>;
     handleDeleteConfirmed: (test: TestDetail | null, qid: number, refresh: () => Promise<void>) => Promise<void>;
     handleDelete: (test: TestDetail | null, qid: number, refresh: () => Promise<void>) => Promise<void>;
   };
@@ -216,7 +216,11 @@ const useQuestionDraft = () => {
     }
   };
 
-  const handleAdd = async (test: TestDetail | null, refresh: () => Promise<void>) => {
+  const handleAdd = async (
+    test: TestDetail | null,
+    refresh: () => Promise<void>,
+    groupId: number
+  ) => {
     if (!test) return;
     setEditorError(null);
     setSavingAdd(true);
@@ -226,6 +230,7 @@ const useQuestionDraft = () => {
         text: (draft.text || "").trim(),
         is_closed: !!draft.is_closed,
         difficulty: draft.difficulty || 1,
+        group_id: groupId,
         choices: draft.choices,
         correct_choices: draft.correct_choices,
       };

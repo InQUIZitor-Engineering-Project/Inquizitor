@@ -6,6 +6,8 @@ import { Box, Flex } from "../../../design-system/primitives";
 export interface GroupTabItem {
   id: string;
   label: string;
+  /** Gdy true, w tabie pokazywany jest spinner (np. podczas generowania wariantu AI). */
+  loading?: boolean;
 }
 
 const MENU_GAP = 4;
@@ -21,11 +23,17 @@ export interface GroupTabsProps {
   onDuplicateCurrentGroup?: () => void;
   /** Generuj wariant AI (opcja w menu Add) */
   onGenerateAIVariant?: () => void;
+  /** Nowa grupa z inną kolejnością pytań i odpowiedzi (opcja w menu Add) */
+  onAddShuffledVariant?: () => void;
   /** Zmiana nazwy grupy (np. po wyborze z menu) */
   onRenameGroup?: (id: string) => void;
   /** Usunięcie grupy (np. po wyborze z menu) */
   onRemoveGroup?: (id: string) => void;
   onTabContextMenu?: (id: string, e: React.MouseEvent) => void;
+  /** Gdy false, przycisk „Dodaj grupę” jest nieaktywny (np. po osiągnięciu limitu). Domyślnie true. */
+  canAddGroup?: boolean;
+  /** Gdy false, opcja „Usuń grupę” nie jest pokazywana w menu (np. gdy jest tylko jedna grupa). Domyślnie true. */
+  canRemoveGroup?: boolean;
 }
 
 /** Wrapper: segmented control + add button side by side */
@@ -96,18 +104,31 @@ const Tab = styled.button<{ $active: boolean }>`
   }
 `;
 
-/** Chevron (▼): small, inherits green when active */
+const TabSpinner = styled.span`
+  display: inline-flex;
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  animation: spin 0.8s linear infinite;
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+`;
+
+/** Chevron (▼): larger hit area for easier clicking, inherits green when active */
 const TabMenuTrigger = styled.button.attrs({ type: "button" })<{ $active?: boolean }>`
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 12px;
-  height: 12px;
+  min-width: 28px;
+  min-height: 28px;
+  padding: 0 4px;
   border: none;
-  border-radius: ${({ theme }) => theme.radii.xs};
+  border-radius: ${({ theme }) => theme.radii.sm};
   color: inherit;
   opacity: ${({ $active }) => ($active ? 1 : 0.7)};
-  font-size: 8px;
+  font-size: 10px;
   line-height: 1;
   flex-shrink: 0;
   cursor: pointer;
@@ -139,7 +160,7 @@ const AddGroupButton = styled.button`
   cursor: pointer;
   transition: color 0.2s ease, background-color 0.2s ease;
 
-  &:hover {
+  &:hover:not(:disabled) {
     color: ${({ theme }) => theme.colors.brand.primary};
     background: ${({ theme }) => theme.colors.tint.t5};
   }
@@ -147,6 +168,11 @@ const AddGroupButton = styled.button`
   &:focus-visible {
     outline: 2px solid ${({ theme }) => theme.colors.brand.primary};
     outline-offset: 2px;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 `;
 
@@ -189,8 +215,13 @@ const AddMenuItem = styled.button`
   cursor: pointer;
   transition: background-color 0.15s ease;
 
-  &:hover {
+  &:hover:not(:disabled) {
     background: #f9fafb; /* gray-50 */
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
   }
 `;
 
@@ -199,7 +230,7 @@ const AddMenuItemFeatured = styled(AddMenuItem)`
   color: #1d4ed8; /* blue-700 */
   font-weight: 500;
 
-  &:hover {
+  &:hover:not(:disabled) {
     background: #eff6ff; /* blue-50 */
   }
 `;
@@ -281,6 +312,8 @@ const FilePlusIcon = () => (
 
 const ADD_MENU_MARGIN_TOP = 8; /* mt-2 */
 
+const MAX_GROUPS_LABEL = "Maksymalnie 5 grup";
+
 const GroupTabs: React.FC<GroupTabsProps> = ({
   groups,
   activeGroupId,
@@ -288,9 +321,12 @@ const GroupTabs: React.FC<GroupTabsProps> = ({
   onAddGroup,
   onDuplicateCurrentGroup,
   onGenerateAIVariant,
+  onAddShuffledVariant,
   onRenameGroup,
   onRemoveGroup,
   onTabContextMenu,
+  canAddGroup = true,
+  canRemoveGroup = true,
 }) => {
   const [menuOpenForId, setMenuOpenForId] = useState<string | null>(null);
   const [addMenuOpen, setAddMenuOpen] = useState(false);
@@ -382,17 +418,26 @@ const GroupTabs: React.FC<GroupTabsProps> = ({
   const closeAddMenu = () => setAddMenuOpen(false);
 
   const handleAddEmptyGroup = () => {
+    if (!canAddGroup) return;
     onAddGroup();
     closeAddMenu();
   };
 
   const handleDuplicateCurrent = () => {
+    if (!canAddGroup) return;
     onDuplicateCurrentGroup?.();
     closeAddMenu();
   };
 
   const handleGenerateAIVariant = () => {
+    if (!canAddGroup) return;
     onGenerateAIVariant?.();
+    closeAddMenu();
+  };
+
+  const handleAddShuffledVariant = () => {
+    if (!canAddGroup) return;
+    onAddShuffledVariant?.();
     closeAddMenu();
   };
 
@@ -406,12 +451,12 @@ const GroupTabs: React.FC<GroupTabsProps> = ({
               Zmień nazwę
             </GroupMenuItem>
           )}
-          {onRemoveGroup && (
+          {onRemoveGroup && canRemoveGroup && (
             <GroupMenuItemDanger type="button" onClick={() => handleRemove(menuOpenForId)}>
               Usuń grupę
             </GroupMenuItemDanger>
           )}
-          {!onRenameGroup && !onRemoveGroup && (
+          {!onRenameGroup && (!onRemoveGroup || !canRemoveGroup) && (
             <GroupMenuItem type="button" onClick={closeMenu}>
               Opcje wkrótce
             </GroupMenuItem>
@@ -427,21 +472,47 @@ const GroupTabs: React.FC<GroupTabsProps> = ({
       <div ref={addMenuRef} style={{ position: "fixed", zIndex: 50, ...addMenuStyle }}>
         <AddMenuPopover $visible={addMenuOpen}>
           {onGenerateAIVariant && (
-            <AddMenuItemFeatured type="button" onClick={handleGenerateAIVariant}>
+            <AddMenuItemFeatured
+              type="button"
+              onClick={handleGenerateAIVariant}
+              disabled={!canAddGroup}
+              title={!canAddGroup ? MAX_GROUPS_LABEL : undefined}
+            >
               <AddMenuItemIcon $featured>✨</AddMenuItemIcon>
               Generuj wariant AI
             </AddMenuItemFeatured>
           )}
           {onGenerateAIVariant && <AddMenuDivider />}
           {onDuplicateCurrentGroup && (
-            <AddMenuItem type="button" onClick={handleDuplicateCurrent}>
+            <AddMenuItem
+              type="button"
+              onClick={handleDuplicateCurrent}
+              disabled={!canAddGroup}
+              title={!canAddGroup ? MAX_GROUPS_LABEL : undefined}
+            >
               <AddMenuItemIcon>
                 <CopyIcon />
               </AddMenuItemIcon>
               Duplikuj obecną
             </AddMenuItem>
           )}
-          <AddMenuItem type="button" onClick={handleAddEmptyGroup}>
+          {onAddShuffledVariant && (
+            <AddMenuItem
+              type="button"
+              onClick={handleAddShuffledVariant}
+              disabled={!canAddGroup}
+              title={!canAddGroup ? MAX_GROUPS_LABEL : undefined}
+            >
+              <AddMenuItemIcon>↔</AddMenuItemIcon>
+              Inna kolejność pytań i odpowiedzi
+            </AddMenuItem>
+          )}
+          <AddMenuItem
+            type="button"
+            onClick={handleAddEmptyGroup}
+            disabled={!canAddGroup}
+            title={!canAddGroup ? MAX_GROUPS_LABEL : undefined}
+          >
             <AddMenuItemIcon>
               <FilePlusIcon />
             </AddMenuItemIcon>
@@ -483,37 +554,48 @@ const GroupTabs: React.FC<GroupTabsProps> = ({
                     : undefined
                 }
               >
+                {group.loading ? (
+                  <TabSpinner aria-hidden>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                      <path d="M21 12a9 9 0 1 1-6.22-8.56" />
+                    </svg>
+                  </TabSpinner>
+                ) : null}
                 <span>{group.label}</span>
-                <TabMenuTrigger
-                  ref={(el) => {
-                    if (isMenuOpen) menuTriggerRef.current = el;
-                  }}
-                  $active={isActive}
-                  aria-label="Opcje grupy"
-                  aria-expanded={isMenuOpen}
-                  title="Opcje grupy (zmień nazwę, usuń)"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    openMenu(group, e.currentTarget);
-                  }}
-                >
-                  ▼
-                </TabMenuTrigger>
+                {!group.loading && (
+                  <TabMenuTrigger
+                    ref={(el) => {
+                      if (isMenuOpen) menuTriggerRef.current = el;
+                    }}
+                    $active={isActive}
+                    aria-label="Opcje grupy"
+                    aria-expanded={isMenuOpen}
+                    title="Opcje grupy (zmień nazwę, usuń)"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openMenu(group, e.currentTarget);
+                    }}
+                  >
+                    ▼
+                  </TabMenuTrigger>
+                )}
               </Tab>
             );
           })}
         </TabBar>
-        <AddGroupButton
-          ref={addButtonRef}
-          type="button"
-          onClick={() => setAddMenuOpen((open) => !open)}
-          aria-label="Dodaj grupę"
-          aria-expanded={addMenuOpen}
-          aria-haspopup="menu"
-          title="Dodaj grupę"
-        >
-          <PlusIcon />
-        </AddGroupButton>
+        {canAddGroup && (
+          <AddGroupButton
+            ref={addButtonRef}
+            type="button"
+            onClick={() => setAddMenuOpen((open) => !open)}
+            aria-label="Dodaj grupę"
+            aria-expanded={addMenuOpen}
+            aria-haspopup="menu"
+            title="Dodaj grupę"
+          >
+            <PlusIcon />
+          </AddGroupButton>
+        )}
       </GroupTabsWrapper>
       {menuDropdown}
       {addMenuDropdown}

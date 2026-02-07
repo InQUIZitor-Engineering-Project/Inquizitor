@@ -14,6 +14,7 @@ from .password_reset_token import PasswordResetToken
 from .pdf_export_cache import PdfExportCache
 from .pending_verification import PendingVerification
 from .question import Question
+from .question_group import QuestionGroup
 from .refresh_token import RefreshToken
 from .test import Test
 from .user import User
@@ -32,6 +33,7 @@ __all__ = [
     "ProcessingStatus",
     "Question",
     "QuestionDifficulty",
+    "QuestionGroup",
     "RefreshToken",
     "RoutingTier",
     "Test",

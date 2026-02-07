@@ -60,6 +60,7 @@ class Test(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
     owner: User | None = Relationship(back_populates="tests")
+    question_groups: list["QuestionGroup"] = Relationship(back_populates="test")
     questions: list["Question"] = Relationship(
         back_populates="test",
         sa_relationship_kwargs={
@@ -68,6 +69,18 @@ class Test(SQLModel, table=True):
         },
     )
 
+
+class QuestionGroup(SQLModel, table=True):
+    __tablename__ = "question_group"
+    id: int | None = Field(default=None, primary_key=True)
+    test_id: int = Field(foreign_key="test.id", index=True)
+    label: str = Field(max_length=200)
+    position: int = Field(default=0)
+
+    test: Test | None = Relationship(back_populates="question_groups")
+    questions: list["Question"] = Relationship(back_populates="group")
+
+
 class Question(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     test_id: int = Field(
@@ -75,6 +88,15 @@ class Question(SQLModel, table=True):
             "test_id",
             Integer,
             ForeignKey("test.id", ondelete="CASCADE"),
+            index=True,
+            nullable=False
+        )
+    )
+    group_id: int = Field(
+        sa_column=Column(
+            "group_id",
+            Integer,
+            ForeignKey("question_group.id", ondelete="CASCADE"),
             index=True,
             nullable=False
         )
@@ -95,6 +117,7 @@ class Question(SQLModel, table=True):
     )
 
     test: Test | None = Relationship(back_populates="questions")
+    group: QuestionGroup | None = Relationship(back_populates="questions")
 
 class File(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
@@ -129,6 +152,7 @@ class JobType(StrEnum):
     material_analysis = "material_analysis"
     questions_regeneration = "questions_regeneration"
     questions_conversion = "questions_conversion"
+    group_ai_variant = "group_ai_variant"
 
 class AnalysisStatus(StrEnum):
     pending = "pending"

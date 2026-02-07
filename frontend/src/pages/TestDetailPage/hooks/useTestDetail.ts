@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useOutletContext, useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { useLoader } from "../../../components/Loader/GlobalLoader";
 import useDocumentTitle from "../../../hooks/useDocumentTitle";
@@ -14,6 +14,13 @@ import {
   bulkRegenerateQuestions,
   bulkConvertQuestions,
   reorderQuestions,
+  createGroup,
+  updateGroup,
+  deleteGroup,
+  duplicateGroup,
+  createShuffledVariantGroup,
+  generateGroupAIVariant,
+  type GroupOut,
 } from "../../../services/test";
 
 type LayoutCtx = { refreshSidebarTests: () => Promise<void> };
@@ -70,7 +77,7 @@ type UseTestDetailResult = {
     addDraftChoiceRow: ReturnType<typeof useQuestionDraft>["actions"]["addDraftChoiceRow"];
     removeChoiceRow: ReturnType<typeof useQuestionDraft>["actions"]["removeChoiceRow"];
     handleSaveEdit: () => Promise<void>;
-    handleAdd: () => Promise<void>;
+    handleAdd: (groupId: number) => Promise<void>;
     handleDelete: (qid: number) => Promise<void>;
     openQuestionDeleteModal: (qid: number) => void;
     closeQuestionDeleteModal: () => void;
@@ -114,6 +121,12 @@ type UseTestDetailResult = {
     handleDownloadCustomPdf: () => Promise<void>;
     downloadXml: () => Promise<void>;
     handleEditConfig: () => void;
+    createGroup: (testId: number, label: string) => Promise<GroupOut | null>;
+    updateGroup: (testId: number, groupId: number, label: string) => Promise<void>;
+    deleteGroup: (testId: number, groupId: number) => Promise<void>;
+    duplicateGroup: (testId: number, groupId: number) => Promise<GroupOut | null>;
+    createShuffledVariantGroup: (testId: number, groupId: number) => Promise<GroupOut | null>;
+    handleGenerateAIVariant: (groupId: number, onSuccess?: (newGroupId: number) => void) => Promise<void>;
   };
 };
 
@@ -134,16 +147,22 @@ const useTestDetail = (): UseTestDetailResult => {
 
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const clearSelection = () => setSelectedIds([]);
+  const pendingVariantOnSuccessRef = useRef<((newGroupId: number) => void) | null>(null);
 
   const pollingOptions = useMemo(() => ({
-    onDone: async () => {
+    onDone: async (job: any) => {
       await refresh();
       stopLoading();
       clearSelection();
+      if (job?.result?.group_id != null && pendingVariantOnSuccessRef.current) {
+        pendingVariantOnSuccessRef.current(job.result.group_id);
+        pendingVariantOnSuccessRef.current = null;
+      }
     },
     onFail: (job: any) => {
       stopLoading();
-      alert(job.error || "Regeneracja pytań nie powiodła się");
+      pendingVariantOnSuccessRef.current = null;
+      alert(job.error || "Zadanie nie powiodło się");
     },
   }), [refresh, stopLoading]);
 
@@ -183,8 +202,8 @@ const useTestDetail = (): UseTestDetailResult => {
     if (next) setData(next);
   };
 
-  const handleAdd = async () => {
-    await draftActions.handleAdd(data, refresh);
+  const handleAdd = async (groupId: number) => {
+    await draftActions.handleAdd(data, refresh, groupId);
   };
 
 
@@ -403,6 +422,88 @@ const useTestDetail = (): UseTestDetailResult => {
     }
   };
 
+  const createGroupAction = async (
+    testId: number,
+    label: string
+  ): Promise<GroupOut | null> => {
+    try {
+      const newGroup = await createGroup(testId, { label });
+      await refresh();
+      return newGroup;
+    } catch (e: any) {
+      alert(e.message || "Nie udało się dodać grupy");
+      return null;
+    }
+  };
+
+  const updateGroupAction = async (
+    testId: number,
+    groupId: number,
+    label: string
+  ): Promise<void> => {
+    try {
+      await updateGroup(testId, groupId, { label });
+      await refresh();
+    } catch (e: any) {
+      alert(e.message || "Nie udało się zmienić nazwy grupy");
+    }
+  };
+
+  const deleteGroupAction = async (
+    testId: number,
+    groupId: number
+  ): Promise<void> => {
+    try {
+      await deleteGroup(testId, groupId);
+      await refresh();
+    } catch (e: any) {
+      alert(e.message || "Nie udało się usunąć grupy");
+    }
+  };
+
+  const duplicateGroupAction = async (
+    testId: number,
+    groupId: number
+  ): Promise<GroupOut | null> => {
+    try {
+      const result = await duplicateGroup(testId, groupId);
+      await refresh();
+      return result.group;
+    } catch (e: any) {
+      alert(e.message || "Nie udało się skopiować grupy");
+      return null;
+    }
+  };
+
+  const createShuffledVariantGroupAction = async (
+    testId: number,
+    groupId: number
+  ): Promise<GroupOut | null> => {
+    try {
+      const newGroup = await createShuffledVariantGroup(testId, groupId);
+      await refresh();
+      return newGroup;
+    } catch (e: any) {
+      alert(e.message || "Nie udało się utworzyć wariantu z inną kolejnością");
+      return null;
+    }
+  };
+
+  const handleGenerateAIVariant = async (
+    groupId: number,
+    onSuccess?: (newGroupId: number) => void
+  ) => {
+    if (!data) return;
+    if (onSuccess) pendingVariantOnSuccessRef.current = onSuccess;
+    try {
+      const res = await generateGroupAIVariant(data.test_id, groupId);
+      jobPolling.startPolling(res.job_id);
+    } catch (e: any) {
+      pendingVariantOnSuccessRef.current = null;
+      alert(e.message || "Nie udało się uruchomić generowania wariantu AI");
+    }
+  };
+
   const closedCount = data?.questions.filter((q) => q.is_closed).length || 0;
   const openCount = data ? data.questions.length - closedCount : 0;
 
@@ -498,6 +599,12 @@ const useTestDetail = (): UseTestDetailResult => {
       handleDownloadCustomPdf,
       downloadXml,
       handleEditConfig,
+      createGroup: createGroupAction,
+      updateGroup: updateGroupAction,
+      deleteGroup: deleteGroupAction,
+      duplicateGroup: duplicateGroupAction,
+      createShuffledVariantGroup: createShuffledVariantGroupAction,
+      handleGenerateAIVariant,
     },
   };
 };

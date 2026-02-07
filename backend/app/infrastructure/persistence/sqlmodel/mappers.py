@@ -14,6 +14,7 @@ from app.domain.models import (
     PdfExportCache,
     PendingVerification,
     Question,
+    QuestionGroup,
     RefreshToken,
     Test,
     User,
@@ -74,22 +75,45 @@ def question_to_domain(row: db_models.Question) -> Question:
         text=row.text,
         is_closed=row.is_closed,
         difficulty=QuestionDifficulty(row.difficulty),
+        group_id=getattr(row, "group_id", None),
         choices=choices,
         correct_choices=correct_choices,
         citations=row.citations or [],
     )
 
 
-def question_to_row(question: Question, test_id: int) -> db_models.Question:
+def question_to_row(
+    question: Question, test_id: int, group_id: int | None = None
+) -> db_models.Question:
+    gid = group_id if group_id is not None else question.group_id
     return db_models.Question(
         id=question.id,
         test_id=test_id,
+        group_id=gid,
         text=question.text,
         is_closed=question.is_closed,
         difficulty=question.difficulty.value,
         choices=question.choices or None,
         correct_choices=question.correct_choices or None,
         citations=question.citations or None,
+    )
+
+
+def question_group_to_domain(row: db_models.QuestionGroup) -> QuestionGroup:
+    return QuestionGroup(
+        id=row.id,
+        test_id=row.test_id,
+        label=row.label,
+        position=row.position,
+    )
+
+
+def question_group_to_row(group: QuestionGroup) -> db_models.QuestionGroup:
+    return db_models.QuestionGroup(
+        id=group.id,
+        test_id=group.test_id,
+        label=group.label,
+        position=group.position,
     )
 
 
@@ -379,6 +403,8 @@ __all__ = [
     "pending_verification_to_row",
     "question_to_domain",
     "question_to_row",
+    "question_group_to_domain",
+    "question_group_to_row",
     "refresh_token_to_domain",
     "refresh_token_to_row",
     "test_to_domain",
