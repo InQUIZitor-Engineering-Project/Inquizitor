@@ -8,9 +8,9 @@ from typing import Any
 
 from app.api.schemas.jobs import JobOut
 from app.api.schemas.materials import MaterialOut
-from app.api.schemas.tests import QuestionOut, TestDetailOut, TestOut
+from app.api.schemas.tests import GroupOut, QuestionOut, TestDetailOut, TestOut
 from app.api.schemas.users import UserRead
-from app.domain.models import Job, Material, Question, Test, User
+from app.domain.models import Job, Material, Question, QuestionGroup, Test, User
 
 
 def _as_list(value: Any) -> list[str] | None:
@@ -68,16 +68,26 @@ def to_question_out(question: Question) -> QuestionOut:
         text=question.text,
         is_closed=question.is_closed,
         difficulty=getattr(question.difficulty, "value", question.difficulty),
+        group_id=getattr(question, "group_id", None) or 0,
         choices=_as_list(getattr(question, "choices", None)),
         correct_choices=_as_list(getattr(question, "correct_choices", None)),
         citations=_as_list(getattr(question, "citations", None)),
     )
 
 
-def to_test_detail(test: Test) -> TestDetailOut:
+def to_group_out(group: QuestionGroup) -> GroupOut:
+    return GroupOut(
+        id=group.id,
+        label=group.label,
+        position=group.position,
+    )
+
+
+def to_test_detail(test: Test, groups: list[QuestionGroup]) -> TestDetailOut:
     return TestDetailOut(
         test_id=test.id,
         title=test.title,
+        groups=[to_group_out(g) for g in groups],
         questions=[to_question_out(q) for q in test.questions],
     )
 

@@ -13,6 +13,8 @@ class Question:
     text: str
     is_closed: bool
     difficulty: QuestionDifficulty
+    # None when creating from generator; set when loading or adding via API
+    group_id: int | None = None
     choices: list[str] = field(default_factory=list)
     correct_choices: list[str] = field(default_factory=list)
     citations: list[str] = field(default_factory=list)

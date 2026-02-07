@@ -1,14 +1,27 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useOutletContext, useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { useLoader } from "../../../components/Loader/GlobalLoader";
 import useDocumentTitle from "../../../hooks/useDocumentTitle";
-import useTestData, { sortQuestions } from "./useTestData";
+import useTestData from "./useTestData";
 import useQuestionDraft from "./useQuestionDraft";
 import useTitleEdit from "./useTitleEdit";
 import usePdfConfig from "./usePdfConfig";
 import useJobPolling from "../../../hooks/useJobPolling";
 import type { PdfExportConfig, TestDetail } from "../../../services/test";
-import { bulkDeleteQuestions, bulkUpdateQuestions, bulkRegenerateQuestions, bulkConvertQuestions } from "../../../services/test";
+import {
+  bulkDeleteQuestions,
+  bulkUpdateQuestions,
+  bulkRegenerateQuestions,
+  bulkConvertQuestions,
+  reorderQuestions,
+  createGroup,
+  updateGroup,
+  deleteGroup,
+  duplicateGroup,
+  createShuffledVariantGroup,
+  generateGroupAIVariant,
+  type GroupOut,
+} from "../../../services/test";
 
 type LayoutCtx = { refreshSidebarTests: () => Promise<void> };
 
@@ -27,8 +40,12 @@ type UseTestDetailResult = {
     questionIdToDelete: number | null;
     isRegenerateModalOpen: boolean;
     regenerationInstruction: string;
+    /** Non-null when regenerate modal was opened for a single question (no bulk). */
+    singleQuestionRegenerateId: number | null;
     isDifficultyModalOpen: boolean;
     isTypeModalOpen: boolean;
+    /** Non-null when type modal was opened for a single question (no bulk). */
+    singleQuestionTypeChangeId: number | null;
     isBulkDeleteModalOpen: boolean;
     isMobileMenuOpen: boolean;
     tempDifficulty: number | null;
@@ -60,7 +77,7 @@ type UseTestDetailResult = {
     addDraftChoiceRow: ReturnType<typeof useQuestionDraft>["actions"]["addDraftChoiceRow"];
     removeChoiceRow: ReturnType<typeof useQuestionDraft>["actions"]["removeChoiceRow"];
     handleSaveEdit: () => Promise<void>;
-    handleAdd: () => Promise<void>;
+    handleAdd: (groupId: number) => Promise<void>;
     handleDelete: (qid: number) => Promise<void>;
     openQuestionDeleteModal: (qid: number) => void;
     closeQuestionDeleteModal: () => void;
@@ -68,16 +85,21 @@ type UseTestDetailResult = {
     toggleSelect: (qid: number) => void;
     selectAll: () => void;
     clearSelection: () => void;
+    onReorderQuestions?: (questionIds: number[]) => Promise<void>;
     handleBulkDelete: () => Promise<void>;
     handleBulkUpdate: (fields: { difficulty?: number; is_closed?: boolean }) => Promise<void>;
     handleBulkRegenerate: () => Promise<void>;
     openRegenerateModal: () => void;
     closeRegenerateModal: () => void;
     setRegenerationInstruction: (s: string) => void;
+    /** Select single question and open regenerate modal. */
+    selectAndOpenRegenerateModal: (qId: number) => void;
     openDifficultyModal: () => void;
     closeDifficultyModal: () => void;
     openTypeModal: () => void;
     closeTypeModal: () => void;
+    /** Select single question and open type (open/closed) modal. */
+    selectAndOpenTypeModal: (qId: number) => void;
     openBulkDeleteModal: () => void;
     closeBulkDeleteModal: () => void;
     openMobileMenu: () => void;
@@ -99,6 +121,12 @@ type UseTestDetailResult = {
     handleDownloadCustomPdf: () => Promise<void>;
     downloadXml: () => Promise<void>;
     handleEditConfig: () => void;
+    createGroup: (testId: number, label: string) => Promise<GroupOut | null>;
+    updateGroup: (testId: number, groupId: number, label: string) => Promise<void>;
+    deleteGroup: (testId: number, groupId: number) => Promise<void>;
+    duplicateGroup: (testId: number, groupId: number) => Promise<GroupOut | null>;
+    createShuffledVariantGroup: (testId: number, groupId: number) => Promise<GroupOut | null>;
+    handleGenerateAIVariant: (groupId: number, onSuccess?: (newGroupId: number) => void) => Promise<void>;
   };
 };
 
@@ -119,16 +147,22 @@ const useTestDetail = (): UseTestDetailResult => {
 
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const clearSelection = () => setSelectedIds([]);
+  const pendingVariantOnSuccessRef = useRef<((newGroupId: number) => void) | null>(null);
 
   const pollingOptions = useMemo(() => ({
-    onDone: async () => {
+    onDone: async (job: any) => {
       await refresh();
       stopLoading();
       clearSelection();
+      if (job?.result?.group_id != null && pendingVariantOnSuccessRef.current) {
+        pendingVariantOnSuccessRef.current(job.result.group_id);
+        pendingVariantOnSuccessRef.current = null;
+      }
     },
     onFail: (job: any) => {
       stopLoading();
-      alert(job.error || "Regeneracja pytań nie powiodła się");
+      pendingVariantOnSuccessRef.current = null;
+      alert(job.error || "Zadanie nie powiodło się");
     },
   }), [refresh, stopLoading]);
 
@@ -138,8 +172,12 @@ const useTestDetail = (): UseTestDetailResult => {
   const [questionIdToDelete, setQuestionIdToDelete] = useState<number | null>(null);
   const [isRegenerateModalOpen, setIsRegenerateModalOpen] = useState(false);
   const [regenerationInstruction, setRegenerationInstruction] = useState("");
+  /** When set, regenerate modal applies to this one question only (no bulk selection). */
+  const [singleQuestionRegenerateId, setSingleQuestionRegenerateId] = useState<number | null>(null);
   const [isDifficultyModalOpen, setIsDifficultyModalOpen] = useState(false);
   const [isTypeModalOpen, setIsTypeModalOpen] = useState(false);
+  /** When set, type modal applies to this one question only (no bulk selection). */
+  const [singleQuestionTypeChangeId, setSingleQuestionTypeChangeId] = useState<number | null>(null);
   const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [tempDifficulty, setTempDifficulty] = useState<number | null>(null);
@@ -159,17 +197,13 @@ const useTestDetail = (): UseTestDetailResult => {
     }
   }, [searchParams, data, draftState.isAdding, draftActions, setSearchParams]);
 
-  const setDataSorted = (next: TestDetail | null) => {
-    setData(next ? { ...next, questions: sortQuestions(next.questions) } : next);
-  };
-
   const handleSaveEdit = async () => {
     const next = await draftActions.handleSaveEdit(data);
-    if (next) setDataSorted(next);
+    if (next) setData(next);
   };
 
-  const handleAdd = async () => {
-    await draftActions.handleAdd(data, refresh);
+  const handleAdd = async (groupId: number) => {
+    await draftActions.handleAdd(data, refresh, groupId);
   };
 
 
@@ -255,16 +289,21 @@ const useTestDetail = (): UseTestDetailResult => {
   };
 
   const handleBulkRegenerate = async () => {
-    if (selectedIds.length === 0 || !data) return;
+    const ids =
+      singleQuestionRegenerateId !== null
+        ? [singleQuestionRegenerateId]
+        : selectedIds;
+    if (ids.length === 0 || !data) return;
 
     const instruction = regenerationInstruction.trim();
     setIsRegenerateModalOpen(false);
-    setRegenerationInstruction(""); // Czyścimy po zamknięciu
+    setRegenerationInstruction("");
+    setSingleQuestionRegenerateId(null);
     startLoading();
 
     try {
       const res = await bulkRegenerateQuestions(data.test_id, {
-        question_ids: selectedIds,
+        question_ids: ids,
         instruction: instruction || undefined,
       });
       jobPolling.startPolling(res.job_id);
@@ -274,8 +313,18 @@ const useTestDetail = (): UseTestDetailResult => {
     }
   };
 
-  const openRegenerateModal = () => setIsRegenerateModalOpen(true);
-  const closeRegenerateModal = () => setIsRegenerateModalOpen(false);
+  const openRegenerateModal = () => {
+    setSingleQuestionRegenerateId(null);
+    setIsRegenerateModalOpen(true);
+  };
+  const closeRegenerateModal = () => {
+    setIsRegenerateModalOpen(false);
+    setSingleQuestionRegenerateId(null);
+  };
+  const selectAndOpenRegenerateModal = (qId: number) => {
+    setSingleQuestionRegenerateId(qId);
+    setIsRegenerateModalOpen(true);
+  };
 
   const openDifficultyModal = () => setIsDifficultyModalOpen(true);
   const closeDifficultyModal = () => {
@@ -283,21 +332,34 @@ const useTestDetail = (): UseTestDetailResult => {
     setTempDifficulty(null);
   };
 
-  const openTypeModal = () => setIsTypeModalOpen(true);
+  const openTypeModal = () => {
+    setSingleQuestionTypeChangeId(null);
+    setIsTypeModalOpen(true);
+  };
   const closeTypeModal = () => {
     setIsTypeModalOpen(false);
     setTempType(null);
+    setSingleQuestionTypeChangeId(null);
+  };
+  const selectAndOpenTypeModal = (qId: number) => {
+    setSingleQuestionTypeChangeId(qId);
+    setIsTypeModalOpen(true);
   };
 
   const handleBulkTypeChange = async (targetType: "open" | "closed") => {
-    if (selectedIds.length === 0 || !data) return;
+    const ids =
+      singleQuestionTypeChangeId !== null
+        ? [singleQuestionTypeChangeId]
+        : selectedIds;
+    if (ids.length === 0 || !data) return;
 
     closeTypeModal();
+    setSingleQuestionTypeChangeId(null);
     startLoading();
 
     try {
       const res = await bulkConvertQuestions(data.test_id, {
-        question_ids: selectedIds,
+        question_ids: ids,
         target_type: targetType,
       });
       jobPolling.startPolling(res.job_id);
@@ -309,7 +371,7 @@ const useTestDetail = (): UseTestDetailResult => {
 
   const beginTitleEdit = (title: string) => titleActions.begin(title);
   const saveTitle = async () => {
-    await titleActions.save(data, refreshSidebarTests, setDataSorted);
+    await titleActions.save(data, refreshSidebarTests, setData);
   };
   const cancelTitle = () => titleActions.cancel(data?.title);
   const setTitleDraft = (value: string) => titleActions.change(value);
@@ -350,6 +412,98 @@ const useTestDetail = (): UseTestDetailResult => {
     navigate(`/tests/new/ai?from=${data.test_id}`);
   };
 
+  const onReorderQuestions = async (questionIds: number[]) => {
+    if (!testIdNum) return;
+    try {
+      await reorderQuestions(testIdNum, questionIds);
+      await refresh();
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : "Nie udało się zmienić kolejności pytań");
+    }
+  };
+
+  const createGroupAction = async (
+    testId: number,
+    label: string
+  ): Promise<GroupOut | null> => {
+    try {
+      const newGroup = await createGroup(testId, { label });
+      await refresh();
+      return newGroup;
+    } catch (e: any) {
+      alert(e.message || "Nie udało się dodać grupy");
+      return null;
+    }
+  };
+
+  const updateGroupAction = async (
+    testId: number,
+    groupId: number,
+    label: string
+  ): Promise<void> => {
+    try {
+      await updateGroup(testId, groupId, { label });
+      await refresh();
+    } catch (e: any) {
+      alert(e.message || "Nie udało się zmienić nazwy grupy");
+    }
+  };
+
+  const deleteGroupAction = async (
+    testId: number,
+    groupId: number
+  ): Promise<void> => {
+    try {
+      await deleteGroup(testId, groupId);
+      await refresh();
+    } catch (e: any) {
+      alert(e.message || "Nie udało się usunąć grupy");
+    }
+  };
+
+  const duplicateGroupAction = async (
+    testId: number,
+    groupId: number
+  ): Promise<GroupOut | null> => {
+    try {
+      const result = await duplicateGroup(testId, groupId);
+      await refresh();
+      return result.group;
+    } catch (e: any) {
+      alert(e.message || "Nie udało się skopiować grupy");
+      return null;
+    }
+  };
+
+  const createShuffledVariantGroupAction = async (
+    testId: number,
+    groupId: number
+  ): Promise<GroupOut | null> => {
+    try {
+      const newGroup = await createShuffledVariantGroup(testId, groupId);
+      await refresh();
+      return newGroup;
+    } catch (e: any) {
+      alert(e.message || "Nie udało się utworzyć wariantu z inną kolejnością");
+      return null;
+    }
+  };
+
+  const handleGenerateAIVariant = async (
+    groupId: number,
+    onSuccess?: (newGroupId: number) => void
+  ) => {
+    if (!data) return;
+    if (onSuccess) pendingVariantOnSuccessRef.current = onSuccess;
+    try {
+      const res = await generateGroupAIVariant(data.test_id, groupId);
+      jobPolling.startPolling(res.job_id);
+    } catch (e: any) {
+      pendingVariantOnSuccessRef.current = null;
+      alert(e.message || "Nie udało się uruchomić generowania wariantu AI");
+    }
+  };
+
   const closedCount = data?.questions.filter((q) => q.is_closed).length || 0;
   const openCount = data ? data.questions.length - closedCount : 0;
 
@@ -368,8 +522,10 @@ const useTestDetail = (): UseTestDetailResult => {
       questionIdToDelete,
       isRegenerateModalOpen,
       regenerationInstruction,
+      singleQuestionRegenerateId,
       isDifficultyModalOpen,
       isTypeModalOpen,
+      singleQuestionTypeChangeId,
       isBulkDeleteModalOpen,
       isMobileMenuOpen,
       tempDifficulty,
@@ -409,16 +565,19 @@ const useTestDetail = (): UseTestDetailResult => {
       toggleSelect,
       selectAll,
       clearSelection,
+      onReorderQuestions,
       handleBulkDelete,
       handleBulkUpdate,
       handleBulkRegenerate,
       openRegenerateModal,
       closeRegenerateModal,
       setRegenerationInstruction,
+      selectAndOpenRegenerateModal,
       openDifficultyModal,
       closeDifficultyModal,
       openTypeModal,
       closeTypeModal,
+      selectAndOpenTypeModal,
       openBulkDeleteModal,
       closeBulkDeleteModal,
       openMobileMenu,
@@ -440,6 +599,12 @@ const useTestDetail = (): UseTestDetailResult => {
       handleDownloadCustomPdf,
       downloadXml,
       handleEditConfig,
+      createGroup: createGroupAction,
+      updateGroup: updateGroupAction,
+      deleteGroup: deleteGroupAction,
+      duplicateGroup: duplicateGroupAction,
+      createShuffledVariantGroup: createShuffledVariantGroupAction,
+      handleGenerateAIVariant,
     },
   };
 };

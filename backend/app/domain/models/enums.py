@@ -27,6 +27,7 @@ class JobType(Enum):
     MATERIAL_ANALYSIS = "material_analysis"
     QUESTIONS_REGENERATION = "questions_regeneration"
     QUESTIONS_CONVERSION = "questions_conversion"
+    GROUP_AI_VARIANT = "group_ai_variant"
 
 
 class MaterialType(Enum):

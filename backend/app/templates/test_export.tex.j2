@@ -143,11 +143,12 @@
 
 [% set cfg = config %]
 
-% --- Główna pętla wariantów ---
+% --- Główna pętla wariantów (każda grupa od nowej strony) ---
 [% for variant in variants %]
-    
-    [% if variants|length > 1 %]
-      \section*{\textcolor{brand}{\textbf{Grupa {{ variant.name }}}}}
+    [% if not loop.first %]\newpage[% endif %]
+
+    [% if variants|length > 1 or variant.name %]
+      \section*{\textcolor{brand}{\textbf{ {{ variant.name or 'Pytania' }} }}}
     [% endif %]
 
     \begin{enumerate}
@@ -220,8 +221,6 @@
           \begin{answergrid}[height=23cm]\end{answergrid}
       \fi
     [% endif %]
-
-    [% if not loop.last %]\newpage[% endif %]
 [% endfor %]
 
 
