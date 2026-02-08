@@ -162,6 +162,23 @@ class UserService:
             if not user:
                 raise ValueError("Użytkownik nie został znaleziony")
 
+            # Collect paths of physical files to delete before removing DB records
+            file_paths = []
+            for file_row in user.files:
+                if file_row.filepath:
+                    file_paths.append(file_row.filepath)
+
+            # Collect thumbnail paths from materials
+            for material_row in user.materials:
+                if material_row.thumbnail_path:
+                    file_paths.append(material_row.thumbnail_path)
+
             # SQLModel/SQLAlchemy cascade delete will handle related entities
             # if configured
             session.delete(user)
+
+            # Trigger background task for physical file cleanup if there are any
+            if file_paths:
+                from app.tasks.materials import cleanup_user_files_task
+
+                cleanup_user_files_task.delay(file_paths)

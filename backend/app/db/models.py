@@ -22,10 +22,18 @@ class User(SQLModel, table=True):
     marketing_accepted: bool = Field(default=False)
     marketing_accepted_at: datetime | None = Field(default=None)
 
-    tests: list["Test"] = Relationship(back_populates="owner")
-    files: list["File"] = Relationship(back_populates="owner")
-    materials: list["Material"] = Relationship(back_populates="owner")
-    refresh_tokens: list["RefreshToken"] = Relationship(back_populates="owner")
+    tests: list["Test"] = Relationship(
+        back_populates="owner", sa_relationship_kwargs={"cascade": "all, delete-orphan"}
+    )
+    files: list["File"] = Relationship(
+        back_populates="owner", sa_relationship_kwargs={"cascade": "all, delete-orphan"}
+    )
+    materials: list["Material"] = Relationship(
+        back_populates="owner", sa_relationship_kwargs={"cascade": "all, delete-orphan"}
+    )
+    refresh_tokens: list["RefreshToken"] = Relationship(
+        back_populates="owner", sa_relationship_kwargs={"cascade": "all, delete-orphan"}
+    )
 
 
 class RefreshToken(SQLModel, table=True):
@@ -144,13 +152,19 @@ class Question(SQLModel, table=True):
 
 class File(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
-    owner_id: int = Field(foreign_key="user.id", index=True)
+    owner_id: int = Field(
+        sa_column=Column(
+            Integer, ForeignKey("user.id", ondelete="CASCADE"), index=True, nullable=False
+        )
+    )
     filename: str
     filepath: str
     uploaded_at: datetime = Field(default_factory=datetime.utcnow)
 
     owner: User | None = Relationship(back_populates="files")
-    material: Optional["Material"] = Relationship(back_populates="file")
+    material: Optional["Material"] = Relationship(
+        back_populates="file", sa_relationship_kwargs={"cascade": "all, delete-orphan"}
+    )
 
 
 class FilePurpose(StrEnum):
@@ -200,8 +214,20 @@ class SupportStatus(StrEnum):
 
 class Material(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
-    owner_id: int = Field(foreign_key="user.id", index=True)
-    file_id: int = Field(foreign_key="file.id", unique=True, index=True)
+    owner_id: int = Field(
+        sa_column=Column(
+            Integer, ForeignKey("user.id", ondelete="CASCADE"), index=True, nullable=False
+        )
+    )
+    file_id: int = Field(
+        sa_column=Column(
+            Integer,
+            ForeignKey("file.id", ondelete="CASCADE"),
+            unique=True,
+            index=True,
+            nullable=False,
+        )
+    )
     mime_type: str | None = Field(default=None, index=True)
     size_bytes: int | None = None
     checksum: str | None = Field(default=None, index=True)
@@ -234,7 +260,11 @@ class Material(SQLModel, table=True):
 
 class Job(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
-    owner_id: int = Field(foreign_key="user.id", index=True)
+    owner_id: int = Field(
+        sa_column=Column(
+            Integer, ForeignKey("user.id", ondelete="CASCADE"), index=True, nullable=False
+        )
+    )
     job_type: JobType = Field(sa_column=Column("job_type", SAEnum(JobType), index=True))
     status: JobStatus = Field(sa_column=Column("status", SAEnum(JobStatus), index=True))
     payload: dict = Field(default_factory=dict, sa_column=Column(JSONB))
@@ -260,7 +290,11 @@ class OcrCache(SQLModel, table=True):
     __tablename__ = "ocr_cache"
 
     id: int | None = Field(default=None, primary_key=True)
-    user_id: int = Field(foreign_key="user.id", index=True)
+    user_id: int = Field(
+        sa_column=Column(
+            Integer, ForeignKey("user.id", ondelete="CASCADE"), index=True, nullable=False
+        )
+    )
     file_hash: str = Field(index=True, max_length=64)
     ocr_options_hash: str = Field(index=True, max_length=64)
     pipeline_version: str = Field(max_length=20)
@@ -276,14 +310,26 @@ class SystemNotification(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     
     type: str = Field(default="info", max_length=20) 
-    recipient_id: int | None = Field(default=None, foreign_key="user.id", nullable=True)
+    recipient_id: int | None = Field(
+        sa_column=Column(
+            Integer, ForeignKey("user.id", ondelete="CASCADE"), nullable=True
+        )
+    )
 
 class UserReadNotification(SQLModel, table=True):
     __tablename__ = "user_read_notifications"
     
-    user_id: int = Field(foreign_key="user.id", primary_key=True)
+    user_id: int = Field(
+        sa_column=Column(
+            Integer, ForeignKey("user.id", ondelete="CASCADE"), primary_key=True
+        )
+    )
     notification_id: int = Field(
-        foreign_key="system_notifications.id", primary_key=True
+        sa_column=Column(
+            Integer,
+            ForeignKey("system_notifications.id", ondelete="CASCADE"),
+            primary_key=True,
+        )
     )
     read_at: datetime = Field(default_factory=datetime.utcnow)
 
@@ -291,7 +337,9 @@ class SupportTicket(SQLModel, table=True):
     __tablename__ = "support_tickets"
     id: int | None = Field(default=None, primary_key=True)
     user_id: int | None = Field(
-        default=None, foreign_key="user.id", index=True, nullable=True
+        sa_column=Column(
+            Integer, ForeignKey("user.id", ondelete="CASCADE"), index=True, nullable=True
+        )
     )
     email: str = Field(index=True, max_length=100)
     first_name: str | None = Field(default=None, max_length=50)

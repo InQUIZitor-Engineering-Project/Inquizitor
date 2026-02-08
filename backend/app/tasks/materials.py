@@ -228,3 +228,19 @@ def analyze_material_task(
             error=str(exc),
         )
         raise
+
+
+@celery_app.task(name="app.tasks.cleanup_user_files")
+def cleanup_user_files_task(file_paths: list[str]) -> None:
+    """Background task to delete physical files from storage."""
+    from app.bootstrap import get_container
+
+    container = get_container()
+    storage = container.provide_file_storage()
+
+    for path in file_paths:
+        try:
+            storage.delete(path)
+            logger.info("Successfully deleted physical file: %s", path)
+        except Exception as exc:
+            logger.error("Failed to delete physical file %s: %s", path, exc)
