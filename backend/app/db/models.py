@@ -60,7 +60,10 @@ class Test(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
     owner: User | None = Relationship(back_populates="tests")
-    question_groups: list["QuestionGroup"] = Relationship(back_populates="test")
+    question_groups: list["QuestionGroup"] = Relationship(
+        back_populates="test",
+        sa_relationship_kwargs={"cascade": "all, delete-orphan"},
+    )
     questions: list["Question"] = Relationship(
         back_populates="test",
         sa_relationship_kwargs={
