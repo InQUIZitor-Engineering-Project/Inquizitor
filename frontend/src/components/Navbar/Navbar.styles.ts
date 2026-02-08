@@ -158,7 +158,6 @@ export const StyledLink = styled(Link)<{ $active?: boolean }>`
     font-weight: 600;
     line-height: ${theme.typography.body.medium.body2.lineHeight};
     color: ${$active ? theme.colors.brand.primary : theme.colors.neutral.dGrey};
-    background-color: ${$active ? theme.colors.tint.t5 : 'transparent'};
   `}
   white-space: nowrap;      /* żeby się nie łamały słowa w połowie */
   transition: all 0.2s ease;
@@ -181,7 +180,6 @@ export const StyledLink = styled(Link)<{ $active?: boolean }>`
 
   &:hover {
     color: ${({ theme }) => theme.colors.brand.primary};
-    background-color: ${({ theme }) => theme.colors.tint.t5};
     
     &::after {
       transform: scaleX(1);
