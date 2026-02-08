@@ -162,5 +162,6 @@ class UserService:
             if not user:
                 raise ValueError("Użytkownik nie został znaleziony")
 
-            # SQLModel/SQLAlchemy cascade delete will handle related entities if configured
+            # SQLModel/SQLAlchemy cascade delete will handle related entities
+            # if configured
             session.delete(user)

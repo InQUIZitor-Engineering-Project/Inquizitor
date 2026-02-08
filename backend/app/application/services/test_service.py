@@ -39,6 +39,7 @@ from app.application.interfaces import (
 )
 from app.db.models import Question as QuestionRow
 from app.db.models import Test as TestRow
+from app.db.models import User as UserRow
 from app.domain.events import TestGenerated
 from app.domain.models import PdfExportCache
 from app.domain.models import Question as QuestionDomain
