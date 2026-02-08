@@ -154,7 +154,10 @@ class File(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     owner_id: int = Field(
         sa_column=Column(
-            Integer, ForeignKey("user.id", ondelete="CASCADE"), index=True, nullable=False
+            Integer,
+            ForeignKey("user.id", ondelete="CASCADE"),
+            index=True,
+            nullable=False,
         )
     )
     filename: str
@@ -216,7 +219,10 @@ class Material(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     owner_id: int = Field(
         sa_column=Column(
-            Integer, ForeignKey("user.id", ondelete="CASCADE"), index=True, nullable=False
+            Integer,
+            ForeignKey("user.id", ondelete="CASCADE"),
+            index=True,
+            nullable=False,
         )
     )
     file_id: int = Field(
@@ -262,7 +268,10 @@ class Job(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     owner_id: int = Field(
         sa_column=Column(
-            Integer, ForeignKey("user.id", ondelete="CASCADE"), index=True, nullable=False
+            Integer,
+            ForeignKey("user.id", ondelete="CASCADE"),
+            index=True,
+            nullable=False,
         )
     )
     job_type: JobType = Field(sa_column=Column("job_type", SAEnum(JobType), index=True))
@@ -292,7 +301,10 @@ class OcrCache(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     user_id: int = Field(
         sa_column=Column(
-            Integer, ForeignKey("user.id", ondelete="CASCADE"), index=True, nullable=False
+            Integer,
+            ForeignKey("user.id", ondelete="CASCADE"),
+            index=True,
+            nullable=False,
         )
     )
     file_hash: str = Field(index=True, max_length=64)
@@ -338,7 +350,10 @@ class SupportTicket(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     user_id: int | None = Field(
         sa_column=Column(
-            Integer, ForeignKey("user.id", ondelete="CASCADE"), index=True, nullable=True
+            Integer,
+            ForeignKey("user.id", ondelete="CASCADE"),
+            index=True,
+            nullable=True,
         )
     )
     email: str = Field(index=True, max_length=100)
