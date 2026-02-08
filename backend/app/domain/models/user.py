@@ -17,6 +17,8 @@ class User:
     first_name: str | None = None
     last_name: str | None = None
     created_at: datetime | None = None
+    terms_accepted: bool = True
+    marketing_accepted: bool = False
 
     def __post_init__(self) -> None:
         self.email = self.email.strip().lower()

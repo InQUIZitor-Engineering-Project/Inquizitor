@@ -23,6 +23,7 @@ import PublicLayout from "./layouts/PublicLayout";
 import VerifyEmailPage from "./pages/VerifyEmailPage/VerifyEmailPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage/ResetPasswordPage";
+import SettingsPage from "./pages/SettingsPage/SettingsPage";
 
 import ScrollToTop from "./components/ScrollToTop/ScrollToTop";
 
@@ -150,14 +151,22 @@ const App: React.FC = () => {
               } 
             />
           </Route>
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute>
-                <ProfilePage />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <ProfilePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/settings"
+              element={
+                <ProtectedRoute>
+                  <SettingsPage />
+                </ProtectedRoute>
+              }
+            />
 
           <Route path="*" element={<FallbackRedirect />} />
         </Routes>

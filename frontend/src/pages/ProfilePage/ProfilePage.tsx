@@ -6,7 +6,8 @@ import ProfileHeader from "./components/ProfileHeader";
 import AccountInfoCard from "./components/AccountInfoCard";
 import StatsCard from "./components/StatsCard";
 import NotificationsCard from "./components/NotificationsCard";
-import PasswordCard from "./components/PasswordCard";
+import { Card, Button, Heading, Text } from "../../design-system/primitives";
+import { useNavigate } from "react-router-dom";
 import profileIllustration from "../../assets/profile.webp";
 import { PageContainer, PageSection } from "../../design-system/patterns";
 
@@ -36,17 +37,12 @@ interface UserStatistics {
 
 const ProfilePage: React.FC = () => {
   const { withLoader } = useLoader();
+  const navigate = useNavigate();
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [stats, setStats] = useState<UserStatistics | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-
-  const [oldPassword, setOldPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [passwordError, setPasswordError] = useState<string | null>(null);
-  const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     const loadData = async () => {
@@ -95,58 +91,6 @@ const ProfilePage: React.FC = () => {
     loadData();
   }, [withLoader]);
 
-  const handlePasswordChange = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setPasswordError(null);
-    setPasswordSuccess(null);
-
-    if (!oldPassword || !newPassword || !confirmPassword) {
-      setPasswordError("Uzupełnij wszystkie pola.");
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      setPasswordError("Nowe hasła nie są zgodne.");
-      return;
-    }
-    if (newPassword.length < 8) {
-      setPasswordError("Nowe hasło musi mieć co najmniej 8 znaków.");
-      return;
-    }
-
-    try {
-      await withLoader(async () => {
-        const token = localStorage.getItem("access_token");
-        if (!token) {
-          throw new Error("Brak autoryzacji. Zaloguj się ponownie.");
-        }
-
-        const res = await fetch(`${API_BASE}/users/me/change-password`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            old_password: oldPassword,
-            new_password: newPassword,
-          }),
-        });
-
-        if (!res.ok) {
-          const body = await res.json().catch(() => ({}));
-          throw new Error(body.detail || "Nie udało się zmienić hasła.");
-        }
-
-        setPasswordSuccess("Hasło zostało pomyślnie zmienione.");
-        setOldPassword("");
-        setNewPassword("");
-        setConfirmPassword("");
-      });
-    } catch (err: any) {
-      setPasswordError(err.message || "Wystąpił błąd podczas zmiany hasła.");
-    }
-  };
-
   useDocumentTitle("Profil | Inquizitor");
 
   const pageContent = (
@@ -173,17 +117,19 @@ const ProfilePage: React.FC = () => {
 
             <Stack $gap="lg" style={{ flex: "1 1 320px", minWidth: "min(320px, 100%)" }}>
               <NotificationsCard />
-              <PasswordCard
-                oldPassword={oldPassword}
-                newPassword={newPassword}
-                confirmPassword={confirmPassword}
-                onOldChange={setOldPassword}
-                onNewChange={setNewPassword}
-                onConfirmChange={setConfirmPassword}
-                onSubmit={handlePasswordChange}
-                error={passwordError}
-                success={passwordSuccess}
-              />
+              <Card $p="lg" $shadow="md" $variant="elevated">
+                <Stack $gap="md">
+                  <Stack $gap="4px">
+                    <Heading $level="h3">Ustawienia konta</Heading>
+                    <Text $variant="body3" $tone="muted">
+                      Zmień hasło, zarządzaj zgodami lub usuń konto.
+                    </Text>
+                  </Stack>
+                  <Button onClick={() => navigate("/settings")} $variant="outline" $fullWidth>
+                    Przejdź do ustawień
+                  </Button>
+                </Stack>
+              </Card>
             </Stack>
           </Flex>
         </Stack>
