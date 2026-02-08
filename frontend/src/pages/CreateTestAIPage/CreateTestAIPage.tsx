@@ -1,5 +1,5 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import styled from "styled-components";
 import { Box, Flex, Stack, Heading, Text, Button } from "../../design-system/primitives";
 import { AlertBar, Tooltip } from "../../design-system/patterns";
@@ -10,6 +10,7 @@ import StructureCard from "./components/StructureCard";
 import DifficultyCard from "./components/DifficultyCard";
 import MaterialLibraryModal from "./components/MaterialLibraryModal";
 import { PageContainer, PageSection } from "../../design-system/patterns";
+import { useAuth } from "../../hooks/useAuth";
 
 const ActionButton = styled(Button)`
   ${({ theme }) => theme.media.down("sm")} {
@@ -20,7 +21,10 @@ const ActionButton = styled(Button)`
 
 const CreateTestAIPage: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { state, derived, status, actions, refs } = useGenerateTestForm();
+
+  const isConsentRevoked = user && !user.terms_accepted;
 
   return (
     <Flex $direction="column" $height="100%" $bg="#f5f6f8">
@@ -28,6 +32,18 @@ const CreateTestAIPage: React.FC = () => {
         <PageSection $py="xl">
           <PageContainer>
             <Stack style={{ width: "100%", maxWidth: 960, margin: "0 auto" }} $gap="lg">
+              {isConsentRevoked && (
+                <AlertBar variant="danger">
+                  <Flex $align="center" $gap="xs" $wrap="wrap">
+                    <Text $variant="body2">
+                      Nie zaakceptowałeś regulaminu. Funkcja generowania testów jest wyłączona.
+                    </Text>
+                    <Link to="/settings" style={{ fontWeight: "bold", textDecoration: "underline", color: "inherit" }}>
+                      Przejdź do ustawień, aby zaakceptować regulamin.
+                    </Link>
+                  </Flex>
+                </AlertBar>
+              )}
               <Stack $gap="xs">
                 <Flex $justify="space-between" $align="flex-start">
                   <Stack $gap="xs">
@@ -117,12 +133,12 @@ const CreateTestAIPage: React.FC = () => {
               />
 
               <Flex $justify="center">
-                <Tooltip content={derived.primaryValidationError}>
+                <Tooltip content={isConsentRevoked ? "Musisz zaakceptować regulamin" : (derived.primaryValidationError ?? undefined)}>
                   <Button
                     $size="lg"
                     onClick={actions.handleGenerate}
                     disabled={
-                      status.genLoading || state.materialUploading || !derived.canGenerate
+                      !!(status.genLoading || state.materialUploading || !derived.canGenerate || isConsentRevoked)
                     }
                   >
                     {status.genLoading 

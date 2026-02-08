@@ -15,24 +15,163 @@ import {
   RelativeContainer,
   NotificationBadge,
 } from "./Navbar.styles";
+import styled from "styled-components";
 import { Logo, LogosWrapper } from "../../styles/common";
 import { useAuth } from "../../hooks/useAuth";
 import { useLoader } from "../../components/Loader/GlobalLoader";
 import logoBook from "../../assets/logo_book.webp";
 import logoText from "../../assets/logo_text.webp";
 import hamburgerIcon from "../../assets/hamburger.webp";
+import userAvatarIcon from "../../assets/profilenavbaricon.webp";
 import { PageContainer } from "../../design-system/patterns";
-import { Flex } from "../../design-system/primitives";
+import { Flex, Box, Text} from "../../design-system/primitives";
+
+const UserMenuContainer = styled.div`
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+`;
+
+const AvatarButton = styled.button`
+  background: none;
+  border: 2px solid transparent;
+  padding: 2px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  overflow: visible;
+  position: relative;
+  transition: all 0.2s ease;
+  padding: 0px 5px 5px 5px;
+
+  &:hover {
+    transform: scale(1.05);
+    border-color: ${({ theme }) => theme.colors.brand.primary};
+    background-color: rgba(76, 175, 80, 0.05);
+  }
+`;
+
+const AvatarImage = styled.img`
+  width: 32px;
+  height: 32px;
+  border-radius: 0;
+  object-fit: contain;
+  display: block;
+`;
+
+const InitialsText = styled(Text)`
+  font-size: 12px;
+  font-weight: 700;
+  color: ${({ theme }) => theme.colors.neutral.dGrey};
+  text-transform: uppercase;
+  line-height: 1;
+`;
+
+const DropdownMenu = styled.div<{ $open: boolean }>`
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  width: max-content;
+  min-width: 200px;
+  padding: 8px;
+  display: ${({ $open }) => ($open ? "block" : "none")};
+  z-index: 1000;
+  border: 1px solid ${({ theme }) => theme.colors.tint.t5};
+  animation: fadeInCentered 0.2s ease-out;
+
+  @keyframes fadeInCentered {
+    from { opacity: 0; transform: translate(-50%, -10px); }
+    to { opacity: 1; transform: translate(-50%, 0); }
+  }
+
+  @media (max-width: 768px) {
+    position: static;
+    transform: none;
+    box-shadow: none;
+    border: none;
+    padding: 0;
+    width: 100%;
+    display: block;
+    margin-top: 8px;
+    animation: none;
+  }
+`;
+
+const DropdownItem = styled.button`
+  width: 100%;
+  text-align: left;
+  padding: 10px 16px;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+  transition: all 0.2s;
+  color: ${({ theme }) => theme.colors.neutral.dGrey};
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+
+  &:hover {
+    background-color: ${({ theme }) => theme.colors.tint.t5};
+    color: ${({ theme }) => theme.colors.brand.primary};
+  }
+
+  @media (max-width: 768px) {
+    padding: 14px 16px;
+    font-size: 15px;
+    background-color: ${({ theme }) => theme.colors.tint.t5};
+    margin-bottom: 6px;
+    justify-content: center;
+    text-align: center;
+  }
+`;
+
+const MobileGreeting = styled(Box)`
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.tint.t5};
+  text-align: center;
+`;
 
 const Navbar: React.FC = () => {
-  const { user, logout, unreadNotificationsCount } = useAuth();  const navigate = useNavigate();
+  const { user, logout, unreadNotificationsCount } = useAuth();
+  const navigate = useNavigate();
   const location = useLocation();
   const { startLoading, stopLoading, withLoader } = useLoader();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   const [showSidebarToggle, setShowSidebarToggle] = useState(false);
 
-  const closeMenu = () => setMenuOpen(false);
+  const closeMenu = () => {
+    setMenuOpen(false);
+    setUserMenuOpen(false);
+  };
+  
+  const toggleUserMenu = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setUserMenuOpen(!userMenuOpen);
+  };
+
+  useEffect(() => {
+    const handleClickOutside = () => setUserMenuOpen(false);
+    window.addEventListener("click", handleClickOutside);
+    return () => window.removeEventListener("click", handleClickOutside);
+  }, []);
+
   const toggleSidebarDrawer = () =>
     window.dispatchEvent(new CustomEvent("inquizitor:toggle-sidebar"));
 
@@ -74,6 +213,54 @@ const Navbar: React.FC = () => {
     setShowSidebarToggle(shouldShow);
   }, [location]);
 
+  const UserMenu = ({ isMobile = false }) => {
+    const initials = user ? `${user.first_name?.[0] || ""}${user.last_name?.[0] || ""}` : "";
+
+    return (
+      <UserMenuContainer onClick={(e) => isMobile && e.stopPropagation()}>
+        {!isMobile && (
+          <>
+            <AvatarButton onClick={toggleUserMenu}>
+              <RelativeContainer>
+                <AvatarImage src={userAvatarIcon} alt="User Avatar" />
+                {unreadNotificationsCount > 0 && (
+                  <NotificationBadge style={{ transform: "translate(20%, -20%)" }}>
+                    {unreadNotificationsCount > 9 ? "9+" : unreadNotificationsCount}
+                  </NotificationBadge>
+                )}
+              </RelativeContainer>
+            </AvatarButton>
+            {initials && <InitialsText>{initials}</InitialsText>}
+          </>
+        )}
+        
+        <DropdownMenu $open={isMobile ? true : userMenuOpen}>
+          {isMobile && (
+            <MobileGreeting>
+              <Text $variant="body2" $weight="medium" style={{ color: "#333" }}>
+                Cześć, {user?.first_name}!
+              </Text>
+            </MobileGreeting>
+          )}
+          <DropdownItem onClick={() => handleNavClick("/profile")}>
+            Strona profilowa
+          </DropdownItem>
+          <DropdownItem onClick={() => handleNavClick("/settings")}>
+            Ustawienia konta
+          </DropdownItem>
+          <DropdownItem onClick={handleLogout} style={{ borderTop: isMobile ? "none" : "1px solid #f0f0f0", marginTop: isMobile ? 0 : 4, paddingTop: isMobile ? 12 : 12, color: "#d32f2f" }}>
+            Wyloguj
+          </DropdownItem>
+        </DropdownMenu>
+      </UserMenuContainer>
+    );
+  };
+
+  const isPathActive = (path: string) => {
+    if (path === "/") return location.pathname === "/";
+    return location.pathname.startsWith(path);
+  };
+
   return (
     <NavbarContainer>
       <PageContainer>
@@ -86,28 +273,28 @@ const Navbar: React.FC = () => {
           </Link>
 
           <NavLinks>
-            <StyledLink to="/" onClick={triggerQuickLoader}>
+            <StyledLink to="/" onClick={triggerQuickLoader} $active={isPathActive("/")}>
               Strona główna
             </StyledLink>
 
             {user && (
-              <StyledLink to="/dashboard" onClick={triggerQuickLoader}>
+              <StyledLink to="/dashboard" onClick={triggerQuickLoader} $active={isPathActive("/dashboard")}>
                 Panel główny
               </StyledLink>
             )}
 
             {user && (
-              <StyledLink to="/biblioteka" onClick={triggerQuickLoader}>
+              <StyledLink to="/biblioteka" onClick={triggerQuickLoader} $active={isPathActive("/biblioteka")}>
                 Biblioteka
               </StyledLink>
             )}
 
-            <StyledLink to="/about" onClick={triggerQuickLoader}>
+            <StyledLink to="/about" onClick={triggerQuickLoader} $active={isPathActive("/about")}>
               O nas
             </StyledLink>
 
 
-            <StyledLink to="/pomoc" onClick={triggerQuickLoader}>
+            <StyledLink to="/pomoc" onClick={triggerQuickLoader} $active={isPathActive("/pomoc")}>
               Pomoc
             </StyledLink>
           </NavLinks>
@@ -118,19 +305,7 @@ const Navbar: React.FC = () => {
                 {showSidebarToggle && (
                   <SidebarToggleButton onClick={toggleSidebarDrawer}>Testy</SidebarToggleButton>
                 )}
-                <RegisterButton as="button" onClick={() => handleNavClick("/profile")}>
-                      <RelativeContainer>
-                        {user.first_name} →
-                        {unreadNotificationsCount > 0 && (
-                          <NotificationBadge>
-                            {unreadNotificationsCount > 9 ? "9+" : unreadNotificationsCount}
-                          </NotificationBadge>
-                        )}
-                      </RelativeContainer>
-                </RegisterButton>
-                <LoginLink as="button" onClick={handleLogout}>
-                  Wyloguj
-                </LoginLink>
+                <UserMenu />
               </>
             ) : (
               <>
@@ -172,47 +347,35 @@ const Navbar: React.FC = () => {
 
         <NavContent $open={menuOpen}>
           <NavLinks>
-            <StyledLink to="/" onClick={triggerQuickLoader}>
+            <StyledLink to="/" onClick={triggerQuickLoader} $active={isPathActive("/")}>
               Strona główna
             </StyledLink>
 
             {user && (
-              <StyledLink to="/dashboard" onClick={triggerQuickLoader}>
+              <StyledLink to="/dashboard" onClick={triggerQuickLoader} $active={isPathActive("/dashboard")}>
                 Panel główny
               </StyledLink>
             )}
 
             {user && (
-              <StyledLink to="/biblioteka" onClick={triggerQuickLoader}>
+              <StyledLink to="/biblioteka" onClick={triggerQuickLoader} $active={isPathActive("/biblioteka")}>
                 Biblioteka
               </StyledLink>
             )}
 
-            <StyledLink to="/about" onClick={triggerQuickLoader}>
+            <StyledLink to="/about" onClick={triggerQuickLoader} $active={isPathActive("/about")}>
               O nas
             </StyledLink>
 
 
-            <StyledLink to="/pomoc" onClick={triggerQuickLoader}>
+            <StyledLink to="/pomoc" onClick={triggerQuickLoader} $active={isPathActive("/pomoc")}>
               Pomoc
             </StyledLink>
           </NavLinks>
 
           <ButtonGroup>
             {user ? (
-              <>
-                <RegisterButton as="button" onClick={() => handleNavClick("/profile")}>
-                    {user.first_name} →
-                    {unreadNotificationsCount > 0 && (
-                      <NotificationBadge>
-                        {unreadNotificationsCount > 9 ? "9+" : unreadNotificationsCount}
-                      </NotificationBadge>
-                    )}
-                </RegisterButton>
-                <LoginLink as="button" onClick={handleLogout}>
-                  Wyloguj
-                </LoginLink>
-              </>
+              <UserMenu isMobile />
             ) : (
               <>
                 <LoginLink as="button" onClick={() => handleNavClick("/login")}>

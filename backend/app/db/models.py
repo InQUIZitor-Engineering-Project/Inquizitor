@@ -15,6 +15,12 @@ class User(SQLModel, table=True):
     first_name: str | None = Field(default=None, max_length=50)
     last_name:  str | None = Field(default=None, max_length=50)
     created_at: datetime = Field(default_factory=datetime.utcnow)
+    
+    # Consents
+    terms_accepted: bool = Field(default=True)
+    terms_accepted_at: datetime | None = Field(default_factory=datetime.utcnow)
+    marketing_accepted: bool = Field(default=False)
+    marketing_accepted_at: datetime | None = Field(default=None)
 
     tests: list["Test"] = Relationship(back_populates="owner")
     files: list["File"] = Relationship(back_populates="owner")

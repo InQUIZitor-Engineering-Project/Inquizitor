@@ -37,6 +37,8 @@ def user_to_domain(row: db_models.User) -> User:
         first_name=row.first_name,
         last_name=row.last_name,
         created_at=row.created_at,
+        terms_accepted=row.terms_accepted,
+        marketing_accepted=row.marketing_accepted,
     )
 
 
@@ -48,6 +50,8 @@ def user_to_row(user: User) -> db_models.User:
         first_name=user.first_name,
         last_name=user.last_name,
         created_at=user.created_at or datetime.utcnow(),
+        terms_accepted=user.terms_accepted,
+        marketing_accepted=user.marketing_accepted,
     )
 
 

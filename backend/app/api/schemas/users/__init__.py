@@ -33,9 +33,17 @@ class UserRead(UserBase):
     first_name: str | None = None
     last_name: str | None = None
     created_at: datetime
+    terms_accepted: bool
+    marketing_accepted: bool
 
     class Config:
         from_attributes = True
+
+
+class UserConsentsUpdate(BaseModel):
+    terms_accepted: bool
+    marketing_accepted: bool
+
 
 class UserStatistics(BaseModel):
     total_tests: int
@@ -60,4 +68,5 @@ __all__ = [
     "UserCreate",
     "UserRead",
     "UserStatistics",
+    "UserConsentsUpdate",
 ]

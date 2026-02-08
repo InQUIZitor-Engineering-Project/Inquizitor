@@ -151,19 +151,41 @@ export const NavLinks = styled.div`
   }
 `;
 
-export const StyledLink = styled(Link)`
-  ${({ theme }) => `
+export const StyledLink = styled(Link)<{ $active?: boolean }>`
+  ${({ theme, $active }) => `
     font-family: ${theme.typography.body.medium.body2.fontFamily};
     font-size: ${theme.typography.body.medium.body2.fontSize};
-    font-weight: ${theme.typography.body.medium.body2.fontWeight};
+    font-weight: 600;
     line-height: ${theme.typography.body.medium.body2.lineHeight};
-    color: ${theme.colors.neutral.lGrey};
+    color: ${$active ? theme.colors.brand.primary : theme.colors.neutral.dGrey};
+    background-color: ${$active ? theme.colors.tint.t5 : 'transparent'};
   `}
   white-space: nowrap;      /* żeby się nie łamały słowa w połowie */
-  transition: color 0.2s;
+  transition: all 0.2s ease;
+  padding: 6px 12px;
+  border-radius: 6px;
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 12px;
+    right: 12px;
+    height: 2px;
+    background-color: ${({ theme }) => theme.colors.brand.primary};
+    transform: scaleX(${({ $active }) => ($active ? 1 : 0)});
+    transition: transform 0.2s ease;
+    border-radius: 2px;
+  }
 
   &:hover {
     color: ${({ theme }) => theme.colors.brand.primary};
+    background-color: ${({ theme }) => theme.colors.tint.t5};
+    
+    &::after {
+      transform: scaleX(1);
+    }
   }
 `;
 

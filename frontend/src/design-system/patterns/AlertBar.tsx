@@ -7,6 +7,7 @@ type AlertVariant = "info" | "success" | "warning" | "danger";
 export interface AlertBarProps {
   variant?: AlertVariant;
   children: React.ReactNode;
+  style?: React.CSSProperties;
 }
 
 const variantStyles = {
@@ -40,9 +41,9 @@ const AlertContainer = styled(Flex)<{ $variant: AlertVariant }>`
   ${({ $variant }) => variantStyles[$variant]}
 `;
 
-const AlertBar: React.FC<AlertBarProps> = ({ variant = "warning", children }) => {
+const AlertBar: React.FC<AlertBarProps> = ({ variant = "warning", children, style }) => {
   return (
-    <AlertContainer $variant={variant}>
+    <AlertContainer $variant={variant} style={style}>
       <Text as="span" $variant="body3" $weight="medium" $tone="default">
         {children}
       </Text>

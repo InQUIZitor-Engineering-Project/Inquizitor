@@ -292,6 +292,15 @@ class TestService:
         owner_id: int,
     ) -> TestGenerateResponse:
         with self._uow_factory() as uow:
+            session = getattr(uow, "session", None)
+            if session:
+                user = session.get(UserRow, owner_id)
+                if user and not user.terms_accepted:
+                    raise ValueError(
+                        "Musisz zaakceptować regulamin, aby generować testy. "
+                        "Przejdź do ustawień konta."
+                    )
+
             normalized_text = request.text.strip() if request.text else ""
             source_text: str
             base_title: str

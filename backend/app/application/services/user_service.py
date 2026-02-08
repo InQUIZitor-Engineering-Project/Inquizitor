@@ -127,3 +127,40 @@ class UserService:
             # Encja jest zmapowana, więc samo session.add(user) jest opcjonalne,
             # ale nie zaszkodzi:
             session.add(user)
+
+    def update_consents(
+        self, *, user_id: int, terms_accepted: bool, marketing_accepted: bool
+    ) -> None:
+        with self._uow_factory() as uow:
+            session = getattr(uow, "session", None)
+            if session is None:
+                raise RuntimeError("UnitOfWork session is not initialized")
+
+            user = session.get(UserRow, user_id)
+            if not user:
+                raise ValueError("Użytkownik nie został znaleziony")
+
+            if user.terms_accepted != terms_accepted:
+                user.terms_accepted = terms_accepted
+                user.terms_accepted_at = datetime.utcnow() if terms_accepted else None
+
+            if user.marketing_accepted != marketing_accepted:
+                user.marketing_accepted = marketing_accepted
+                user.marketing_accepted_at = (
+                    datetime.utcnow() if marketing_accepted else None
+                )
+
+            session.add(user)
+
+    def delete_account(self, *, user_id: int) -> None:
+        with self._uow_factory() as uow:
+            session = getattr(uow, "session", None)
+            if session is None:
+                raise RuntimeError("UnitOfWork session is not initialized")
+
+            user = session.get(UserRow, user_id)
+            if not user:
+                raise ValueError("Użytkownik nie został znaleziony")
+
+            # SQLModel/SQLAlchemy cascade delete will handle related entities if configured
+            session.delete(user)
