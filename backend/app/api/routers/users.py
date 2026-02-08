@@ -107,7 +107,11 @@ def delete_my_account(
     if current_user.id is None:
         raise HTTPException(status_code=401, detail="User ID is missing")
 
-    user_service.delete_account(user_id=current_user.id)
+    file_paths = user_service.delete_account(user_id=current_user.id)
+    if file_paths:
+        from app.tasks.materials import cleanup_user_files_task
+
+        cleanup_user_files_task.delay(file_paths)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 

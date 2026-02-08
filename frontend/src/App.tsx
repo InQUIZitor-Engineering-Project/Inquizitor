@@ -21,6 +21,7 @@ import MaterialPreviewPage from "./pages/LibraryPage/MaterialPreviewPage";
 import MainLayout from "./layouts/MainLayout";
 import PublicLayout from "./layouts/PublicLayout";
 import VerifyEmailPage from "./pages/VerifyEmailPage/VerifyEmailPage";
+import AuthCallbackPage from "./pages/AuthCallbackPage/AuthCallbackPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage/ResetPasswordPage";
 import SettingsPage from "./pages/SettingsPage/SettingsPage";
@@ -77,6 +78,7 @@ const App: React.FC = () => {
               }
             />
             <Route path="/verify-email" element={<VerifyEmailPage />} />
+            <Route path="/auth/callback" element={<AuthCallbackPage />} />
             <Route 
               path="/forgot-password" 
               element={

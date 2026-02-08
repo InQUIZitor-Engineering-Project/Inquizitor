@@ -3,9 +3,12 @@ from __future__ import annotations
 from collections.abc import Callable
 from datetime import datetime
 
+from sqlalchemy import delete
+
 from app.api.schemas.users import UserStatistics
 from app.application.interfaces import UnitOfWork
 from app.core.security import get_password_hash, verify_password
+from app.db.models import PdfExportCache as PdfExportCacheRow
 from app.db.models import User as UserRow
 
 
@@ -152,7 +155,12 @@ class UserService:
 
             session.add(user)
 
-    def delete_account(self, *, user_id: int) -> None:
+    def delete_account(self, *, user_id: int) -> list[str]:
+        """
+        Delete user and all related data in a single transaction.
+        Returns list of physical file paths to clean up; caller should schedule
+        cleanup task only after this returns (so after commit).
+        """
         with self._uow_factory() as uow:
             session = getattr(uow, "session", None)
             if session is None:
@@ -162,23 +170,25 @@ class UserService:
             if not user:
                 raise ValueError("Użytkownik nie został znaleziony")
 
-            # Collect paths of physical files to delete before removing DB records
-            file_paths = []
+            # Collect paths of physical files to delete (schedule after commit)
+            file_paths: list[str] = []
             for file_row in user.files:
                 if file_row.filepath:
                     file_paths.append(file_row.filepath)
-
-            # Collect thumbnail paths from materials
             for material_row in user.materials:
                 if material_row.thumbnail_path:
                     file_paths.append(material_row.thumbnail_path)
 
-            # SQLModel/SQLAlchemy cascade delete will handle related entities
-            # if configured
+            # Remove pdf_export cache entries (no commit here – part of same tx)
+            test_ids = [t.id for t in user.tests if t.id is not None]
+            if test_ids:
+                stmt = delete(PdfExportCacheRow).where(
+                    PdfExportCacheRow.test_id.in_(test_ids)
+                )
+                session.execute(stmt)
+
+            # Cascade delete will remove tests, files, materials, tokens, etc.
             session.delete(user)
+            # UoW commits on exit; only then is the deletion durable
 
-            # Trigger background task for physical file cleanup if there are any
-            if file_paths:
-                from app.tasks.materials import cleanup_user_files_task
-
-                cleanup_user_files_task.delay(file_paths)
+        return file_paths

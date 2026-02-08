@@ -1,5 +1,12 @@
 import { apiRequest } from "./api";
 
+const API_BASE = import.meta.env.VITE_API_URL || "";
+
+/** URL to start Google OAuth (redirects to backend, then to Google). */
+export function getGoogleAuthorizeUrl(): string {
+  return `${API_BASE.replace(/\/$/, "")}/auth/google/authorize`;
+}
+
 export interface UserCreate {
   first_name: string;
   last_name: string;

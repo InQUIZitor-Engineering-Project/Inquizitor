@@ -8,7 +8,7 @@ import { useLoader } from "../components/Loader/GlobalLoader";
 interface AuthContextType {
   user: UserRead | null;
   login: (email: string, password: string) => Promise<void>;
-  loginWithToken: (accessToken: string, refreshToken: string) => Promise<void>;
+  loginWithToken: (accessToken: string, refreshToken?: string | null) => Promise<void>;
   logout: () => void;
   loading: boolean;
 
@@ -85,10 +85,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (token) await fetchUnreadCount(token);
   };
 
-  const loginWithToken = async (accessToken: string, refreshToken: string) => {
+  const loginWithToken = async (accessToken: string, refreshToken?: string | null) => {
     await withLoader(async () => {
       localStorage.setItem("access_token", accessToken);
-      localStorage.setItem("refresh_token", refreshToken);
+      if (refreshToken != null && refreshToken !== "") {
+        localStorage.setItem("refresh_token", refreshToken);
+      } else {
+        localStorage.removeItem("refresh_token");
+      }
       await fetchAndSetUser();
     });
   };

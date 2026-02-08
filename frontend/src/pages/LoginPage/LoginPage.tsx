@@ -5,9 +5,11 @@ import { Stack, Heading, Text, Input, Button, Checkbox } from "../../design-syst
 import AlertBar from "../../design-system/patterns/AlertBar";
 import { useAuth } from "../../hooks/useAuth";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
+import { getGoogleAuthorizeUrl } from "../../services/auth";
 import loginIllustration from "../../assets/login.webp";
 import AuthLayout from "../Auth/components/AuthLayout";
 import AuthLogos from "../Auth/components/AuthLogos";
+import GoogleAuthButton from "../Auth/components/GoogleAuthButton";
 
 const MobileHide = styled.div`
   @media (max-width: 768px) {
@@ -144,6 +146,13 @@ const LoginPage: React.FC = () => {
                 <Button type="submit" $fullWidth $size="lg" disabled={loading}>
                   {loading ? "Loguję…" : "Zaloguj się →"}
                 </Button>
+
+                <Text as="span" $variant="body3" $tone="muted" style={{ textAlign: "center" }}>
+                  lub
+                </Text>
+                <GoogleAuthButton onClick={() => { window.location.href = getGoogleAuthorizeUrl(); }}>
+                  Zaloguj przez Google
+                </GoogleAuthButton>
               </Stack>
             </Stack>
           </form>

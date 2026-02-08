@@ -3,11 +3,12 @@ import { Link } from "react-router-dom";
 import styled, { useTheme } from "styled-components";
 import { Stack, Heading, Text, Input, Button, Checkbox, Flex } from "../../design-system/primitives";
 import AlertBar from "../../design-system/patterns/AlertBar";
-import { registerUser } from "../../services/auth";
+import { registerUser, getGoogleAuthorizeUrl } from "../../services/auth";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import loginIllustration from "../../assets/login.webp";
 import AuthLayout from "../Auth/components/AuthLayout";
 import AuthLogos from "../Auth/components/AuthLogos";
+import GoogleAuthButton from "../Auth/components/GoogleAuthButton";
 import { Modal } from "../../design-system/patterns";
 
 const MobileHide = styled.div`
@@ -129,6 +130,12 @@ const RegisterPage: React.FC = () => {
             ) : (
               <form onSubmit={handleSubmit}>
                 <Stack $gap="md">
+                  <GoogleAuthButton onClick={() => { window.location.href = getGoogleAuthorizeUrl(); }}>
+                    Kontynuuj z Google
+                  </GoogleAuthButton>
+                  <Text as="span" $variant="body3" $tone="muted" style={{ textAlign: "center" }}>
+                    lub wypełnij formularz
+                  </Text>
                   <Flex $gap="md" $wrap="wrap">
                     <Stack $gap="xs" as="label" htmlFor="firstName" style={{ flex: "1 1 160px" }}>
                       <Text as="span" $variant="body3" $tone="muted">
@@ -254,8 +261,7 @@ const RegisterPage: React.FC = () => {
                       required
                     />
                     <Text $variant="body3" $tone="muted">
-                      Akceptuję Warunki Użytkowania i Politykę Prywatności. * Oświadczam, że posiadam
-                      prawa do materiałów i wyrażam zgodę na ich przetworzenie przez AI.{" "}
+                      Akceptuję Warunki Użytkowania i Politykę Prywatności. * {" "}
                       <button
                         type="button"
                         onClick={() => setIsModalOpen(true)}
