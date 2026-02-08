@@ -11,6 +11,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from slowapi import Limiter, _rate_limit_exceeded_handler
+from starlette.middleware.sessions import SessionMiddleware
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from sqladmin import Admin
@@ -354,6 +355,18 @@ def create_app(settings_override: Settings | None = None) -> FastAPI:
     app.state.limiter = container.provide_limiter()
     app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
     app.add_middleware(SlowAPIMiddleware)
+
+    # SessionMiddleware MUST be outermost (added last) — BaseHTTPMiddleware
+    # subclasses (like SlowAPIMiddleware) can drop Set-Cookie headers from
+    # redirect responses when they wrap SessionMiddleware, which breaks
+    # authlib's OAuth state/CSRF flow.
+    app.add_middleware(
+        SessionMiddleware,
+        secret_key=current_settings.SECRET_KEY,
+        same_site="lax",
+        https_only=False,
+        max_age=14 * 24 * 3600,
+    )
 
     @app.on_event("startup")
     def on_startup() -> None:

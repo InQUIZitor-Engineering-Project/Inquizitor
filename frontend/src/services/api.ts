@@ -65,19 +65,13 @@ async function handleUnauthorized(endpoint: string, response: Response, options:
   }
 
   const refreshToken = getRefreshToken();
-  if (!refreshToken) {
-    // No refresh token available, logout user
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("user");
-    if (window.location.pathname !== "/login") {
-      window.location.href = "/login";
-    }
-    const errorBody = await response.json().catch(() => ({}));
-    throw new Error(errorBody.detail || "Błąd autoryzacji (401).");
+  const hasRefresh = !!refreshToken;
+  if (!hasRefresh) {
+    // No refresh in localStorage; we might have it in cookie (e.g. after Google OAuth)
+    // So only redirect to login if we're not about to try cookie-based refresh
   }
 
   if (isRefreshing) {
-    // If already refreshing, queue this request
     return new Promise((resolve, reject) => {
       failedQueue.push({ resolve, reject, endpoint, options });
     });
@@ -88,10 +82,13 @@ async function handleUnauthorized(endpoint: string, response: Response, options:
   try {
     const refreshResponse = await fetch(`${API_BASE}/auth/refresh`, {
       method: "POST",
+      credentials: "include",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ refresh_token: refreshToken }),
+      body: hasRefresh
+        ? JSON.stringify({ refresh_token: refreshToken })
+        : "{}",
     });
 
     if (!refreshResponse.ok) {
@@ -114,7 +111,9 @@ async function handleUnauthorized(endpoint: string, response: Response, options:
 
     const data = await refreshResponse.json();
     localStorage.setItem("access_token", data.access_token);
-    localStorage.setItem("refresh_token", data.refresh_token);
+    if (data.refresh_token) {
+      localStorage.setItem("refresh_token", data.refresh_token);
+    }
 
     processQueue(null);
     

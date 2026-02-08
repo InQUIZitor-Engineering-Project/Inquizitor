@@ -144,6 +144,60 @@ class AuthService:
                 raise ValueError("Niepoprawny e-mail lub hasło")
             return user
 
+    def get_or_create_user_from_google(
+        self,
+        *,
+        email: str,
+        first_name: str | None = None,
+        last_name: str | None = None,
+    ) -> User:
+        """Find user by email or create one with a non-guessable placeholder password (Google OAuth)."""
+        with self._uow_factory() as uow:
+            existing = uow.users.get_by_email(email)
+            if existing:
+                return existing
+            placeholder = self._password_hasher(secrets.token_urlsafe(32))
+            user = User(
+                id=None,
+                email=email,
+                hashed_password=placeholder,
+                first_name=first_name or None,
+                last_name=last_name or None,
+                created_at=datetime.utcnow(),
+            )
+            created = uow.users.add(user)
+            raw_name = (created.first_name or "").strip()
+            display_name = raw_name[:1].upper() + raw_name[1:] if raw_name else ""
+            greeting = f"Cześć {display_name}!" if display_name else "Cześć!"
+            welcome_message = (
+                f"{greeting} Super, że jesteś z nami! 🚀 Rozgość się i sprawdź, "
+                "co dla Ciebie przygotowaliśmy. Jeśli będziesz potrzebować "
+                "wsparcia, zakładka Pomoc jest do Twojej dyspozycji. Twoja "
+                "opinia o Inquizitorze jest dla nas bezcenna - daj znać, co "
+                "myślisz!"
+            )
+            uow.notifications.add_notification(
+                SystemNotification(
+                    title="Witamy w Inquizitorze!",
+                    message=welcome_message,
+                    type="info",
+                    recipient_id=created.id,
+                )
+            )
+            analytics.capture(
+                user_id=created.email,
+                event="user_signed_up",
+                properties={
+                    "user_id": created.id,
+                    "email": created.email,
+                    "first_name": created.first_name,
+                    "last_name": created.last_name,
+                    "provider": "google",
+                },
+            )
+            analytics.flush()
+            return created
+
     def _create_refresh_token(self, user_id: int, uow: UnitOfWork) -> str:
         settings = get_settings()
         raw_token = secrets.token_urlsafe(32)

@@ -55,6 +55,11 @@ class Settings(BaseSettings):
     SENTRY_ENV: str = "production"
     POSTHOG_API_KEY: str | None = None
     POSTHOG_HOST: str = "https://eu.i.posthog.com"
+    # Google OAuth (login/register with Google)
+    GOOGLE_CLIENT_ID: str | None = None
+    GOOGLE_CLIENT_SECRET: str | None = None
+    BACKEND_BASE_URL: str | None = None  # e.g. http://localhost:8000 or https://api.inquizitor.pl
+    COOKIE_DOMAIN: str | None = None  # e.g. .inquizitor.pl so frontend and api share refresh cookie
 
 
 @lru_cache
