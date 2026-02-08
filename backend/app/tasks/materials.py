@@ -240,7 +240,7 @@ def cleanup_user_files_task(file_paths: list[str]) -> None:
 
     for path in file_paths:
         try:
-            storage.delete(path)
+            storage.delete(stored_path=path)
             logger.info("Successfully deleted physical file: %s", path)
         except Exception as exc:
             logger.error("Failed to delete physical file %s: %s", path, exc)
