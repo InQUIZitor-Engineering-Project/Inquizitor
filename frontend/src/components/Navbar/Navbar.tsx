@@ -37,16 +37,22 @@ const UserMenuContainer = styled.div`
 const AvatarButton = styled.button`
   background: none;
   border: 2px solid transparent;
-  padding: 2px;
+  padding: 0;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 52px;
+  height: 52px;
+  min-width: 52px;
+  min-height: 52px;
+  box-sizing: border-box;
   border-radius: 50%;
   overflow: visible;
   position: relative;
   transition: all 0.2s ease;
-  padding: 0px 5px 5px 5px;
+  line-height: 0;
+  flex-shrink: 0;
 
   &:hover {
     transform: scale(1.05);
@@ -55,20 +61,20 @@ const AvatarButton = styled.button`
   }
 `;
 
-const AvatarImage = styled.img`
+const AvatarImageWrapper = styled.div`
   width: 32px;
   height: 32px;
-  border-radius: 0;
-  object-fit: contain;
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 `;
 
-const InitialsText = styled(Text)`
-  font-size: 12px;
-  font-weight: 700;
-  color: ${({ theme }) => theme.colors.neutral.dGrey};
-  text-transform: uppercase;
-  line-height: 1;
+const AvatarImage = styled.img`
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
 `;
 
 const DropdownMenu = styled.div<{ $open: boolean }>`
@@ -214,24 +220,22 @@ const Navbar: React.FC = () => {
   }, [location]);
 
   const UserMenu = ({ isMobile = false }) => {
-    const initials = user ? `${user.first_name?.[0] || ""}${user.last_name?.[0] || ""}` : "";
-
     return (
       <UserMenuContainer onClick={(e) => isMobile && e.stopPropagation()}>
         {!isMobile && (
-          <>
-            <AvatarButton onClick={toggleUserMenu}>
-              <RelativeContainer>
-                <AvatarImage src={userAvatarIcon} alt="User Avatar" />
+          <AvatarButton onClick={toggleUserMenu}>
+            <RelativeContainer>
+                <AvatarImageWrapper>
+                  <AvatarImage src={userAvatarIcon} alt="User Avatar" />
+                </AvatarImageWrapper>
+{/* TODO: temporary – zawsze pokazuj badge do testów; usunąć */}
                 {unreadNotificationsCount > 0 && (
                   <NotificationBadge style={{ transform: "translate(20%, -20%)" }}>
-                    {unreadNotificationsCount > 9 ? "9+" : unreadNotificationsCount}
+                    {(unreadNotificationsCount || 3) > 9 ? "9+" : (unreadNotificationsCount || 3)}
                   </NotificationBadge>
                 )}
-              </RelativeContainer>
-            </AvatarButton>
-            {initials && <InitialsText>{initials}</InitialsText>}
-          </>
+            </RelativeContainer>
+          </AvatarButton>
         )}
         
         <DropdownMenu $open={isMobile ? true : userMenuOpen}>

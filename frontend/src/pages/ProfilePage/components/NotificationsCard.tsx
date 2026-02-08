@@ -15,7 +15,8 @@ interface Notification {
 }
 
 const ScrollableList = styled(Stack)`
-  max-height: 350px;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding-right: 4px;
 
@@ -79,8 +80,8 @@ const NotificationsCard: React.FC = () => {
   };
 
   return (
-    <Box $bg="#fff" $p="lg" $radius="xl" $shadow="sm" style={{ height: "100%" }}>
-      <Stack $gap="md">
+    <Box $bg="#fff" $p="lg" $radius="xl" $shadow="sm" style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+      <Stack $gap="md" style={{ flex: 1, minHeight: 0 }}>
         <Heading $level="h3">Powiadomienia</Heading>
         <Text $variant="body2" $tone="muted">
           Kliknij na powiadomienie, aby oznaczyć je jako przeczytane.

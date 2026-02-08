@@ -10,6 +10,31 @@ import { Card, Button, Heading, Text } from "../../design-system/primitives";
 import { useNavigate } from "react-router-dom";
 import profileIllustration from "../../assets/profile.webp";
 import { PageContainer, PageSection } from "../../design-system/patterns";
+import styled from "styled-components";
+
+/* Empty wrapper — absolute children don't contribute to flex row height,
+   so the row height is set only by the left column.
+   align-items:stretch then stretches this wrapper to match. */
+const RightColumnWrapper = styled.div`
+  flex: 1 1 320px;
+  min-width: min(320px, 100%);
+  position: relative;
+
+  @media (max-width: 900px) {
+    position: static;
+  }
+`;
+
+const RightColumnInner = styled(Stack)`
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+
+  @media (max-width: 900px) {
+    position: static;
+    overflow: visible;
+  }
+`;
 
 const API_BASE = import.meta.env.VITE_API_URL || "";
 
@@ -115,22 +140,24 @@ const ProfilePage: React.FC = () => {
               <StatsCard stats={stats} />
             </Stack>
 
-            <Stack $gap="lg" style={{ flex: "1 1 320px", minWidth: "min(320px, 100%)" }}>
-              <NotificationsCard />
-              <Card $p="lg" $shadow="md" $variant="elevated">
-                <Stack $gap="md">
-                  <Stack $gap="4px">
-                    <Heading $level="h3">Ustawienia konta</Heading>
-                    <Text $variant="body3" $tone="muted">
-                      Zmień hasło, zarządzaj zgodami lub usuń konto.
-                    </Text>
+            <RightColumnWrapper>
+              <RightColumnInner $gap="lg">
+                <NotificationsCard />
+                <Card $p="lg" $shadow="md" $variant="elevated">
+                  <Stack $gap="md">
+                    <Stack $gap="4px">
+                      <Heading $level="h3">Ustawienia konta</Heading>
+                      <Text $variant="body3" $tone="muted">
+                        Zmień hasło, zarządzaj zgodami lub usuń konto.
+                      </Text>
+                    </Stack>
+                    <Button onClick={() => navigate("/settings")} $variant="outline" $fullWidth>
+                      Przejdź do ustawień
+                    </Button>
                   </Stack>
-                  <Button onClick={() => navigate("/settings")} $variant="outline" $fullWidth>
-                    Przejdź do ustawień
-                  </Button>
-                </Stack>
-              </Card>
-            </Stack>
+                </Card>
+              </RightColumnInner>
+            </RightColumnWrapper>
           </Flex>
         </Stack>
       </PageContainer>
