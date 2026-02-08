@@ -6,6 +6,8 @@ import {
   TestItem,
   CreateNewButton,
   DeleteIcon,
+  ToggleButton,
+  SidebarInner,
 } from "./Sidebar.styles";
 import trashIcon from "../../assets/icons/Trash.webp";
 
@@ -16,6 +18,8 @@ export interface SidebarProps {
   onDelete: (testId: number) => void;
   isDrawerOpen?: boolean;
   onCloseDrawer?: () => void;
+  isHidden?: boolean;
+  onToggleHide?: () => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -25,6 +29,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   onDelete,
   isDrawerOpen,
   onCloseDrawer,
+  isHidden,
+  onToggleHide,
 }) => {
   const [query, setQuery] = useState("");
 
@@ -43,48 +49,56 @@ const Sidebar: React.FC<SidebarProps> = ({
   };
 
   return (
-    <SidebarWrapper $isDrawerOpen={isDrawerOpen}>
-      <SearchInput
-        placeholder="Wyszukaj…"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        aria-label="Wyszukaj test"
+    <SidebarWrapper $isDrawerOpen={isDrawerOpen} $isHidden={isHidden}>
+      <ToggleButton 
+        $isHidden={isHidden} 
+        onClick={onToggleHide} 
+        aria-label={isHidden ? "Pokaż pasek boczny" : "Ukryj pasek boczny"}
       />
+      
+      <SidebarInner $isHidden={isHidden}>
+        <SearchInput
+          placeholder="Wyszukaj…"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          aria-label="Wyszukaj test"
+        />
 
-      <TestList>
-        {filtered.length === 0 ? (
-          <div style={{ padding: "12px", color: "#777", fontSize: 12 }}>
-            Brak wyników.
-          </div>
-        ) : (
-          filtered.map((t) => (
-            <TestItem
-              key={t.id}
-              onClick={() => {
-                onSelect(t.id);
-                onCloseDrawer?.();
-              }}
-            >
-              <span>{t.title}</span>
-              <DeleteIcon
-                src={trashIcon}
-                alt="Usuń"
-                onClick={(e) => handleDeleteClick(e, t.id)}
-                title="Usuń test"
-              />
-            </TestItem>
-          ))
-        )}
-      </TestList>
+        <TestList>
+          {filtered.length === 0 ? (
+            <div style={{ padding: "12px", color: "#777", fontSize: 12 }}>
+              Brak wyników.
+            </div>
+          ) : (
+            filtered.map((t) => (
+              <TestItem
+                key={t.id}
+                onClick={() => {
+                  onSelect(t.id);
+                  onCloseDrawer?.();
+                }}
+              >
+                <span>{t.title}</span>
+                <DeleteIcon
+                  src={trashIcon}
+                  alt="Usuń"
+                  onClick={(e) => handleDeleteClick(e, t.id)}
+                  title="Usuń test"
+                />
+              </TestItem>
+            ))
+          )}
+        </TestList>
 
-      <CreateNewButton
-        onClick={() => {
-          onCreateNew();
-          onCloseDrawer?.();
-        }}
-      >
-        + Utwórz nowy
-      </CreateNewButton>
+        <CreateNewButton
+          onClick={() => {
+            onCreateNew();
+            onCloseDrawer?.();
+          }}
+        >
+          + Utwórz nowy
+        </CreateNewButton>
+      </SidebarInner>
     </SidebarWrapper>
   );
 };
