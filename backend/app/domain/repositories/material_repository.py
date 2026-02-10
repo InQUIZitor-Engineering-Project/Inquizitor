@@ -38,7 +38,7 @@ class MaterialRepository(ABC):
 
     @abstractmethod
     def list_without_thumbnail(self) -> Iterable[Material]:
-        """List materials that have no thumbnail and have an associated file (for backfill)."""
+        """List materials with no thumbnail and an associated file (backfill)."""
         raise NotImplementedError
 
 

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useOutletContext, useSearchParams } from "react-router-dom";
-import { generateTest, getJobs, getTestConfig, type JobOut } from "../../../services/test";
+import { generateTest, getJobs, getTestConfig } from "../../../services/test";
 import {
   analyzeMaterials,
   deleteMaterial,

@@ -6,7 +6,8 @@ Usage:
 
 Example on prod (Docker):
   docker compose exec backend python -m app.cli backfill-thumbnails
-  docker compose run --rm backend python -m app.cli backfill-thumbnails --limit 100 --dry-run
+  docker compose run --rm backend python -m app.cli backfill-thumbnails
+    --limit 100 --dry-run
 """
 
 from __future__ import annotations
@@ -27,12 +28,13 @@ def _cmd_backfill_thumbnails(args: argparse.Namespace) -> int:
         candidates = candidates[: args.limit]
 
     if args.dry_run:
-        print(f"[DRY RUN] Would process {len(candidates)} materials (total without thumbnail: {total})")
+        msg = f"[DRY RUN] Would process {len(candidates)} materials (total: {total})"
+        print(msg)
         for owner_id, material_id in candidates:
             print(f"  owner_id={owner_id} material_id={material_id}")
         return 0
 
-    print(f"Processing {len(candidates)} materials without thumbnail (total: {total})...")
+    print(f"Processing {len(candidates)} materials (total: {total})...")
     ok = 0
     fail = 0
     for i, (owner_id, material_id) in enumerate(candidates, 1):
@@ -44,7 +46,7 @@ def _cmd_backfill_thumbnails(args: argparse.Namespace) -> int:
                 print(f"  [{i}/{len(candidates)}] material_id={material_id} OK")
             else:
                 fail += 1
-                print(f"  [{i}/{len(candidates)}] material_id={material_id} skip (unsupported or error)")
+                print(f"  [{i}/{len(candidates)}] material_id={material_id} skip")
         except Exception as e:
             fail += 1
             print(f"  [{i}/{len(candidates)}] material_id={material_id} error: {e}")
@@ -54,11 +56,14 @@ def _cmd_backfill_thumbnails(args: argparse.Namespace) -> int:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="InQUIZitor backend CLI (one-off jobs, e.g. backfill thumbnails on prod)."
+        description="InQUIZitor backend CLI (one-off jobs, e.g. backfill on prod)."
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    backfill = subparsers.add_parser("backfill-thumbnails", help="Generate thumbnails for materials that don't have one")
+    backfill = subparsers.add_parser(
+        "backfill-thumbnails",
+        help="Generate thumbnails for materials that don't have one",
+    )
     backfill.add_argument(
         "--limit",
         type=int,

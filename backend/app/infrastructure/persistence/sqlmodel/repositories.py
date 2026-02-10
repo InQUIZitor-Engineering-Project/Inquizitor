@@ -352,8 +352,8 @@ class SqlModelMaterialRepository(MaterialRepository):
         stmt = (
             select(db_models.Material)
             .where(
-                db_models.Material.thumbnail_path.is_(None),
-                db_models.Material.file_id.isnot(None),
+                db_models.Material.thumbnail_path == None,  # noqa: E711
+                db_models.Material.file_id != None,  # noqa: E711
             )
             .options(joinedload(db_models.Material.file))
             .order_by(cast(Any, db_models.Material.id).asc())
@@ -449,11 +449,12 @@ class SqlModelJobRepository(JobRepository):
     def get_many(self, owner_id: int, job_ids: list[int]) -> list[Job]:
         if not job_ids:
             return []
+        job_id_col = cast(Any, db_models.Job.id)
         stmt = (
             select(db_models.Job)
             .where(
                 db_models.Job.owner_id == owner_id,
-                db_models.Job.id.in_(job_ids),
+                job_id_col.in_(job_ids),
             )
         )
         rows = cast(Any, self._session).exec(stmt).all()

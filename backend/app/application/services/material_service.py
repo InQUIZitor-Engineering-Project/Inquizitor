@@ -15,7 +15,10 @@ from app.application.interfaces import DocumentAnalyzer, FileStorage, UnitOfWork
 from app.domain.models import File as FileDomain
 from app.domain.models import Material as MaterialDomain
 from app.domain.models.enums import AnalysisStatus, ProcessingStatus
-from app.infrastructure.thumbnails import can_generate_thumbnail, generate_and_save_thumbnail
+from app.infrastructure.thumbnails import (
+    can_generate_thumbnail,
+    generate_and_save_thumbnail,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -115,27 +118,32 @@ class MaterialService:
             # If we copied from cache but don't have thumbnail, generate it
             no_thumb = not material_record.thumbnail_path
             if existing_material and existing_material.markdown_twin and no_thumb:
-                import tempfile
-                with tempfile.NamedTemporaryFile(delete=True, suffix=extension) as tmp:
-                    tmp.write(content)
-                    tmp.flush()
-                    local_path = Path(tmp.name)
-                    thumb_path = generate_and_save_thumbnail(
-                        self._storage,
-                        owner_id=owner_id,
-                        material_id=material_record.id,
-                        local_path=local_path,
-                        mime_type=mime_type,
-                        filename=filename,
-                    )
-                    if thumb_path:
-                        material_record.thumbnail_path = thumb_path
-                        material_record = uow.materials.update(material_record)
-                    else:
-                        logger.warning(
-                            "Failed to generate thumbnail for cached material %s",
-                            material_record.id,
+                mid = material_record.id
+                if mid is not None:
+                    import tempfile
+                    with tempfile.NamedTemporaryFile(
+                        delete=True, 
+                        suffix=extension
+                    ) as tmp:
+                        tmp.write(content)
+                        tmp.flush()
+                        local_path = Path(tmp.name)
+                        thumb_path = generate_and_save_thumbnail(
+                            self._storage,
+                            owner_id=owner_id,
+                            material_id=mid,
+                            local_path=local_path,
+                            mime_type=mime_type,
+                            filename=filename,
                         )
+                        if thumb_path:
+                            material_record.thumbnail_path = thumb_path
+                            material_record = uow.materials.update(material_record)
+                        else:
+                            logger.warning(
+                                "Failed to generate thumbnail for cached material %s",
+                                mid,
+                            )
 
         return dto.to_material_out(material_record)
 
@@ -196,9 +204,7 @@ class MaterialService:
         return False
 
     def list_materials_without_thumbnail(self) -> list[tuple[int, int]]:
-        """
-        List (owner_id, material_id) for materials that have no thumbnail (for backfill).
-        """
+        """List (owner_id, material_id) for materials without thumbnail (backfill)."""
         with self._uow_factory() as uow:
             materials = list(uow.materials.list_without_thumbnail())
         return [(m.owner_id, m.id) for m in materials if m.id is not None]
@@ -432,8 +438,10 @@ class MaterialService:
                         local, mime_type, filename=file_record.filename
                     )
 
-                # 0. Generate thumbnail (if supported); stored with material_id in metadata
-                if can_generate_thumbnail(mime_type, file_record.filename) and material.id:
+                # 0. Generate thumbnail (if supported);
+                # stored with material_id in metadata.
+                can_thumb = can_generate_thumbnail(mime_type, file_record.filename)
+                if can_thumb and material.id:
                     thumb_path = generate_and_save_thumbnail(
                         self._storage,
                         owner_id=owner_id,
@@ -446,7 +454,7 @@ class MaterialService:
                         material.thumbnail_path = thumb_path
                     else:
                         logger.warning(
-                            "Thumbnail generation returned None for material %s, mime_type: %s",
+                            "Thumbnail None for material %s mime %s",
                             material.id,
                             mime_type,
                         )

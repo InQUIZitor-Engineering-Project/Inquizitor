@@ -27,7 +27,7 @@ def generate_and_save_thumbnail(
 ) -> str | None:
     """
     Generate thumbnail from file and save to storage.
-    Associates the stored object with the material via metadata (e.g. R2 Metadata material_id).
+    Associates the stored object with the material via metadata (e.g. R2 material_id).
     Returns stored_path if successful, None otherwise.
     """
     if not can_generate_thumbnail(mime_type, filename):
