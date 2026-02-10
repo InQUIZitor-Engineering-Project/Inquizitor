@@ -19,8 +19,16 @@ class LocalFileStorage(FileStorage):
             path = self._base_dir / path
         return path
 
-    def save(self, *, owner_id: int, filename: str, content: bytes) -> str:
+    def save(
+        self,
+        *,
+        owner_id: int,
+        filename: str,
+        content: bytes,
+        metadata: dict[str, str] | None = None,
+    ) -> str:
         _ = owner_id
+        _ = metadata  # not persisted locally; DB has material.thumbnail_path
         extension = Path(filename).suffix.lower()
         unique_name = f"{uuid.uuid4().hex}{extension}"
         stored_path = self._base_dir / unique_name

@@ -6,9 +6,17 @@ from typing import Protocol
 
 
 class FileStorage(Protocol):
-    def save(self, *, owner_id: int, filename: str, content: bytes) -> str:
-        """Persist the file and return the storage path."""
-
+    def save(
+        self,
+        *,
+        owner_id: int,
+        filename: str,
+        content: bytes,
+        metadata: dict[str, str] | None = None,
+    ) -> str:
+        """Persist the file and return the storage path.
+        metadata: optional key-value pairs (e.g. material_id for thumbnails).
+        """
         ...
 
     def delete(self, *, stored_path: str) -> None:

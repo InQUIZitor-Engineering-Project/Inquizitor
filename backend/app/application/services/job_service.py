@@ -42,6 +42,13 @@ class JobService:
             jobs = list(uow.jobs.list_for_user(owner_id))
         return jobs
 
+    def get_jobs(self, *, owner_id: int, job_ids: list[int]) -> list[Job]:
+        """Return jobs by ids that belong to owner (one request for batch polling)."""
+        if not job_ids:
+            return []
+        with self._uow_factory() as uow:
+            return uow.jobs.get_many(owner_id=owner_id, job_ids=job_ids)
+
     def update_job_status(
         self,
         *,

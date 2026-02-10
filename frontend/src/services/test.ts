@@ -423,3 +423,12 @@ export async function getJob(jobId: number): Promise<JobOut> {
   const res = await apiRequest(`/jobs/${jobId}`);
   return handleJson<JobOut>(res, "Nie udało się pobrać statusu zadania");
 }
+
+/** Batch fetch jobs by ids (one request instead of N – avoids rate limits when polling many material jobs). */
+export async function getJobs(jobIds: number[]): Promise<JobOut[]> {
+  if (jobIds.length === 0) return [];
+  const params = new URLSearchParams();
+  jobIds.forEach((id) => params.append("ids", String(id)));
+  const res = await apiRequest(`/jobs?${params.toString()}`);
+  return handleJson<JobOut[]>(res, "Nie udało się pobrać statusów zadań");
+}

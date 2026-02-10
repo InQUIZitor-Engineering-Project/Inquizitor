@@ -10,7 +10,7 @@ interface UseJobPollingOptions {
 }
 
 export function useJobPolling(options?: UseJobPollingOptions) {
-  const intervalMs = options?.intervalMs ?? 1500;
+  const intervalMs = options?.intervalMs ?? 1000;
   const [jobId, setJobId] = useState<number | null>(null);
   const [job, setJob] = useState<JobOut | null>(null);
   const [status, setStatus] = useState<Status>(null);
@@ -66,13 +66,12 @@ export function useJobPolling(options?: UseJobPollingOptions) {
           setError(data.error || "Zadanie zakończyło się niepowodzeniem");
           optionsRef.current?.onFail?.(data);
         } else {
-          // Zadanie w toku - planujemy kolejne sprawdzenie za stale 1.5s
+          // Zadanie w toku - kolejne sprawdzenie za intervalMs (domyślnie 1s, żeby uniknąć rate limitów)
           timeoutId = window.setTimeout(fetchJob, intervalMs);
         }
       } catch (err: any) {
         if (cancelled) return;
         setError(err.message || "Nie udało się pobrać statusu zadania");
-        // W razie błędu sieciowego próbujemy dalej za 1.5s
         timeoutId = window.setTimeout(fetchJob, intervalMs);
       }
     };

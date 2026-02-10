@@ -15,10 +15,9 @@ from app.application.interfaces import DocumentAnalyzer, FileStorage, UnitOfWork
 from app.domain.models import File as FileDomain
 from app.domain.models import Material as MaterialDomain
 from app.domain.models.enums import AnalysisStatus, ProcessingStatus
-from app.infrastructure.thumbnails.generator import (
+from app.infrastructure.thumbnails import (
     can_generate_thumbnail,
-    generate_thumbnail_from_image,
-    generate_thumbnail_from_pdf,
+    generate_and_save_thumbnail,
 )
 
 logger = logging.getLogger(__name__)
@@ -119,54 +118,31 @@ class MaterialService:
             # If we copied from cache but don't have thumbnail, generate it
             no_thumb = not material_record.thumbnail_path
             if existing_material and existing_material.markdown_twin and no_thumb:
-                # Generate thumbnail for the new material
-                import tempfile
-                with tempfile.NamedTemporaryFile(delete=True, suffix=extension) as tmp:
-                    tmp.write(content)
-                    tmp.flush()
-                    local_path = Path(tmp.name)
-                    
-                    from app.infrastructure.thumbnails.generator import (
-                        can_generate_thumbnail,
-                        generate_thumbnail_from_image,
-                        generate_thumbnail_from_pdf,
-                    )
-                    
-                    if can_generate_thumbnail(mime_type, filename):
-                        try:
-                            thumbnail_bytes: bytes | None = None
-                            if mime_type == "application/pdf" or (
-                                filename and filename.lower().endswith(".pdf")
-                            ):
-                                thumbnail_bytes = generate_thumbnail_from_pdf(
-                                    local_path
-                                )
-                            elif mime_type and mime_type.startswith("image/"):
-                                thumbnail_bytes = generate_thumbnail_from_image(
-                                    local_path
-                                )
-                            if thumbnail_bytes:
-                                thumb_id = (
-                                    material_record.id
-                                    if material_record.id
-                                    else file_record.id
-                                )
-                                thumbnail_filename = f"thumb_{thumb_id}.jpg"
-                                thumbnail_path = self._storage.save(
-                                    owner_id=owner_id,
-                                    filename=thumbnail_filename,
-                                    content=thumbnail_bytes,
-                                )
-                                material_record.thumbnail_path = thumbnail_path
-                                # Update material with thumbnail
-                                material_record = uow.materials.update(material_record)
-                        except Exception as exc:
-                            # Don't fail if thumbnail generation fails
+                mid = material_record.id
+                if mid is not None:
+                    import tempfile
+                    with tempfile.NamedTemporaryFile(
+                        delete=True, 
+                        suffix=extension
+                    ) as tmp:
+                        tmp.write(content)
+                        tmp.flush()
+                        local_path = Path(tmp.name)
+                        thumb_path = generate_and_save_thumbnail(
+                            self._storage,
+                            owner_id=owner_id,
+                            material_id=mid,
+                            local_path=local_path,
+                            mime_type=mime_type,
+                            filename=filename,
+                        )
+                        if thumb_path:
+                            material_record.thumbnail_path = thumb_path
+                            material_record = uow.materials.update(material_record)
+                        else:
                             logger.warning(
-                                "Failed to generate thumbnail for cached material "
-                                "%s: %s",
-                                material_record.id,
-                                exc,
+                                "Failed to generate thumbnail for cached material %s",
+                                mid,
                             )
 
         return dto.to_material_out(material_record)
@@ -183,6 +159,55 @@ class MaterialService:
             if not material or material.owner_id != owner_id:
                 raise ValueError("Materiał nie został znaleziony")
         return dto.to_material_out(material)
+
+    def generate_thumbnail_for_material(
+        self, *, owner_id: int, material_id: int
+    ) -> bool:
+        """
+        Generate and save thumbnail for one material (for backfill).
+        Returns True if thumbnail was generated and saved, False otherwise.
+        """
+        with self._uow_factory() as uow:
+            material = uow.materials.get(material_id)
+            if not material or material.owner_id != owner_id:
+                raise ValueError("Materiał nie został znaleziony")
+            file_record = material.file
+            if not file_record or not material.id:
+                return False
+            if not can_generate_thumbnail(material.mime_type, file_record.filename):
+                return False
+            try:
+                with self._storage.download_to_temp(
+                    stored_path=str(file_record.stored_path)
+                ) as local_path:
+                    local = Path(local_path)
+                    mime_type = self._detect_mime(local) or material.mime_type
+                    thumb_path = generate_and_save_thumbnail(
+                        self._storage,
+                        owner_id=owner_id,
+                        material_id=material.id,
+                        local_path=local,
+                        mime_type=mime_type,
+                        filename=file_record.filename,
+                    )
+                    if thumb_path:
+                        material.thumbnail_path = thumb_path
+                        uow.materials.update(material)
+                        return True
+            except Exception as exc:
+                logger.warning(
+                    "Backfill thumbnail failed for material %s: %s",
+                    material_id,
+                    exc,
+                    exc_info=True,
+                )
+        return False
+
+    def list_materials_without_thumbnail(self) -> list[tuple[int, int]]:
+        """List (owner_id, material_id) for materials without thumbnail (backfill)."""
+        with self._uow_factory() as uow:
+            materials = list(uow.materials.list_without_thumbnail())
+        return [(m.owner_id, m.id) for m in materials if m.id is not None]
 
     def get_material_file_for_download(
         self, *, owner_id: int, material_id: int
@@ -413,41 +438,25 @@ class MaterialService:
                         local, mime_type, filename=file_record.filename
                     )
 
-                # 0. Generate thumbnail (if supported)
-                if can_generate_thumbnail(mime_type, file_record.filename):
-                    try:
-                        thumbnail_bytes: bytes | None = None
-                        fn = file_record.filename
-                        is_pdf = fn and fn.lower().endswith(".pdf")
-                        if mime_type == "application/pdf" or is_pdf:
-                            thumbnail_bytes = generate_thumbnail_from_pdf(local)
-                        elif mime_type and mime_type.startswith("image/"):
-                            thumbnail_bytes = generate_thumbnail_from_image(local)
-                        
-                        if thumbnail_bytes:
-                            # Save thumbnail; use material.id or file_id as fallback
-                            thumb_id = material.id if material.id else file_record.id
-                            thumbnail_filename = f"thumb_{thumb_id}.jpg"
-                            thumbnail_path = self._storage.save(
-                                owner_id=owner_id,
-                                filename=thumbnail_filename,
-                                content=thumbnail_bytes,
-                            )
-                            material.thumbnail_path = thumbnail_path
-                        else:
-                            logger.warning(
-                                "Thumbnail generation returned None for material "
-                                "%s, mime_type: %s",
-                                material.id,
-                                mime_type,
-                            )
-                    except Exception as exc:
-                        # Don't fail material processing if thumbnail generation fails
+                # 0. Generate thumbnail (if supported);
+                # stored with material_id in metadata.
+                can_thumb = can_generate_thumbnail(mime_type, file_record.filename)
+                if can_thumb and material.id:
+                    thumb_path = generate_and_save_thumbnail(
+                        self._storage,
+                        owner_id=owner_id,
+                        material_id=material.id,
+                        local_path=local,
+                        mime_type=mime_type,
+                        filename=file_record.filename,
+                    )
+                    if thumb_path:
+                        material.thumbnail_path = thumb_path
+                    else:
                         logger.warning(
-                            "Failed to generate thumbnail for material %s: %s",
+                            "Thumbnail None for material %s mime %s",
                             material.id,
-                            exc,
-                            exc_info=True,
+                            mime_type,
                         )
 
                 # 1. LLM Analysis (Multi-modal) - Gemini extracts from files.
