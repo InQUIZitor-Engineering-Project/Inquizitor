@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useOutletContext, useSearchParams } from "react-router-dom";
-import { generateTest, getJob, getTestConfig, type JobOut } from "../../../services/test";
+import { generateTest, getJobs, getTestConfig, type JobOut } from "../../../services/test";
 import {
   analyzeMaterials,
   deleteMaterial,
@@ -230,6 +230,7 @@ const useGenerateTestForm = (): UseGenerateTestFormResult => {
   >([]);
   const [libraryModalOpen, setLibraryModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const materialJobsRef = useRef<MaterialAnalyzeJob[]>([]);
 
   useDocumentTitle("Stwórz nowy | Inquizitor");
 
@@ -554,26 +555,38 @@ const useGenerateTestForm = (): UseGenerateTestFormResult => {
     stopLoading,
   ]);
 
+  // Keep ref in sync so polling callback always sees latest list without re-running effect
   useEffect(() => {
-    if (!materialAnalyzing || !materialJobs.length) return;
+    materialJobsRef.current = materialJobs;
+  }, [materialJobs]);
+
+  useEffect(() => {
+    if (!materialAnalyzing) return;
+    const jobs = materialJobsRef.current;
+    if (jobs.length === 0) return;
 
     let cancelled = false;
     let timeoutId: number | null = null;
 
     const pollJobs = async () => {
+      const currentJobs = materialJobsRef.current;
+      if (currentJobs.length === 0 || cancelled) return;
+
       try {
-        const results: JobOut[] = await Promise.all(
-          materialJobs.map((job) => getJob(job.job_id))
-        );
+        const jobIds = currentJobs.map((j) => j.job_id);
+        const results = await getJobs(jobIds);
         if (cancelled) return;
 
+        const byId = new Map(results.map((j) => [j.id, j]));
         const finishedJobs: { mId: number; result: any; status: string; error?: string }[] = [];
         const pendingJobs: MaterialAnalyzeJob[] = [];
 
-        results.forEach((job, index) => {
+        currentJobs.forEach((mj) => {
+          const job = byId.get(mj.job_id);
+          if (!job) return;
           const status = (job.status || "").toLowerCase();
-          const mId = materialJobs[index].material.id;
-          
+          const mId = mj.material.id;
+
           if (status === "done" || status === "failed") {
             finishedJobs.push({
               mId,
@@ -582,7 +595,7 @@ const useGenerateTestForm = (): UseGenerateTestFormResult => {
               error: job.error || (job.result as any)?.processing_error || (job.result as any)?.error,
             });
           } else {
-            pendingJobs.push(materialJobs[index]);
+            pendingJobs.push(mj);
           }
         });
 
@@ -591,7 +604,7 @@ const useGenerateTestForm = (): UseGenerateTestFormResult => {
             const updated = prev.map((item) => {
               const info = finishedJobs.find(f => f.mId === item.id);
               if (!info) return item;
-              
+
               return {
                 ...item,
                 analysis_status: info.status === "done" ? "done" : "failed",
@@ -600,7 +613,6 @@ const useGenerateTestForm = (): UseGenerateTestFormResult => {
               };
             });
 
-            // Rebuild source content from all materials that have text
             const combinedText = updated
               .map((item) => item.markdown_twin)
               .filter(Boolean)
@@ -613,7 +625,6 @@ const useGenerateTestForm = (): UseGenerateTestFormResult => {
             return updated;
           });
 
-          // Check for global failures to show errors
           const firstFailure = finishedJobs.find(f => f.status === "failed");
           if (firstFailure) {
             setMaterialError(firstFailure.error || "Nie udało się przeanalizować części plików.");
@@ -623,19 +634,22 @@ const useGenerateTestForm = (): UseGenerateTestFormResult => {
         if (pendingJobs.length === 0) {
           setMaterialAnalyzing(false);
           setMaterialJobs([]);
+          materialJobsRef.current = [];
           return;
         }
 
+        materialJobsRef.current = pendingJobs;
         setMaterialJobs(pendingJobs);
-        timeoutId = window.setTimeout(pollJobs, 1500);
+        timeoutId = window.setTimeout(pollJobs, 1000);
       } catch (err: any) {
         if (cancelled) return;
         setMaterialError(err.message || "Nie udało się pobrać statusu analizy.");
-        timeoutId = window.setTimeout(pollJobs, 1500);
+        timeoutId = window.setTimeout(pollJobs, 1000);
       }
     };
 
-    pollJobs();
+    // Schedule first poll in 1s (never call pollJobs() immediately → avoids effect re-run request storm)
+    timeoutId = window.setTimeout(pollJobs, 1000);
 
     return () => {
       cancelled = true;

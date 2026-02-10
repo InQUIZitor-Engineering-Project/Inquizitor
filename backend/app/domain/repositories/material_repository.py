@@ -36,5 +36,10 @@ class MaterialRepository(ABC):
         """Find a material by checksum for the given owner."""
         raise NotImplementedError
 
+    @abstractmethod
+    def list_without_thumbnail(self) -> Iterable[Material]:
+        """List materials that have no thumbnail and have an associated file (for backfill)."""
+        raise NotImplementedError
+
 
 __all__ = ["MaterialRepository"]

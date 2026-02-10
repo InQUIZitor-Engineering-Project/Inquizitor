@@ -69,7 +69,7 @@ const useLibrary = (): UseLibraryResult => {
         // Kontynuuj polling jeśli są jeszcze pending materiały
         // Ale wykonaj jeszcze jedno odświeżenie po zakończeniu przetwarzania
         if (stillPending.length > 0 && !cancelled) {
-          timeoutId = window.setTimeout(pollMaterials, 1500);
+          timeoutId = window.setTimeout(pollMaterials, 1000);
         } else if (stillPending.length === 0 && pendingMaterials.length > 0) {
           // Jeśli były pending materiały, ale teraz już nie ma,
           // wykonaj jeszcze jedno odświeżenie po krótkim opóźnieniu
@@ -89,13 +89,13 @@ const useLibrary = (): UseLibraryResult => {
       } catch (err) {
         console.error("Failed to poll materials", err);
         if (!cancelled) {
-          timeoutId = window.setTimeout(pollMaterials, 1500);
+          timeoutId = window.setTimeout(pollMaterials, 1000);
         }
       }
     };
 
-    // Rozpocznij polling po 1.5s
-    timeoutId = window.setTimeout(pollMaterials, 1500);
+    // Rozpocznij polling po 1s
+    timeoutId = window.setTimeout(pollMaterials, 1000);
 
     return () => {
       cancelled = true;
@@ -114,7 +114,7 @@ const useLibrary = (): UseLibraryResult => {
       await uploadMaterials(files);
       
       // Odśwież listę po udanym uploadzie
-      // Polling automatycznie sprawdzi status materiałów co 1.5s
+      // Polling automatycznie sprawdzi status materiałów co 1s
       await loadMaterials();
     } catch (err: any) {
       setError(err?.message || "Nie udało się wgrać plików");

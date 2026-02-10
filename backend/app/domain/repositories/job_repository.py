@@ -24,6 +24,11 @@ class JobRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    def get_many(self, owner_id: int, job_ids: list[int]) -> list[Job]:
+        """Return jobs that belong to owner and are in job_ids (for batch polling)."""
+        raise NotImplementedError
+
+    @abstractmethod
     def get_generation_job_by_test_id(self, test_id: int) -> Job | None:
         raise NotImplementedError
 

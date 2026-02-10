@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import Any, cast
 
 from sqlalchemy import delete, func
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import joinedload
 from sqlmodel import Session, select
 
@@ -347,6 +348,19 @@ class SqlModelMaterialRepository(MaterialRepository):
             materials.append(mappers.material_to_domain(row))
         return materials
 
+    def list_without_thumbnail(self) -> Iterable[Material]:
+        stmt = (
+            select(db_models.Material)
+            .where(
+                db_models.Material.thumbnail_path.is_(None),
+                db_models.Material.file_id.isnot(None),
+            )
+            .options(joinedload(db_models.Material.file))
+            .order_by(cast(Any, db_models.Material.id).asc())
+        )
+        rows = cast(Any, self._session).exec(stmt).all()
+        return [mappers.material_to_domain(row) for row in rows]
+
     def update(self, material: Material) -> Material:
         db_material = self._session.get(db_models.Material, material.id)
         if not db_material:
@@ -432,6 +446,19 @@ class SqlModelJobRepository(JobRepository):
         rows = cast(Any, self._session).exec(stmt).all()
         return [mappers.job_to_domain(row) for row in rows]
 
+    def get_many(self, owner_id: int, job_ids: list[int]) -> list[Job]:
+        if not job_ids:
+            return []
+        stmt = (
+            select(db_models.Job)
+            .where(
+                db_models.Job.owner_id == owner_id,
+                db_models.Job.id.in_(job_ids),
+            )
+        )
+        rows = cast(Any, self._session).exec(stmt).all()
+        return [mappers.job_to_domain(row) for row in rows]
+
     def get_generation_job_by_test_id(self, test_id: int) -> Job | None:
 
         # Szukamy joba typu test_generation, którego result zawiera test_id
@@ -485,9 +512,16 @@ class SqlModelOcrCacheRepository(OcrCacheRepository):
     def add(self, entry: OcrCache) -> OcrCache:
         row = mappers.ocr_cache_to_row(entry)
         self._session.add(row)
-        self._session.commit()
-        self._session.refresh(row)
-        return mappers.ocr_cache_to_domain(row)
+        try:
+            self._session.commit()
+            self._session.refresh(row)
+            return mappers.ocr_cache_to_domain(row)
+        except IntegrityError:
+            self._session.rollback()
+            existing = self.get_by_key(entry.cache_key)
+            if existing is not None:
+                return existing
+            raise
 
     def get_by_key(self, cache_key: str) -> OcrCache | None:
         stmt = select(db_models.OcrCache).where(
