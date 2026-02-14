@@ -133,7 +133,6 @@ const SettingsPage: React.FC = () => {
                 onUpdate={handleUpdateConsents}
                 loading={consentLoading}
               />
-              <DeleteAccountCard onDelete={handleDeleteAccount} />
             </Stack>
 
             <Stack $gap="lg" style={{ flex: "1 1 400px" }}>
@@ -148,6 +147,7 @@ const SettingsPage: React.FC = () => {
                 error={passwordError}
                 success={passwordSuccess}
               />
+              <DeleteAccountCard onDelete={handleDeleteAccount} />
             </Stack>
           </Flex>
         </Stack>
