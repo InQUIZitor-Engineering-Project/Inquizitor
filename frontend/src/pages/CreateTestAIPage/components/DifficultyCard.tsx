@@ -1,5 +1,5 @@
 import React from "react";
-import styled from "styled-components";
+import styled, { useTheme } from "styled-components";
 import { Stack, Heading, Text, Box, Divider } from "../../../design-system/primitives";
 import CounterControl from "./CounterControl";
 import SummaryPills from "./SummaryPills";
@@ -56,6 +56,7 @@ const DifficultyCard: React.FC<DifficultyCardProps> = ({
   onChangeMedium,
   onChangeHard,
 }) => {
+  const theme = useTheme();
   const pills = [
     { label: "Łatwe", value: easyCount, bg: PALETTE.diff.easyBg, fg: PALETTE.diff.easyFg },
     { label: "Średnie", value: mediumCount, bg: PALETTE.diff.medBg, fg: PALETTE.diff.medFg },
@@ -64,7 +65,7 @@ const DifficultyCard: React.FC<DifficultyCardProps> = ({
   ];
 
   return (
-    <Box $p="lg" $radius="xl" $bg="#fff" $shadow="md">
+    <Box $p="lg" $radius="xl" $bg={theme.colors.neutral.white} $shadow="md">
       <Stack $gap="md">
         <Stack $gap="xs">
           <Heading as="h3" $level="h4">

@@ -167,7 +167,7 @@ const TestDetailPage: React.FC = () => {
   const { data } = state;
 
   return (
-    <Flex $direction="column" $height="100%" $bg="#f5f6f8" style={{ position: "relative" }}>
+    <Flex $direction="column" $height="100%" $bg="transparent" style={{ position: "relative" }}>
       <Box $flex={1} $width="100%">
         <PageSection $py="xl">
           <PageContainer>

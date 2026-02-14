@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import styled from "styled-components";
+import styled, { useTheme } from "styled-components";
 import { Box, Heading, Text, Stack, Flex, Badge } from "../../../design-system/primitives";
 import { useAuth } from "../../../hooks/useAuth";
 
@@ -27,18 +27,18 @@ const ScrollableList = styled(Stack)`
 
 const NotifItem = styled(Box)<{ $read: boolean }>`
   cursor: pointer;
-  background: ${({ $read }) => ($read ? "#fff" : "#f0f7ff")};
-  border: 1px solid ${({ $read }) => ($read ? "#eee" : "#d0e2ff")};
-  border-left: 4px solid ${({ $read, theme }) => ($read ? "#ddd" : theme.colors.brand.primary)};
+  border: 1px solid ${({ theme }) => theme.colors.neutral.greyBlue};
+  border-left: 4px solid ${({ $read, theme }) => ($read ? theme.colors.neutral.greyBlue : theme.colors.brand.primary)};
   transition: all 0.2s;
   
   &:hover {
-    background: #fafafa;
-    border-color: #ccc;
+    background: ${({ theme }) => theme.colors.tint.t5};
+    border-color: ${({ theme }) => theme.colors.brand.primary};
   }
 `;
 
 const NotificationsCard: React.FC = () => {
+  const theme = useTheme();
   const { refreshNotificationsCount } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
@@ -80,7 +80,7 @@ const NotificationsCard: React.FC = () => {
   };
 
   return (
-    <Box $bg="#fff" $p="lg" $radius="xl" $shadow="sm" style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+    <Box $bg={theme.colors.neutral.white} $p="lg" $radius="xl" $shadow="sm" style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
       <Stack $gap="md" style={{ flex: 1, minHeight: 0 }}>
         <Heading $level="h3">Powiadomienia</Heading>
         <Text $variant="body2" $tone="muted">
@@ -102,6 +102,10 @@ const NotificationsCard: React.FC = () => {
                 $p="md"
                 $radius="md"
                 onClick={() => handleMarkAsRead(n)}
+                style={{
+                  background: n.is_read ? "transparent" : "rgba(33, 150, 243, 0.08)",
+                  borderColor: n.is_read ? theme.colors.neutral.greyBlue : "rgba(33, 150, 243, 0.3)"
+                }}
               >
                 <Flex $justify="space-between" $align="center" style={{ marginBottom: 4 }}>
                   <Text 

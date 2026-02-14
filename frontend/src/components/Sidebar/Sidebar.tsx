@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { useTheme } from "styled-components";
 import {
   SidebarWrapper,
   SearchInput,
@@ -33,6 +34,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   onToggleHide,
 }) => {
   const [query, setQuery] = useState("");
+  const theme = useTheme();
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -84,6 +86,10 @@ const Sidebar: React.FC<SidebarProps> = ({
                   alt="Usuń"
                   onClick={(e) => handleDeleteClick(e, t.id)}
                   title="Usuń test"
+                  style={{ 
+                    filter: theme.colorTheme === 'dark' ? "brightness(0) invert(1)" : "none", 
+                    opacity: 0.6 
+                  }}
                 />
               </TestItem>
             ))

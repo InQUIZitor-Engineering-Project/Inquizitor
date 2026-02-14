@@ -27,7 +27,7 @@ const CreateTestAIPage: React.FC = () => {
   const isConsentRevoked = user && !user.terms_accepted;
 
   return (
-    <Flex $direction="column" $height="100%" $bg="#f5f6f8">
+    <Flex $direction="column" $height="100%" $bg="transparent">
       <Box $flex={1} $width="100%">
         <PageSection $py="xl">
           <PageContainer>

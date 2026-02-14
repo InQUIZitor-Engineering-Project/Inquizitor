@@ -126,6 +126,7 @@ const ProfilePage: React.FC = () => {
             fullName={profile ? `${profile.first_name} ${profile.last_name}` : undefined}
             subtitle="Zarządzaj swoim kontem, przeglądaj statystyki quizów i personalizuj swoje doświadczenie w Inquizitor."
             illustrationSrc={profileIllustration}
+            illustrationAlt="Ilustracja profilu użytkownika"
             error={loadError}
           />
 
@@ -166,14 +167,14 @@ const ProfilePage: React.FC = () => {
 
   if (loading) {
     return (
-      <Flex $direction="column" $bg="#f5f6f8" style={{ minHeight: "100%" }}>
+      <Flex $direction="column" $bg="transparent" style={{ minHeight: "100%" }}>
         {pageContent}
       </Flex>
     );
   }
 
   return (
-    <Flex $direction="column" $bg="#f5f6f8" style={{ minHeight: "100%" }}>
+    <Flex $direction="column" $bg="transparent" style={{ minHeight: "100%" }}>
       {pageContent}
     </Flex>
   );

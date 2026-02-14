@@ -21,7 +21,7 @@ const HowItWorks: React.FC<HowItWorksProps> = ({ id }) => {
   return (
     <HowItWorksSection
       id={id}
-      $bg="#ffffff"
+      $bg="transparent"
       $py="xxl"
       $display="flex"
       $flex={1}

@@ -1,5 +1,5 @@
 import React from "react";
-import styled from "styled-components";
+import styled, { useTheme } from "styled-components";
 import {
   DndContext,
   type DragEndEvent,
@@ -147,6 +147,7 @@ const QuestionsSection: React.FC<QuestionsSectionProps> = ({
   actions,
   stateFlags,
 }) => {
+  const theme = useTheme();
   const canAdd = questions.length < MAX_QUESTIONS_TOTAL;
 
   const sensors = useSensors(
@@ -178,17 +179,19 @@ const QuestionsSection: React.FC<QuestionsSectionProps> = ({
             $align="center"
             $p="sm"
             $radius="md"
-            $bg={isCorrect ? "rgba(76, 175, 80, 0.12)" : "#f3f4f6"}
+            $bg={isCorrect ? "rgba(76, 175, 80, 0.25)" : "transparent"}
             $border={
               isCorrect
                 ? "2px solid #4caf50"
-                : "1px solid rgba(0,0,0,0.08)"
+                : `1px solid ${theme.colors.neutral.greyBlue}`
             }
           >
-            <Text $variant="body3" $weight="medium">
+            <Text $variant="body3" $weight="medium" $tone={isCorrect ? "default" : "default"}>
               {String.fromCharCode(65 + ci)}.
             </Text>
-            <MathText text={choice} />
+            <Box style={{ color: isCorrect ? "#4caf50" : "inherit", fontWeight: isCorrect ? 700 : 400 }}>
+              <MathText text={choice} />
+            </Box>
           </Flex>
         );
       })}
@@ -196,7 +199,7 @@ const QuestionsSection: React.FC<QuestionsSectionProps> = ({
   );
 
   const renderOpenAnswerPlaceholder = () => (
-    <Box $border="1px dashed #ccc" $radius="md" $bg="#fff" $p="sm" $height="80px" className="ph-no-capture">
+    <Box $border={`1px dashed ${theme.colors.neutral.greyBlue}`} $radius="md" $bg="transparent" $p="sm" $height="80px" className="ph-no-capture">
       <Text $variant="body4" $tone="muted" style={{ fontStyle: "italic" }}>
         Odpowiedź otwarta…
       </Text>

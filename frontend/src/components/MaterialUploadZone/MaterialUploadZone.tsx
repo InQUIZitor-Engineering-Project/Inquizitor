@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useImperativeHandle, forwardRef } from "react";
-import styled, { css } from "styled-components";
+import styled, { css, useTheme } from "styled-components";
 import { Box, Flex, Stack, Text, Button } from "../../design-system/primitives";
 import { AlertBar } from "../../design-system/patterns";
 import type { MaterialUploadResponse } from "../../services/materials";
@@ -79,6 +79,7 @@ const MaterialUploadZone = forwardRef<MaterialUploadZoneRef, MaterialUploadZoneP
   ) => {
     const [isDragging, setIsDragging] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const theme = useTheme();
 
     useImperativeHandle(ref, () => ({
       openFileDialog: () => {
@@ -156,9 +157,9 @@ const MaterialUploadZone = forwardRef<MaterialUploadZoneRef, MaterialUploadZoneP
             $direction="column"
             $align="center"
             $justify="center"
-            $bg="#f9fafb"
+            $bg="transparent"
             $radius="xl"
-            $border="2px dashed #e5e7eb"
+            $border={`2px dashed ${(({ theme }: any) => theme.colors.neutral.greyBlue)}`}
             $height="200px"
             $isDragging={isDragging}
             onClick={handleButtonClick}
@@ -209,9 +210,9 @@ const MaterialUploadZone = forwardRef<MaterialUploadZoneRef, MaterialUploadZoneP
                 $px="lg"
                 $direction="row"
                 $align="center"
-                $bg="#f9fafb"
+                $bg="transparent"
                 $radius="lg"
-                $border="1px dashed #e5e7eb"
+                $border={`1px dashed ${(({ theme }: any) => theme.colors.neutral.greyBlue)}`}
                 $isDragging={isDragging}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
@@ -239,8 +240,8 @@ const MaterialUploadZone = forwardRef<MaterialUploadZoneRef, MaterialUploadZoneP
               <Flex
                 key={upload.tempId}
                 $p="sm"
-                $bg="#f9fafb"
-                $border="1px solid #e5e7eb"
+                $bg="transparent"
+                $border={`1px solid ${(({ theme }: any) => theme.colors.neutral.greyBlue)}`}
                 $radius="md"
                 $align="center"
                 $justify="space-between"
@@ -294,8 +295,8 @@ const MaterialUploadZone = forwardRef<MaterialUploadZoneRef, MaterialUploadZoneP
                 <Flex
                   key={material.id}
                   $p="sm"
-                  $bg={isFailed ? "#fff5f5" : "#f9fafb"}
-                  $border={isFailed ? "1px solid #feb2b2" : "1px solid #e5e7eb"}
+                  $bg={isFailed ? (theme.colors.danger.bg as any) : "transparent"}
+                  $border={isFailed ? (`1px solid ${theme.colors.danger.main}` as any) : (`1px solid ${theme.colors.neutral.greyBlue}` as any)}
                   $radius="md"
                   $align="center"
                   $justify="space-between"

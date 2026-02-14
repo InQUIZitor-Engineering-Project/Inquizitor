@@ -104,6 +104,12 @@ export const SearchInput = styled.input`
   border-radius: 8px;
   margin-bottom: 24px;
   outline: none;
+  background-color: ${({ theme }) => theme.colors.neutral.white};
+  color: ${({ theme }) => theme.colors.neutral.black};
+
+  &::placeholder {
+    color: ${({ theme }) => theme.colors.neutral.grey};
+  }
 `;
 
 export const TestList = styled.div`
@@ -135,6 +141,7 @@ export const TestItem = styled.div`
   padding: 8px 12px;
   border-radius: 8px;
   cursor: pointer;
+  color: ${({ theme }) => theme.colors.neutral.black};
 
   display: flex;
   justify-content: space-between;

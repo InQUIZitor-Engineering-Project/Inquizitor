@@ -30,7 +30,7 @@ const SelectTrigger = styled(Box)<{ $isOpen: boolean }>`
   align-items: center;
   justify-content: space-between;
   padding: 10px 12px;
-  background: #fff;
+  background: ${({ theme }) => theme.colors.neutral.white};
   border: 1px solid ${({ theme, $isOpen }) => ($isOpen ? theme.colors.brand.primary : theme.colors.neutral.greyBlue)};
   border-radius: ${({ theme }) => theme.radii.sm};
   transition: all 0.2s ease;
@@ -61,7 +61,7 @@ const DropdownMenu = styled(Box)`
   top: calc(100% + 4px);
   left: 0;
   right: 0;
-  background: #fff;
+  background: ${({ theme }) => theme.colors.neutral.white};
   border: 1px solid ${({ theme }) => theme.colors.neutral.greyBlue};
   border-radius: ${({ theme }) => theme.radii.sm};
   box-shadow: ${({ theme }) => theme.elevation.lg};

@@ -1,5 +1,5 @@
 import React from "react";
-import styled from "styled-components";
+import styled, { useTheme } from "styled-components";
 import { Stack, Heading, Text, Box } from "../../../design-system/primitives";
 import CounterControl from "./CounterControl";
 import SummaryPills from "./SummaryPills";
@@ -49,7 +49,7 @@ const StructureCard: React.FC<StructureCardProps> = ({
   onChangeMulti,
   onChangeOpen,
 }) => {
-
+  const theme = useTheme();
   const pills = [
     { label: "Zamknięte", value: totalClosed, bg: PALETTE.type.closedBg, fg: PALETTE.type.closedFg },
     { label: "Otwarte", value: openCount, bg: PALETTE.type.openBg, fg: PALETTE.type.openFg },
@@ -62,7 +62,7 @@ const StructureCard: React.FC<StructureCardProps> = ({
   const maxOpen = Math.max(0, MAX_QUESTIONS_TOTAL - (tfCount + singleCount + multiCount));
 
   return (
-    <Box $p="lg" $radius="xl" $bg="#fff" $shadow="md">
+    <Box $p="lg" $radius="xl" $bg={theme.colors.neutral.white} $shadow="md">
       <Stack $gap="md">
         <Stack $gap="xs">
           <Heading as="h3" $level="h4">

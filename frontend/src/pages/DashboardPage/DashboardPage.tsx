@@ -42,6 +42,7 @@ const DashboardPage: React.FC = () => {
           {consentAlert}
           <EmptyState
             illustrationSrc={EMPTY_ILLUSTRATION}
+            illustrationAlt="Ilustracja powitalna panelu głównego"
             title="Stwórz swój pierwszy test, aby zacząć!"
             actionLabel="+ Utwórz nowy"
             onAction={handleCreate}
@@ -52,7 +53,7 @@ const DashboardPage: React.FC = () => {
   }
 
   return (
-    <Flex $direction="column" $bg="#f5f6f8" style={{ minHeight: "100%" }}>
+    <Flex $direction="column" $bg="transparent" style={{ minHeight: "100%" }}>
       <PageSection $py="xl">
         <PageContainer>
           {consentAlert}
@@ -60,6 +61,7 @@ const DashboardPage: React.FC = () => {
             <Stack style={{ width: "100%" }}>
               <EmptyState
                 illustrationSrc={HUB_ILLUSTRATION}
+                illustrationAlt="Ilustracja powitalna panelu InQUIZitor"
                 title="Witaj w panelu InQUIZitor!"
                 description="Wybierz istniejący test z panelu bocznego, aby zobaczyć szczegóły, lub utwórz nowy."
                 actionLabel="+ Utwórz nowy"
