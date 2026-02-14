@@ -36,7 +36,7 @@ const HelpPage: React.FC = () => {
   return (
     <Flex
       $direction="column"
-      $bg={theme.colors.neutral.silver}
+      $bg="transparent"
       style={{ minHeight: "100%" }}
     >
       <Flex $flex={1} $width="100%" $justify="center">
@@ -46,7 +46,7 @@ const HelpPage: React.FC = () => {
               <Box
                 $p="lg"
                 $radius="xl"
-                $bg="#fff"
+                $bg={theme.colors.neutral.white}
                 $shadow="md"
                 style={{
                   display: "grid",
@@ -76,7 +76,7 @@ const HelpPage: React.FC = () => {
                 </Flex>
               </Box>
 
-              <CardsGrid $p="lg" $radius="xl" $bg="#fff" $shadow="md">
+              <CardsGrid $p="lg" $radius="xl" $bg={theme.colors.neutral.white} $shadow="md">
                 {filteredFaq.length > 0 ? (
                   filteredFaq.map((item) => (
                     <FAQItemCard

@@ -140,5 +140,6 @@ declare module "styled-components" {
       lg: string;
       xl: string;
     };
+    colorTheme?: "default" | "eye-friendly" | "dark";
   }
 }

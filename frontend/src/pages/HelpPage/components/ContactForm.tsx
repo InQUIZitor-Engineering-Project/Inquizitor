@@ -15,7 +15,7 @@ import { useAuth } from "../../../hooks/useAuth";
 import { sendContactForm, type ContactFormData } from "../../../services/support";
 
 const ContactCard = styled(Box)`
-  background: #fff;
+  background: ${({ theme }) => theme.colors.neutral.white};
   border-radius: ${({ theme }) => theme.radii.xl};
   box-shadow: ${({ theme }) => theme.elevation.md};
   padding: ${({ theme }) => theme.spacing.xl};

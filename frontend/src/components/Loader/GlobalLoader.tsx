@@ -7,6 +7,7 @@ import React, {
 } from "react";
 import { Ring } from "ldrs/react";
 import "ldrs/react/Ring.css";
+import { useTheme } from "styled-components";
 
 interface LoaderContextValue {
   startLoading: () => void;
@@ -21,6 +22,7 @@ export const LoaderProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [count, setCount] = useState(0);
   const [visible, setVisible] = useState(false);
+  const theme = useTheme();
 
   const startLoading = useCallback(() => {
     setCount((c) => c + 1);
@@ -67,15 +69,15 @@ export const LoaderProvider: React.FC<{ children: React.ReactNode }> = ({
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            backgroundColor: "rgba(255, 255, 255, 0.45)",
-            backdropFilter: "blur(2px)",
+            backgroundColor: theme?.colors?.neutral?.silver ? `${theme.colors.neutral.silver}CC` : "rgba(255, 255, 255, 0.45)",
+            backdropFilter: "blur(4px)",
             zIndex: 9999,
           }}
         >
           <Ring
             size={60}
             speed={1.2}
-            color="#4CAF4F"
+            color={theme?.colors?.brand?.primary || "#4CAF4F"}
             bgOpacity={0}
           />
         </div>

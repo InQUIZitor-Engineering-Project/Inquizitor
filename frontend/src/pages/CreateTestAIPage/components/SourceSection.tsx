@@ -125,7 +125,7 @@ const SourceSection: React.FC<SourceSectionProps> = ({
   );
 
   return (
-    <Box as={Stack} $gap="md" $p="lg" $bg="#fff" $radius="xl" $shadow="md">
+    <Box as={Stack} $gap="md" $p="lg" $bg={({ theme }) => theme.colors.neutral.white} $radius="xl" $shadow="md">
       <Stack $gap="xs">
         <Heading as="h3" $level="h4">
           Źródło treści
@@ -165,9 +165,9 @@ const SourceSection: React.FC<SourceSectionProps> = ({
                   $direction="column"
                   $align="center"
                   $justify="center"
-                  $bg="#f9fafb"
+                  $bg="transparent"
                   $radius="xl"
-                  $border="2px dashed #e5e7eb"
+                  $border={`2px dashed ${({ theme }) => theme.colors.neutral.greyBlue}`}
                   $height="200px"
                   $isDragging={isDragging}
                   onClick={onMaterialButtonClick}
@@ -222,9 +222,9 @@ const SourceSection: React.FC<SourceSectionProps> = ({
                     $px="lg"
                     $direction="row"
                     $align="center"
-                    $bg="#f9fafb"
+                    $bg="transparent"
                     $radius="lg"
-                    $border="1px dashed #e5e7eb"
+                    $border={`1px dashed ${({ theme }) => theme.colors.neutral.greyBlue}`}
                     $isDragging={isDragging}
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
@@ -252,8 +252,8 @@ const SourceSection: React.FC<SourceSectionProps> = ({
                   <Flex
                     key={upload.tempId}
                     $p="sm"
-                    $bg="#f9fafb"
-                    $border="1px solid #e5e7eb"
+                    $bg="transparent"
+                    $border={`1px solid ${({ theme }) => theme.colors.neutral.greyBlue}`}
                     $radius="md"
                     $align="center"
                     $justify="space-between"
@@ -306,8 +306,8 @@ const SourceSection: React.FC<SourceSectionProps> = ({
                     <Flex
                       key={material.id}
                       $p="sm"
-                      $bg={isFailed ? "#fff5f5" : "#f9fafb"}
-                      $border={isFailed ? "1px solid #feb2b2" : "1px solid #e5e7eb"}
+                      $bg={isFailed ? ({ theme }) => theme.colors.danger.bg : "transparent"}
+                      $border={isFailed ? ({ theme }) => `1px solid ${theme.colors.danger.main}` : ({ theme }) => `1px solid ${theme.colors.neutral.greyBlue}`}
                       $radius="md"
                       $align="center"
                       $justify="space-between"

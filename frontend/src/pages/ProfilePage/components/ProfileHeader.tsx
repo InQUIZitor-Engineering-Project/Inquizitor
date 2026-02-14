@@ -5,12 +5,13 @@ interface ProfileHeaderProps {
   fullName?: string;
   subtitle?: string;
   illustrationSrc: string;
+  illustrationAlt?: string;
   error?: string | null;
 }
 
-const ProfileHeader: React.FC<ProfileHeaderProps> = ({ fullName, subtitle, illustrationSrc, error }) => {
+const ProfileHeader: React.FC<ProfileHeaderProps> = ({ fullName, subtitle, illustrationSrc, illustrationAlt, error }) => {
   return (
-    <Card $p="lg" $shadow="sm" $variant="elevated">
+    <Card $p="lg" $shadow="sm" $variant="elevated" $bg={({ theme }) => theme.colors.neutral.white}>
       <Flex $align="center" $justify="space-between" $wrap="wrap" $gap="md">
         <Stack $gap="xs" style={{ flex: "1 1 300px", minWidth: 240 }}>
           <Heading $level="h3" as="h1">
@@ -30,7 +31,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ fullName, subtitle, illus
           <Box
             as="img"
             src={illustrationSrc}
-            alt="Profil"
+            alt={illustrationAlt || "Ilustracja profilu"}
             style={{ maxWidth: 180, width: "100%", height: "auto", objectFit: "contain" }}
           />
         </Box>

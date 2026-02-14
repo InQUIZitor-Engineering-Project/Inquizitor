@@ -15,7 +15,7 @@ import {
   RelativeContainer,
   NotificationBadge,
 } from "./Navbar.styles";
-import styled from "styled-components";
+import styled, { useTheme } from "styled-components";
 import { Logo, LogosWrapper } from "../../styles/common";
 import { useAuth } from "../../hooks/useAuth";
 import { useLoader } from "../../components/Loader/GlobalLoader";
@@ -35,8 +35,8 @@ const UserMenuContainer = styled.div`
 `;
 
 const AvatarButton = styled.button`
-  background: none;
-  border: 2px solid transparent;
+  background: ${({ theme }) => theme.colorTheme === 'eye-friendly' ? theme.colors.neutral.white : '#ffffff'};
+  border: none;
   padding: 0;
   cursor: pointer;
   display: flex;
@@ -53,17 +53,18 @@ const AvatarButton = styled.button`
   transition: all 0.2s ease;
   line-height: 0;
   flex-shrink: 0;
+  box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, 0.1);
 
   &:hover {
     transform: scale(1.05);
-    border-color: ${({ theme }) => theme.colors.brand.primary};
-    background-color: rgba(76, 175, 80, 0.05);
+    background-color: ${({ theme }) => theme.colorTheme === 'eye-friendly' ? theme.colors.tint.t5 : '#f5f5f5'};
+    box-shadow: 0px 4px 8px 0px rgba(0, 0, 0, 0.15);
   }
 `;
 
 const AvatarImageWrapper = styled.div`
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -82,15 +83,15 @@ const DropdownMenu = styled.div<{ $open: boolean }>`
   top: calc(100% + 8px);
   left: 50%;
   transform: translateX(-50%);
-  background: white;
+  background: ${({ theme }) => theme.colors.neutral.white};
   border-radius: 12px;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  box-shadow: ${({ theme }) => theme.shadows["4px"]};
   width: max-content;
   min-width: 200px;
   padding: 8px;
   display: ${({ $open }) => ($open ? "block" : "none")};
   z-index: 1000;
-  border: 1px solid ${({ theme }) => theme.colors.tint.t5};
+  border: 1px solid ${({ theme }) => theme.colors.neutral.greyBlue};
   animation: fadeInCentered 0.2s ease-out;
 
   @keyframes fadeInCentered {
@@ -156,6 +157,7 @@ const Navbar: React.FC = () => {
   const { user, logout, unreadNotificationsCount } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const theme = useTheme();
   const { startLoading, stopLoading, withLoader } = useLoader();
   const [menuOpen, setMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -219,14 +221,14 @@ const Navbar: React.FC = () => {
     setShowSidebarToggle(shouldShow);
   }, [location]);
 
-  const UserMenu = ({ isMobile = false }) => {
+  const UserMenu = ({ isMobile = false }: { isMobile?: boolean }) => {
     return (
       <UserMenuContainer onClick={(e) => isMobile && e.stopPropagation()}>
         {!isMobile && (
           <AvatarButton onClick={toggleUserMenu}>
             <RelativeContainer>
                 <AvatarImageWrapper>
-                  <AvatarImage src={userAvatarIcon} alt="User Avatar" />
+                  <AvatarImage src={userAvatarIcon} alt="Awatar użytkownika" />
                 </AvatarImageWrapper>
 {/* TODO: temporary – zawsze pokazuj badge do testów; usunąć */}
                 {unreadNotificationsCount > 0 && (
@@ -241,7 +243,7 @@ const Navbar: React.FC = () => {
         <DropdownMenu $open={isMobile ? true : userMenuOpen}>
           {isMobile && (
             <MobileGreeting>
-              <Text $variant="body2" $weight="medium" style={{ color: "#333" }}>
+              <Text $variant="body2" $weight="medium" $tone="default">
                 Cześć, {user?.first_name}!
               </Text>
             </MobileGreeting>
@@ -252,7 +254,7 @@ const Navbar: React.FC = () => {
           <DropdownItem onClick={() => handleNavClick("/settings")}>
             Ustawienia konta
           </DropdownItem>
-          <DropdownItem onClick={handleLogout} style={{ borderTop: isMobile ? "none" : "1px solid #f0f0f0", marginTop: isMobile ? 0 : 4, paddingTop: isMobile ? 12 : 12, color: "#d32f2f" }}>
+          <DropdownItem onClick={handleLogout} style={{ borderTop: isMobile ? "none" : `1px solid ${theme.colors.neutral.greyBlue}`, marginTop: isMobile ? 0 : 4, paddingTop: isMobile ? 12 : 12, color: "#d32f2f" }}>
             Wyloguj
           </DropdownItem>
         </DropdownMenu>
@@ -344,7 +346,7 @@ const Navbar: React.FC = () => {
               aria-expanded={menuOpen}
               onClick={() => setMenuOpen((o) => !o)}
             >
-              <img src={hamburgerIcon} alt="" style={{ width: 24, height: 24 }} />
+              <img src={hamburgerIcon} alt="Otwórz menu" style={{ width: 24, height: 24 }} />
             </MobileToggle>
           </Flex>
         </NavHeader>

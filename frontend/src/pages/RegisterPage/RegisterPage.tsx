@@ -92,7 +92,7 @@ const RegisterPage: React.FC = () => {
     <>
       <AuthLayout
         illustrationSrc={loginIllustration}
-        illustrationAlt="Rejestracja Illustration"
+        illustrationAlt="Ilustracja rejestracji w systemie InQUIZitor"
         left={
           <Stack $gap="lg">
           <MobileHide>

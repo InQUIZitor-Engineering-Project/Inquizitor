@@ -3,6 +3,7 @@ import { Box, Button, Flex, Heading, Stack, Text } from "../../../design-system/
 
 interface EmptyStateProps {
   illustrationSrc: string;
+  illustrationAlt?: string;
   title: string;
   description?: string;
   actionLabel: string;
@@ -12,6 +13,7 @@ interface EmptyStateProps {
 
 const EmptyState: React.FC<EmptyStateProps> = ({
   illustrationSrc,
+  illustrationAlt,
   title,
   description,
   actionLabel,
@@ -23,7 +25,7 @@ const EmptyState: React.FC<EmptyStateProps> = ({
     $align="center"
     $justify="center"
     $gap="lg"
-    $bg="#f5f6f8"
+    $bg="transparent"
     style={{
       textAlign: "center",
       width: "100%",
@@ -36,7 +38,7 @@ const EmptyState: React.FC<EmptyStateProps> = ({
       <Box
         as="img"
         src={illustrationSrc}
-        alt={title}
+        alt={illustrationAlt || title}
         style={{ width: 450, maxWidth: "100%" }}
       />
       <Heading $level="h3" as="h2">

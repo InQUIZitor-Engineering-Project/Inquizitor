@@ -156,9 +156,9 @@ const MaterialUploadZone = forwardRef<MaterialUploadZoneRef, MaterialUploadZoneP
             $direction="column"
             $align="center"
             $justify="center"
-            $bg="#f9fafb"
+            $bg="transparent"
             $radius="xl"
-            $border="2px dashed #e5e7eb"
+            $border={`2px dashed ${({ theme }) => theme.colors.neutral.greyBlue}`}
             $height="200px"
             $isDragging={isDragging}
             onClick={handleButtonClick}
@@ -209,9 +209,9 @@ const MaterialUploadZone = forwardRef<MaterialUploadZoneRef, MaterialUploadZoneP
                 $px="lg"
                 $direction="row"
                 $align="center"
-                $bg="#f9fafb"
+                $bg="transparent"
                 $radius="lg"
-                $border="1px dashed #e5e7eb"
+                $border={`1px dashed ${({ theme }) => theme.colors.neutral.greyBlue}`}
                 $isDragging={isDragging}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
@@ -239,8 +239,8 @@ const MaterialUploadZone = forwardRef<MaterialUploadZoneRef, MaterialUploadZoneP
               <Flex
                 key={upload.tempId}
                 $p="sm"
-                $bg="#f9fafb"
-                $border="1px solid #e5e7eb"
+                $bg="transparent"
+                $border={`1px solid ${({ theme }) => theme.colors.neutral.greyBlue}`}
                 $radius="md"
                 $align="center"
                 $justify="space-between"
@@ -294,8 +294,8 @@ const MaterialUploadZone = forwardRef<MaterialUploadZoneRef, MaterialUploadZoneP
                 <Flex
                   key={material.id}
                   $p="sm"
-                  $bg={isFailed ? "#fff5f5" : "#f9fafb"}
-                  $border={isFailed ? "1px solid #feb2b2" : "1px solid #e5e7eb"}
+                  $bg={isFailed ? theme.colors.danger.bg : "transparent"}
+                  $border={isFailed ? `1px solid ${theme.colors.danger.main}` : `1px solid ${theme.colors.neutral.greyBlue}`}
                   $radius="md"
                   $align="center"
                   $justify="space-between"

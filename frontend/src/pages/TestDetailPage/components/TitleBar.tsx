@@ -62,7 +62,7 @@ const TitleBar: React.FC<TitleBarProps> = ({
           </Heading>
           <Flex $gap="xs" $wrap="wrap">
             <ActionButton $variant="ghost" onClick={onBeginEdit} title="Edytuj tytuł">
-              <img src={editIcon} alt="Edytuj" width={16} height={16} />
+              <img src={editIcon} alt="Ikona edycji" width={16} height={16} />
               Edytuj tytuł
             </ActionButton>
             {onEditConfig && (

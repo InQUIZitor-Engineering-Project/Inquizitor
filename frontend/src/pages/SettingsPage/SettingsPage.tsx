@@ -8,6 +8,7 @@ import ProfileHeader from "../ProfilePage/components/ProfileHeader";
 import PasswordCard from "../ProfilePage/components/PasswordCard";
 import ConsentsCard from "./components/ConsentsCard";
 import DeleteAccountCard from "./components/DeleteAccountCard";
+import PersonalizationCard from "./components/PersonalizationCard";
 import { apiRequest } from "../../services/api";
 import { useNavigate } from "react-router-dom";
 import settingsIllustration from "../../assets/profile.webp"; // Reusing profile illustration for now
@@ -123,10 +124,12 @@ const SettingsPage: React.FC = () => {
             fullName="Ustawienia konta"
             subtitle="Zarządzaj swoim bezpieczeństwem, prywatnością i preferencjami konta."
             illustrationSrc={settingsIllustration}
+            illustrationAlt="Ilustracja ustawień konta"
           />
 
           <Flex $gap="lg" $wrap="wrap">
             <Stack $gap="lg" style={{ flex: "1 1 400px" }}>
+              <PersonalizationCard />
               <ConsentsCard
                 termsAccepted={user?.terms_accepted ?? false}
                 marketingAccepted={user?.marketing_accepted ?? false}

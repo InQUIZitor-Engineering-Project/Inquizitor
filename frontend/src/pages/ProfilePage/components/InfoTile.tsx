@@ -9,13 +9,13 @@ interface InfoTileProps {
   valueColor?: string;
 }
 
-const InfoTile: React.FC<InfoTileProps> = ({ label, value, helper, bg = "rgb(233, 245, 233)", valueColor = "#2e7d32" }) => (
-  <Box $bg={bg} $radius="md" $p="md" style={{ minWidth: 160, flex: "1 1 200px" }}>
+const InfoTile: React.FC<InfoTileProps> = ({ label, value, helper, bg, valueColor }) => (
+  <Box $bg={bg || (({ theme }) => theme.colors.tint.t5)} $radius="md" $p="md" style={{ minWidth: 160, flex: "1 1 200px" }}>
     <Stack $gap="4px">
       <Text $variant="body3" $tone="muted" style={{ textTransform: "uppercase" }}>
         {label}
       </Text>
-      <Text $variant="body1" $weight="medium" style={{ color: valueColor }}>
+      <Text $variant="body1" $weight="medium" style={{ color: valueColor || (({ theme }) => theme.colors.brand.primary) }}>
         {value || "—"}
       </Text>
       {helper && (

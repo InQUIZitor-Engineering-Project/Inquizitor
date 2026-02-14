@@ -51,7 +51,7 @@ const TabBar = styled.nav`
   position: relative;
   padding: 4px; /* p-1: gap between track and tabs */
   border-radius: ${({ theme }) => theme.radii.lg};
-  background: #e5e7eb; /* gray-200: clear contrast vs white card and light page bg */
+  background: ${({ theme }) => theme.colors.neutral.greyBlue};
   isolation: isolate;
 `;
 
@@ -66,13 +66,13 @@ const TabIndicator = styled.div<{ $left: number; $width: number }>`
   background: ${({ theme }) => theme.colors.neutral.white};
   border-radius: ${({ theme }) => theme.radii.sm};
   box-shadow: ${({ theme }) => theme.elevation.sm};
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  border: 1px solid ${({ theme }) => theme.colors.neutral.greyBlue};
   transition: left 0.25s cubic-bezier(0.4, 0, 0.2, 1),
     width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 `;
 
 /** Tab: inactive = transparent + gray-500; active = brand green text (indicator = white card) */
-const Tab = styled.button<{ $active: boolean }>`
+const Tab = styled.div<{ $active: boolean }>`
   position: relative;
   z-index: 2;
   display: inline-flex;
@@ -98,7 +98,7 @@ const Tab = styled.button<{ $active: boolean }>`
     background: rgba(229, 231, 235, 0.5); /* gray-200/50 */
   }
 
-  &:focus-visible {
+  &:focus-within {
     outline: 2px solid ${({ theme }) => theme.colors.brand.primary};
     outline-offset: 2px;
   }
@@ -334,7 +334,7 @@ const GroupTabs: React.FC<GroupTabsProps> = ({
   const [addMenuStyle, setAddMenuStyle] = useState<React.CSSProperties>({});
   const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0 });
   const tabBarRef = useRef<HTMLElement>(null);
-  const tabsRef = useRef<Map<string, HTMLButtonElement>>(new Map());
+  const tabsRef = useRef<Map<string, HTMLElement>>(new Map());
   const menuTriggerRef = useRef<HTMLButtonElement | null>(null);
   const menuDropdownRef = useRef<HTMLDivElement>(null);
   const addButtonRef = useRef<HTMLButtonElement>(null);
@@ -538,7 +538,6 @@ const GroupTabs: React.FC<GroupTabsProps> = ({
                   if (el) tabsRef.current.set(group.id, el);
                   else tabsRef.current.delete(group.id);
                 }}
-                type="button"
                 role="tab"
                 aria-selected={isActive}
                 aria-controls={`group-panel-${group.id}`}

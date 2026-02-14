@@ -197,7 +197,7 @@ const QuestionView: React.FC<QuestionViewProps> = ({
         className="ph-no-capture"
         style={
           isSelected
-            ? { border: "2px solid #4CAF50", backgroundColor: "#f0fdf4" }
+            ? { border: "2px solid #4CAF50", backgroundColor: "rgba(76, 175, 80, 0.1)" }
             : undefined
         }
         leftGutter={dragHandle != null || onSelect ? leftGutter : undefined}

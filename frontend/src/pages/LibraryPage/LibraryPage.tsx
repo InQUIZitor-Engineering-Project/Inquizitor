@@ -233,7 +233,7 @@ const LibraryPage: React.FC = () => {
       <>
         <Flex
           $direction="column"
-          $bg="#f5f6f8"
+          $bg="transparent"
           style={{
             height: "100%",
             width: "100%",
@@ -242,6 +242,7 @@ const LibraryPage: React.FC = () => {
         >
           <EmptyState
             illustrationSrc={dashboardWelcome}
+            illustrationAlt="Ilustracja pustej biblioteki"
             title="Twoja biblioteka jest pusta"
             actionLabel="+ Dodaj materiały"
             onAction={() => {
@@ -263,7 +264,7 @@ const LibraryPage: React.FC = () => {
 
   // Normal state with materials
   return (
-    <Flex $direction="column" $bg="#f5f6f8" style={{ minHeight: "100%" }}>
+    <Flex $direction="column" $bg="transparent" style={{ minHeight: "100%" }}>
       <PageSection $py="xl">
         <PageContainer>
           <Stack $gap="lg">

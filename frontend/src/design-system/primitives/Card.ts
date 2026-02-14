@@ -14,7 +14,7 @@ export const Card = styled(Box).attrs<CardProps>(({ theme, $variant }) => {
   const shadow = $variant === "elevated" ? "md" : undefined;
   const border =
     $variant === "outline" ? `1px solid ${theme.colors.neutral.greyBlue}` : undefined;
-  const background = "#ffffff";
+  const background = theme.colors.neutral.white;
 
   return {
     $radius: radius,

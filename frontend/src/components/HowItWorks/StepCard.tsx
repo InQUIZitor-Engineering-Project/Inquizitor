@@ -31,10 +31,15 @@ const StepCard: React.FC<StepCardProps> = ({ iconSrc, title, description }) => (
       <Box
         as="img"
         src={iconSrc}
-        alt={`${title} icon`}
-        style={{ width: 64, height: 64, objectFit: "contain" }}
+        alt={`Ikona kroku: ${title}`}
+        style={{ 
+          width: 64, 
+          height: 64, 
+          objectFit: "contain", 
+          filter: (({ theme }: { theme: any }) => theme.colorTheme === 'dark' ? "brightness(0) invert(1)" : "none") 
+        }}
       />
-      <Text as="h3" $variant="body1" $weight="medium" style={{ color: "#2d2d2d" }}>
+      <Text as="h3" $variant="body1" $weight="medium" $tone="default">
         {title}
       </Text>
       <Text $variant="body3" $tone="muted">
