@@ -80,7 +80,7 @@ const NotificationsCard: React.FC = () => {
   };
 
   return (
-    <Box $bg={((props: any) => props.theme.colors.neutral.white)} $p="lg" $radius="xl" $shadow="sm" style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+    <Box $bg={theme.colors.neutral.white} $p="lg" $radius="xl" $shadow="sm" style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
       <Stack $gap="md" style={{ flex: 1, minHeight: 0 }}>
         <Heading $level="h3">Powiadomienia</Heading>
         <Text $variant="body2" $tone="muted">

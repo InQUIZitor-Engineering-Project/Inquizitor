@@ -1,4 +1,5 @@
 import React from "react";
+import { useTheme } from "styled-components";
 import { Flex, Stack, Heading, Text, Box, Card } from "../../../design-system/primitives";
 
 interface ProfileHeaderProps {
@@ -10,8 +11,10 @@ interface ProfileHeaderProps {
 }
 
 const ProfileHeader: React.FC<ProfileHeaderProps> = ({ fullName, subtitle, illustrationSrc, illustrationAlt, error }) => {
+  const theme = useTheme();
+  
   return (
-    <Card $p="lg" $shadow="sm" $variant="elevated" $bg={((props: any) => props.theme.colors.neutral.white)}>
+    <Card $p="lg" $shadow="sm" $variant="elevated" $bg={theme.colors.neutral.white}>
       <Flex $align="center" $justify="space-between" $wrap="wrap" $gap="md">
         <Stack $gap="xs" style={{ flex: "1 1 300px", minWidth: 240 }}>
           <Heading $level="h3" as="h1">

@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from "react";
-import styled, { css } from "styled-components";
+import styled, { css, useTheme } from "styled-components";
 import {
   Box,
   Flex,
@@ -19,7 +19,7 @@ const SegmentedWrapper = styled(Box)`
   display: inline-flex;
   max-width: 100%;
 
-  ${({ theme }) => theme.media.down("sm")} {
+  ${({ theme }: any) => theme.media.down("sm")} {
     display: flex;
     width: 100%;
   }
@@ -29,7 +29,7 @@ const DropZone = styled(Flex)<{ $isDragging: boolean }>`
   cursor: pointer;
   transition: all 0.2s ease-in-out;
 
-  ${({ $isDragging, theme }) =>
+  ${({ $isDragging, theme }: any) =>
     $isDragging &&
     css`
       background-color: ${theme.colors.tint.t5};
@@ -97,6 +97,7 @@ const SourceSection: React.FC<SourceSectionProps> = ({
   onSelectFromLibrary,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
+  const theme = useTheme();
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -125,7 +126,7 @@ const SourceSection: React.FC<SourceSectionProps> = ({
   );
 
   return (
-    <Box as={Stack} $gap="md" $p="lg" $bg={((props: any) => props.theme.colors.neutral.white)} $radius="xl" $shadow="md">
+    <Box as={Stack} $gap="md" $p="lg" $bg={theme.colors.neutral.white} $radius="xl" $shadow="md">
       <Stack $gap="xs">
         <Heading as="h3" $level="h4">
           Źródło treści
@@ -167,7 +168,7 @@ const SourceSection: React.FC<SourceSectionProps> = ({
                   $justify="center"
                   $bg="transparent"
                   $radius="xl"
-                  $border={`2px dashed ${({ theme }) => theme.colors.neutral.greyBlue}`}
+                  $border={`2px dashed ${theme.colors.neutral.greyBlue}`}
                   $height="200px"
                   $isDragging={isDragging}
                   onClick={onMaterialButtonClick}
@@ -224,7 +225,7 @@ const SourceSection: React.FC<SourceSectionProps> = ({
                     $align="center"
                     $bg="transparent"
                     $radius="lg"
-                    $border={`1px dashed ${({ theme }) => theme.colors.neutral.greyBlue}`}
+                    $border={`1px dashed ${theme.colors.neutral.greyBlue}`}
                     $isDragging={isDragging}
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
@@ -253,7 +254,7 @@ const SourceSection: React.FC<SourceSectionProps> = ({
                     key={upload.tempId}
                     $p="sm"
                     $bg="transparent"
-                    $border={`1px solid ${((props: any) => props.theme.colors.neutral.greyBlue)}`}
+                    $border={`1px solid ${theme.colors.neutral.greyBlue}`}
                     $radius="md"
                     $align="center"
                     $justify="space-between"
@@ -306,8 +307,8 @@ const SourceSection: React.FC<SourceSectionProps> = ({
                     <Flex
                       key={material.id}
                       $p="sm"
-                      $bg={isFailed ? ((props: any) => props.theme.colors.danger.bg) : "transparent"}
-                      $border={isFailed ? ((props: any) => `1px solid ${props.theme.colors.danger.main}`) : ((props: any) => `1px solid ${props.theme.colors.neutral.greyBlue}`)}
+                      $bg={isFailed ? theme.colors.danger.bg : "transparent"}
+                      $border={isFailed ? `1px solid ${theme.colors.danger.main}` : `1px solid ${theme.colors.neutral.greyBlue}`}
                       $radius="md"
                       $align="center"
                       $justify="space-between"

@@ -1,4 +1,5 @@
 import React from "react";
+import { useTheme } from "styled-components";
 import { Flex, Box, Text } from "../../../design-system/primitives";
 import { Badge } from "../../../design-system/primitives/Badge";
 
@@ -15,6 +16,7 @@ const MetaSummary: React.FC<MetaSummaryProps> = ({
   medium,
   hard,
 }) => {
+  const theme = useTheme();
   // Uniwersalna funkcja do polskiej odmiany
   const getPlural = (n: number, forms: [string, string, string]) => {
     const [singular, pluralNominative, pluralGenitive] = forms;
@@ -44,7 +46,7 @@ const MetaSummary: React.FC<MetaSummaryProps> = ({
         </Text>
       </Flex>
 
-      <Box $width="1px" $height="16px" $bg={((props: any) => props.theme.colors.neutral.greyBlue)} $mx="xs" />
+      <Box $width="1px" $height="16px" $bg={theme.colors.neutral.greyBlue} $mx="xs" />
 
       <Flex $align="center" $gap="xs">
         {easy > 0 && (
