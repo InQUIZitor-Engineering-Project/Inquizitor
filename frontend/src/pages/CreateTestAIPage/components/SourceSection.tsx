@@ -125,7 +125,7 @@ const SourceSection: React.FC<SourceSectionProps> = ({
   );
 
   return (
-    <Box as={Stack} $gap="md" $p="lg" $bg={({ theme }) => theme.colors.neutral.white} $radius="xl" $shadow="md">
+    <Box as={Stack} $gap="md" $p="lg" $bg={((props: any) => props.theme.colors.neutral.white)} $radius="xl" $shadow="md">
       <Stack $gap="xs">
         <Heading as="h3" $level="h4">
           Źródło treści
@@ -253,7 +253,7 @@ const SourceSection: React.FC<SourceSectionProps> = ({
                     key={upload.tempId}
                     $p="sm"
                     $bg="transparent"
-                    $border={`1px solid ${({ theme }) => theme.colors.neutral.greyBlue}`}
+                    $border={`1px solid ${((props: any) => props.theme.colors.neutral.greyBlue)}`}
                     $radius="md"
                     $align="center"
                     $justify="space-between"
@@ -306,8 +306,8 @@ const SourceSection: React.FC<SourceSectionProps> = ({
                     <Flex
                       key={material.id}
                       $p="sm"
-                      $bg={isFailed ? ({ theme }) => theme.colors.danger.bg : "transparent"}
-                      $border={isFailed ? ({ theme }) => `1px solid ${theme.colors.danger.main}` : ({ theme }) => `1px solid ${theme.colors.neutral.greyBlue}`}
+                      $bg={isFailed ? ((props: any) => props.theme.colors.danger.bg) : "transparent"}
+                      $border={isFailed ? ((props: any) => `1px solid ${props.theme.colors.danger.main}`) : ((props: any) => `1px solid ${props.theme.colors.neutral.greyBlue}`)}
                       $radius="md"
                       $align="center"
                       $justify="space-between"

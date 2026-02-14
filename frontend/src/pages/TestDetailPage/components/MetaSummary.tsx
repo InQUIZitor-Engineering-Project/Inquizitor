@@ -44,7 +44,7 @@ const MetaSummary: React.FC<MetaSummaryProps> = ({
         </Text>
       </Flex>
 
-      <Box $width="1px" $height="16px" $bg={({ theme }) => theme.colors.neutral.greyBlue} $mx="xs" />
+      <Box $width="1px" $height="16px" $bg={((props: any) => props.theme.colors.neutral.greyBlue)} $mx="xs" />
 
       <Flex $align="center" $gap="xs">
         {easy > 0 && (

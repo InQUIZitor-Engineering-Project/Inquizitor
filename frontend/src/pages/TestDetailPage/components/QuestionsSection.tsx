@@ -182,7 +182,7 @@ const QuestionsSection: React.FC<QuestionsSectionProps> = ({
             $border={
               isCorrect
                 ? "2px solid #4caf50"
-                : `1px solid ${({ theme }) => theme.colors.neutral.greyBlue}`
+                : `1px solid ${((props: any) => props.theme.colors.neutral.greyBlue)}`
             }
           >
             <Text $variant="body3" $weight="medium" $tone={isCorrect ? "default" : "default"}>
@@ -198,7 +198,7 @@ const QuestionsSection: React.FC<QuestionsSectionProps> = ({
   );
 
   const renderOpenAnswerPlaceholder = () => (
-    <Box $border={`1px dashed ${({ theme }) => theme.colors.neutral.greyBlue}`} $radius="md" $bg="transparent" $p="sm" $height="80px" className="ph-no-capture">
+    <Box $border={`1px dashed ${((props: any) => props.theme.colors.neutral.greyBlue)}`} $radius="md" $bg="transparent" $p="sm" $height="80px" className="ph-no-capture">
       <Text $variant="body4" $tone="muted" style={{ fontStyle: "italic" }}>
         Odpowiedź otwarta…
       </Text>

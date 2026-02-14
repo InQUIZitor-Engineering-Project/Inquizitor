@@ -85,7 +85,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                   onClick={(e) => handleDeleteClick(e, t.id)}
                   title="Usuń test"
                   style={{ 
-                    filter: (({ theme }: { theme: any }) => theme.colorTheme === 'dark' ? "brightness(0) invert(1)" : "none"), 
+                    filter: (({ theme }: any) => theme.colorTheme === 'dark' ? "brightness(0) invert(1)" : "none"), 
                     opacity: 0.6 
                   }}
                 />

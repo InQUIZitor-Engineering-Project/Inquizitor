@@ -64,7 +64,7 @@ const DifficultyCard: React.FC<DifficultyCardProps> = ({
   ];
 
   return (
-    <Box $p="lg" $radius="xl" $bg={({ theme }) => theme.colors.neutral.white} $shadow="md">
+    <Box $p="lg" $radius="xl" $bg={((props: any) => props.theme.colors.neutral.white)} $shadow="md">
       <Stack $gap="md">
         <Stack $gap="xs">
           <Heading as="h3" $level="h4">

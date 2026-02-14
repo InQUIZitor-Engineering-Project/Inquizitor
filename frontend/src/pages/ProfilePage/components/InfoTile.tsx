@@ -10,12 +10,12 @@ interface InfoTileProps {
 }
 
 const InfoTile: React.FC<InfoTileProps> = ({ label, value, helper, bg, valueColor }) => (
-  <Box $bg={bg || (({ theme }) => theme.colors.tint.t5)} $radius="md" $p="md" style={{ minWidth: 160, flex: "1 1 200px" }}>
+  <Box $bg={bg || ((props: any) => props.theme.colors.tint.t5)} $radius="md" $p="md" style={{ minWidth: 160, flex: "1 1 200px" }}>
     <Stack $gap="4px">
       <Text $variant="body3" $tone="muted" style={{ textTransform: "uppercase" }}>
         {label}
       </Text>
-      <Text $variant="body1" $weight="medium" style={{ color: valueColor || (({ theme }) => theme.colors.brand.primary) }}>
+      <Text $variant="body1" $weight="medium" style={{ color: valueColor || ((props: any) => props.theme.colors.brand.primary) }}>
         {value || "—"}
       </Text>
       {helper && (

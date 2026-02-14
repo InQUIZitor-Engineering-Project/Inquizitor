@@ -36,7 +36,7 @@ const StepCard: React.FC<StepCardProps> = ({ iconSrc, title, description }) => (
           width: 64, 
           height: 64, 
           objectFit: "contain", 
-          filter: (({ theme }: { theme: any }) => theme.colorTheme === 'dark' ? "brightness(0) invert(1)" : "none") 
+          filter: (({ theme }: any) => theme.colorTheme === 'dark' ? "brightness(0) invert(1)" : "none") 
         }}
       />
       <Text as="h3" $variant="body1" $weight="medium" $tone="default">
