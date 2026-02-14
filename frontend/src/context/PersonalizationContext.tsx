@@ -45,7 +45,7 @@ export const PersonalizationProvider: React.FC<PersonalizationProviderProps> = (
   };
 
   const getAdjustedTheme = (): any => {
-    let theme = { ...baseTheme };
+    const theme = { ...baseTheme };
 
     // Adjust Font Size
     const sizeMultiplier = fontSize === "small" ? 0.9 : fontSize === "large" ? 1.2 : 1;
