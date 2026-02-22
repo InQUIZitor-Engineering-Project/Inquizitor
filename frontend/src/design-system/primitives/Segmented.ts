@@ -72,21 +72,4 @@ export const SegmentedIndicator = styled.div`
   }
 `;
 
-export const SegmentedIndicator = styled.div`
-  position: absolute;
-  z-index: 1;
-  top: 4px;
-  bottom: 4px;
-  left: 0;
-  background: ${({ theme }) => theme.colors.brand.primary};
-  border-radius: ${({ theme }) => theme.radii.pill};
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-
-  ${({ theme }) => theme.media.down("sm")} {
-    top: 3px;
-    bottom: 3px;
-  }
-`;
-
 export default Segmented;
