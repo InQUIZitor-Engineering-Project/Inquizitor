@@ -73,6 +73,13 @@ class PromptBuilder:
                 f"{closed_p.multi_choice}"
             ),
             (
+                "Struktura pytań zamkniętych:\n"
+                f"- Prawda/Fałsz: {closed_p.true_false}\n"
+                f"- Jednokrotnego wyboru: {closed_p.single_choice}\n"
+                "- Wielokrotnego wyboru (co najmniej dwie poprawne odpowiedzi): "
+                f"{closed_p.multi_choice}"
+            ),
+            (
                 f"Rozkład trudności: {params.easy} łatwych, {params.medium} "
                 f"średnich, {params.hard} trudnych."
             ),

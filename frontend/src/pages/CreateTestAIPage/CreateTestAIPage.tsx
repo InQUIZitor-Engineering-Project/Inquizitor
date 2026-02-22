@@ -19,6 +19,13 @@ const ActionButton = styled(Button)`
   }
 `;
 
+const ActionButton = styled(Button)`
+  ${({ theme }) => theme.media.down("sm")} {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+`;
+
 const CreateTestAIPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();

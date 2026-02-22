@@ -31,6 +31,15 @@ const FieldWrapper = styled.div`
   display: block;
 `;
 
+const VariantModeWrapper = styled(Box)`
+  width: 100%;
+  max-width: 50%;
+
+  ${({ theme }) => theme.media.down("sm")} {
+    max-width: 100%;
+  }
+`;
+
 export interface PdfConfigSectionProps {
   config: PdfExportConfig;
   isOpen: boolean;

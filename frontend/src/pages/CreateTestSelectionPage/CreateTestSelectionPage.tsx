@@ -65,6 +65,40 @@ const SelectionCard = styled(Box)<{ $selected: boolean }>`
       line-height: 1.4;
     }
   }
+
+  h3 {
+    font-size: 20px;
+    margin-bottom: ${({ theme }) => theme.spacing.xs};
+  }
+
+  p {
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  ${({ theme }) => theme.media.down("sm")} {
+    padding: ${({ theme }) => theme.spacing.md};
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+    height: 25dvh;
+    min-height: 160px;
+    flex: none;
+    flex-direction: column;
+    text-align: center;
+    align-items: center;
+    gap: ${({ theme }) => theme.spacing.xs};
+
+    h3 {
+      font-size: 16px;
+      margin-bottom: 0;
+    }
+
+    p {
+      font-size: 12px;
+      line-height: 1.4;
+    }
+  }
 `;
 
 const IconWrapper = styled.div`
