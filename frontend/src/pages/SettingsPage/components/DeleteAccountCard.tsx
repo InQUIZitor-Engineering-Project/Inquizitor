@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTheme } from "styled-components";
 import { Card, Stack, Heading, Text, Button, Divider, Input, Flex } from "../../../design-system/primitives";
 import { Modal } from "../../../design-system/patterns";
 
@@ -11,6 +12,7 @@ const DeleteAccountCard: React.FC<DeleteAccountCardProps> = ({
   onDelete,
   loading,
 }) => {
+  const theme = useTheme();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [confirmText, setConfirmText] = useState("");
 
@@ -20,12 +22,14 @@ const DeleteAccountCard: React.FC<DeleteAccountCardProps> = ({
   };
 
   const isConfirmed = confirmText === "Potwierdzam";
+  const dangerMain = theme.colors?.danger?.main;
+  const dangerBorder = theme.colors?.danger?.border;
 
   return (
-    <Card $p="lg" $shadow="md" $variant="elevated" style={{ borderColor: "#fee2e2" }}>
+    <Card $p="lg" $shadow="md" $variant="elevated" style={{ borderColor: dangerBorder }}>
       <Stack $gap="md">
         <Stack $gap="4px">
-          <Heading $level="h3" style={{ color: "#b91c1c" }}>Usuń konto</Heading>
+          <Heading $level="h3" style={{ color: dangerMain }}>Usuń konto</Heading>
           <Text $variant="body3" $tone="muted">
             Pamiętaj, że ta operacja jest nieodwracalna. Wszystkie Twoje testy i materiały zostaną trwale usunięte.
           </Text>
@@ -36,7 +40,7 @@ const DeleteAccountCard: React.FC<DeleteAccountCardProps> = ({
         <Button 
           $variant="outline" 
           onClick={() => setIsModalOpen(true)}
-          style={{ color: "#b91c1c", borderColor: "#b91c1c" }}
+          style={{ color: dangerMain, borderColor: dangerMain }}
         >
           Usuń moje konto
         </Button>
@@ -77,7 +81,7 @@ const DeleteAccountCard: React.FC<DeleteAccountCardProps> = ({
           
           <Stack $gap="xs" $mt="md">
             <Text $variant="body3" $weight="medium">
-              Aby kontynuować, wpisz: <Text as="span" $weight="medium" style={{ color: "#b91c1c" }}>Potwierdzam</Text>
+              Aby kontynuować, wpisz: <Text as="span" $weight="medium" style={{ color: dangerMain }}>Potwierdzam</Text>
             </Text>
             <Input
               $fullWidth

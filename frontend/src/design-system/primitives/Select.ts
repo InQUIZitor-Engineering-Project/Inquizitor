@@ -26,7 +26,8 @@ export const Select = styled.select<SelectProps>`
   width: ${({ $fullWidth }) => ($fullWidth ? "100%" : "auto")};
   border-radius: ${({ theme }) => theme.radii.sm};
   border: 1px solid ${({ theme }) => theme.colors.neutral.greyBlue};
-  background: #fff;
+  background: ${({ theme }) => theme.colors.neutral.white};
+  color: ${({ theme }) => theme.colors.neutral.black};
   ${({ $size = "md" }) => sizeStyles[$size]}
   font-family: inherit;
   line-height: 1.4;
@@ -34,12 +35,12 @@ export const Select = styled.select<SelectProps>`
 
   &:focus {
     outline: none;
-    border-color: #64b5f6;
-    box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.15);
+    border-color: ${({ theme }) => theme.colors.brand.info};
+    box-shadow: 0 0 0 3px ${({ theme }) => theme.colors.tint.t5};
   }
 
   &:disabled {
-    background: #f5f5f5;
+    background: ${({ theme }) => theme.colors.neutral.silver};
     color: ${({ theme }) => theme.colors.neutral.grey};
     cursor: not-allowed;
   }

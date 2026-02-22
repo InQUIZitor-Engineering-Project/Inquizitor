@@ -43,8 +43,8 @@ const SelectTrigger = styled(Box)<{ $isOpen: boolean }>`
     border-color: ${({ theme, $isOpen }) => (!$isOpen ? theme.colors.neutral.grey : theme.colors.brand.primary)};
   }
 
-  ${({ $isOpen }) => $isOpen && css`
-    box-shadow: 0 0 0 3px rgba(76, 175, 79, 0.1);
+  ${({ theme, $isOpen }) => $isOpen && css`
+    box-shadow: 0 0 0 3px ${theme.colors.tint.t5};
   `}
 `;
 

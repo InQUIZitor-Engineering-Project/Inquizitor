@@ -57,9 +57,9 @@ export const IndexChip = styled.span`
   justify-content: center;
   font-weight: 700;
   font-size: 12px;
-  color: #374151;
-  background: #eef2ff;
-  border: 1px solid #dbeafe;
+  color: ${({ theme }) => theme.colors.neutral.dGrey};
+  background: ${({ theme }) => theme.colors.tint.t5};
+  border: 1px solid ${({ theme }) => theme.colors.neutral.greyBlue};
   flex-shrink: 0;
 `;
 

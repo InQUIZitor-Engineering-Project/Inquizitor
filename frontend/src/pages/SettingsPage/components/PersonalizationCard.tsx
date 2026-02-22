@@ -1,7 +1,7 @@
 import React from "react";
 import { Card, Stack, Heading, Text } from "../../../design-system/primitives";
 import { CustomSelect } from "../../../design-system/patterns";
-import { usePersonalization } from "../../../context/PersonalizationContext";
+import { usePersonalization } from "../../../context/usePersonalization";
 
 const PersonalizationCard: React.FC = () => {
   const { fontSize, colorTheme, setFontSize, setColorTheme } = usePersonalization();

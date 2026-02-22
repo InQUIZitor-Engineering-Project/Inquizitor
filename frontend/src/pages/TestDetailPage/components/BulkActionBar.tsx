@@ -33,10 +33,10 @@ const FloatingContainer = styled(Box)`
   width: 100%;
   max-width: 840px;
   margin: 0 auto;
-  background: white;
+  background: ${({ theme }) => theme.colors.neutral.white};
   border-radius: 16px;
-  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: ${({ theme }) => theme.elevation["2xl"]};
+  border: 1px solid ${({ theme }) => theme.colors.neutral.greyBlue};
   padding: 12px 16px;
   animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 
@@ -61,7 +61,7 @@ const CountCircle = styled.div`
   height: 32px;
   border-radius: 50%;
   background: ${({ theme }) => theme.colors.brand.primary};
-  color: white;
+  color: ${({ theme }) => theme.tone.inverted};
   display: flex;
   align-items: center;
   justify-content: center;
@@ -261,7 +261,7 @@ const BulkActionBar: React.FC<BulkActionBarProps> = ({
 
           <SelectableItem onClick={() => handleMobileAction(onDelete)}>
             <Flex $gap="sm" $align="center">
-              <Text $variant="body1" style={{ color: "#d32f2f" }}>🗑️ Usuń zaznaczone</Text>
+              <Text $variant="body1" style={{ color: "var(--color-danger-main)" }}>🗑️ Usuń zaznaczone</Text>
             </Flex>
           </SelectableItem>
         </Stack>

@@ -22,7 +22,7 @@ const ScrollableList = styled(Stack)`
 
   &::-webkit-scrollbar { width: 6px; }
   &::-webkit-scrollbar-track { background: transparent; }
-  &::-webkit-scrollbar-thumb { background: #dcdcdc; border-radius: 4px; }
+  &::-webkit-scrollbar-thumb { background: ${({ theme }) => theme.colors.neutral.greyBlue}; border-radius: 4px; }
 `;
 
 const NotifItem = styled(Box)<{ $read: boolean }>`
@@ -103,8 +103,8 @@ const NotificationsCard: React.FC = () => {
                 $radius="md"
                 onClick={() => handleMarkAsRead(n)}
                 style={{
-                  background: n.is_read ? "transparent" : "rgba(33, 150, 243, 0.08)",
-                  borderColor: n.is_read ? theme.colors.neutral.greyBlue : "rgba(33, 150, 243, 0.3)"
+                  background: n.is_read ? "transparent" : theme.colors.tint.t5,
+                  borderColor: n.is_read ? theme.colors.neutral.greyBlue : theme.colors.brand.info
                 }}
               >
                 <Flex $justify="space-between" $align="center" style={{ marginBottom: 4 }}>
@@ -121,9 +121,9 @@ const NotificationsCard: React.FC = () => {
                       style={{ 
                         fontSize: 10, 
                         padding: "2px 6px",
-                        backgroundColor: "#e3f2fd",
-                        color: "#1976d2",
-                        borderColor: "#bbdefb"
+                        backgroundColor: theme.colors.tint.t5,
+                        color: theme.colors.brand.info,
+                        borderColor: theme.colors.neutral.greyBlue
                       }}
                     >
                       NOWE

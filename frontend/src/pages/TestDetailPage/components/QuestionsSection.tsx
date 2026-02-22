@@ -29,12 +29,12 @@ const DragHandle = styled.div<{ $disabled?: boolean }>`
   width: 40px;
   height: 40px;
   border-radius: 8px;
-  color: #6b7280;
+  color: ${({ theme }) => theme.colors.neutral.grey};
   cursor: ${({ $disabled }) => ($disabled ? "default" : "grab")};
   touch-action: none;
   &:hover {
-    background: ${({ $disabled }) => ($disabled ? "transparent" : "#f3f4f6")};
-    color: ${({ $disabled }) => ($disabled ? "#6b7280" : "#374151")};
+    background: ${({ theme, $disabled }) => ($disabled ? "transparent" : theme.colors.neutral.silver)};
+    color: ${({ theme, $disabled }) => ($disabled ? theme.colors.neutral.grey : theme.colors.neutral.dGrey)};
   }
   &:active {
     cursor: ${({ $disabled }) => ($disabled ? "default" : "grabbing")};
@@ -181,7 +181,7 @@ const QuestionsSection: React.FC<QuestionsSectionProps> = ({
             $radius="md"
             $bg={
               isCorrect
-                ? "rgba(76, 175, 80, 0.12)"
+                ? theme.colors.tint.t5
                 : theme.colors.neutral.silver
             }
             $border={
