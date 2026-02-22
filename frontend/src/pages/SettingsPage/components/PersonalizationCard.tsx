@@ -12,6 +12,14 @@ const PersonalizationCard: React.FC = () => {
     { value: "large", label: "Duża", icon: "Aa" },
   ];
 
+  const fontSizeToPx = (size: "small" | "medium" | "large") =>
+    size === "small" ? "13px" : size === "large" ? "17px" : "15px";
+
+  const getFontSizeOptionStyle = (option: { value: string; label: string; icon?: React.ReactNode }) => ({
+    fontSize: fontSizeToPx(option.value as "small" | "medium" | "large"),
+    lineHeight: 1.4,
+  });
+
   const colorThemeOptions = [
     { value: "default", label: "Domyślny (Jasny)", icon: "☀️" },
     { value: "eye-friendly", label: "Przyjazny dla oczu (Sepia)", icon: "👓" },
@@ -34,6 +42,7 @@ const PersonalizationCard: React.FC = () => {
             options={fontSizeOptions}
             value={fontSize}
             onChange={(val) => setFontSize(val as any)}
+            getOptionLabelStyle={getFontSizeOptionStyle}
             $fullWidth
           />
 

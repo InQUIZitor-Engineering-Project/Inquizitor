@@ -16,6 +16,8 @@ export interface CustomSelectProps {
   placeholder?: string;
   $fullWidth?: boolean;
   disabled?: boolean;
+  /** Opcjonalny styl dla etykiety w każdej opcji (np. różna wielkość czcionki w dropdownie). */
+  getOptionLabelStyle?: (option: SelectOption) => React.CSSProperties;
 }
 
 const SelectContainer = styled(Box)<{ $fullWidth?: boolean; $disabled?: boolean }>`
@@ -96,6 +98,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
   placeholder = "Wybierz opcję...",
   $fullWidth = true,
   disabled = false,
+  getOptionLabelStyle,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -130,9 +133,13 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
       )}
       <SelectContainer ref={containerRef} $fullWidth={$fullWidth} $disabled={disabled}>
         <SelectTrigger $isOpen={isOpen} onClick={handleToggle}>
-          <Text 
+          <Text
             $tone={selectedOption ? "default" : "muted"}
-            style={{ fontSize: "14px", lineHeight: "1.4" }}
+            style={
+              selectedOption && getOptionLabelStyle
+                ? { fontSize: "14px", lineHeight: "1.4", ...getOptionLabelStyle(selectedOption) }
+                : { fontSize: "14px", lineHeight: "1.4" }
+            }
           >
             {selectedOption ? selectedOption.label : placeholder}
           </Text>
@@ -141,21 +148,30 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
 
         {isOpen && (
           <DropdownMenu>
-            {options.map((option) => (
-              <OptionItem
-                key={option.value}
-                $isSelected={option.value === value}
-                onClick={() => handleSelect(option.value)}
-              >
-                {option.icon && <Box $mr="xs" style={{ display: 'flex', alignItems: 'center' }}>{option.icon}</Box>}
-                <Text 
-                  $weight={option.value === value ? ("medium" as const) : ("regular" as const)}
-                  style={{ fontSize: "14px", lineHeight: "1.4" }}
+            {options.map((option) => {
+              const labelStyle = getOptionLabelStyle?.(option) ?? { fontSize: "14px", lineHeight: "1.4" };
+              const baseStyle = { fontSize: "14px", lineHeight: "1.4" as const };
+              const style = getOptionLabelStyle ? { ...baseStyle, ...labelStyle } : baseStyle;
+              return (
+                <OptionItem
+                  key={option.value}
+                  $isSelected={option.value === value}
+                  onClick={() => handleSelect(option.value)}
                 >
-                  {option.label}
-                </Text>
-              </OptionItem>
-            ))}
+                  {option.icon && (
+                    <Box $mr="xs" style={{ display: "flex", alignItems: "center", fontSize: style.fontSize }}>
+                      {option.icon}
+                    </Box>
+                  )}
+                  <Text
+                    $weight={option.value === value ? ("medium" as const) : ("regular" as const)}
+                    style={style}
+                  >
+                    {option.label}
+                  </Text>
+                </OptionItem>
+              );
+            })}
           </DropdownMenu>
         )}
       </SelectContainer>

@@ -44,14 +44,14 @@ const GroupTabsWrapper = styled(Flex).attrs({
   flex-wrap: wrap;
 `;
 
-/** Track (container): must have visible background for contrast with white active card */
+/** Track (container): light background so segmented control is not too dark */
 const TabBar = styled.nav`
   display: inline-flex;
   align-items: stretch;
   position: relative;
   padding: 4px; /* p-1: gap between track and tabs */
   border-radius: ${({ theme }) => theme.radii.lg};
-  background: ${({ theme }) => theme.colors.neutral.greyBlue};
+  background: ${({ theme }) => theme.colors.neutral.silver};
   isolation: isolate;
 `;
 

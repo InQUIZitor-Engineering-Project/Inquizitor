@@ -1,14 +1,16 @@
 import React, { useState, useMemo, useEffect } from "react";
+import { Link } from "react-router-dom";
 import styled from "styled-components";
 import { Box, Button, Flex, Input, Stack, Text, Textarea } from "../../design-system/primitives";
 import useTestDetail from "./hooks/useTestDetail";
+import { useAuth } from "../../hooks/useAuth";
 import TitleBar from "./components/TitleBar";
 import GroupTabs from "./components/GroupTabs";
 import type { GroupTabItem } from "./components/GroupTabs";
 import QuestionsSection from "./components/QuestionsSection";
 import PdfConfigSection from "./components/PdfConfigSection";
 import BulkActionBar from "./components/BulkActionBar";
-import { Modal } from "../../design-system/patterns";
+import { Modal, AlertBar } from "../../design-system/patterns";
 import { SelectableItem } from "../../design-system/patterns/Modal";
 import { PageContainer, PageSection } from "../../design-system/patterns";
 import DownloadActions from "./components/DownloadActions"
@@ -27,7 +29,9 @@ const VariantLoadingSpinner = styled(Box).attrs({ as: "span" })`
 `;
 
 const TestDetailPage: React.FC = () => {
+  const { user } = useAuth();
   const { state, derived, actions } = useTestDetail();
+  const isConsentRevoked = Boolean(user && !user.terms_accepted);
   const [activeGroupId, setActiveGroupId] = useState<string>("");
   const [generatingVariantLabel, setGeneratingVariantLabel] = useState<string | null>(null);
   const [renameGroupId, setRenameGroupId] = useState<string | null>(null);
@@ -186,14 +190,26 @@ const TestDetailPage: React.FC = () => {
               </Box>
 
               <Stack $gap="lg">
+                {isConsentRevoked && (
+                  <AlertBar variant="danger">
+                    <Flex $align="center" $gap="xs" $wrap="wrap">
+                      <Text $variant="body2">
+                        Nie zaakceptowałeś regulaminu. Funkcje AI (regeneracja pytań, wariant AI, zmiana typu) są wyłączone.
+                      </Text>
+                      <Link to="/settings" style={{ fontWeight: "bold", textDecoration: "underline", color: "inherit" }}>
+                        Przejdź do ustawień, aby zaakceptować regulamin.
+                      </Link>
+                    </Flex>
+                  </AlertBar>
+                )}
                 <GroupTabs
                   groups={groups}
                   activeGroupId={activeGroupId}
                   onGroupChange={setActiveGroupId}
                   onAddGroup={handleAddGroup}
                   onDuplicateCurrentGroup={handleDuplicateCurrentGroup}
-                onGenerateAIVariant={handleGenerateAIVariant}
-                onAddShuffledVariant={handleAddShuffledVariant}
+                  onGenerateAIVariant={isConsentRevoked ? undefined : handleGenerateAIVariant}
+                  onAddShuffledVariant={handleAddShuffledVariant}
                 onRenameGroup={openRenameGroupModal}
                   onRemoveGroup={openRemoveGroupModal}
                   canAddGroup={(state.data?.groups?.length ?? 0) < 5}
@@ -265,8 +281,8 @@ const TestDetailPage: React.FC = () => {
                     selectAll: actions.selectAll,
                     clearSelection: actions.clearSelection,
                     onReorderQuestions: handleReorderQuestions,
-                    onRegenerateForQuestion: actions.selectAndOpenRegenerateModal,
-                    onSettingsForQuestion: actions.selectAndOpenTypeModal,
+                    onRegenerateForQuestion: isConsentRevoked ? undefined : actions.selectAndOpenRegenerateModal,
+                    onSettingsForQuestion: isConsentRevoked ? undefined : actions.selectAndOpenTypeModal,
                   }}
                   stateFlags={{
                     savingEdit: state.savingEdit,
@@ -316,7 +332,7 @@ const TestDetailPage: React.FC = () => {
         isOpen={state.isRegenerateModalOpen}
         title={state.singleQuestionRegenerateId !== null ? "✨ Regeneruj to pytanie z AI" : "✨ Regeneruj pytania z AI"}
         onClose={actions.closeRegenerateModal}
-        onConfirm={actions.handleBulkRegenerate}
+        onConfirm={isConsentRevoked ? undefined : actions.handleBulkRegenerate}
         variant="info"
         confirmLabel="Regeneruj"
         cancelLabel="Anuluj"
@@ -482,8 +498,10 @@ const TestDetailPage: React.FC = () => {
         selectedCount={state.selectedIds.length}
         onDelete={actions.openBulkDeleteModal}
         onOpenDifficulty={actions.openDifficultyModal}
-        onOpenTypeChange={actions.openTypeModal}
-        onRegenerate={actions.openRegenerateModal}
+        onOpenTypeChange={isConsentRevoked ? () => {} : actions.openTypeModal}
+        onRegenerate={isConsentRevoked ? () => {} : actions.openRegenerateModal}
+        regenerateDisabled={isConsentRevoked}
+        typeChangeDisabled={isConsentRevoked}
         onClear={actions.clearSelection}
         isMenuOpen={state.isMobileMenuOpen}
         onOpenMenu={actions.openMobileMenu}

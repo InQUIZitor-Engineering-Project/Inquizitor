@@ -179,17 +179,21 @@ const QuestionsSection: React.FC<QuestionsSectionProps> = ({
             $align="center"
             $p="sm"
             $radius="md"
-            $bg={isCorrect ? "rgba(76, 175, 80, 0.25)" : "transparent"}
+            $bg={
+              isCorrect
+                ? "rgba(76, 175, 80, 0.12)"
+                : theme.colors.neutral.silver
+            }
             $border={
               isCorrect
-                ? "2px solid #4caf50"
+                ? `2px solid ${theme.colors.brand.primary}`
                 : `1px solid ${theme.colors.neutral.greyBlue}`
             }
           >
-            <Text $variant="body3" $weight="medium" $tone={isCorrect ? "default" : "default"}>
+            <Text $variant="body3" $weight="medium" $tone="default">
               {String.fromCharCode(65 + ci)}.
             </Text>
-            <Box style={{ color: isCorrect ? "#4caf50" : "inherit", fontWeight: isCorrect ? 700 : 400 }}>
+            <Box>
               <MathText text={choice} />
             </Box>
           </Flex>

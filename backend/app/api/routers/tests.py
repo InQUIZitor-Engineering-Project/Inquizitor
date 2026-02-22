@@ -272,6 +272,11 @@ def bulk_regenerate_questions(
 ) -> JobEnqueueResponse:
     if current_user.id is None:
         raise HTTPException(status_code=401, detail="User ID is missing")
+    if not current_user.terms_accepted:
+        raise HTTPException(
+            status_code=403,
+            detail="Musisz zaakceptować regulamin, aby korzystać z regeneracji pytań z AI. Przejdź do ustawień konta.",
+        )
     try:
         # Sprawdzamy czy test należy do usera
         test_service.get_test_detail(owner_id=current_user.id, test_id=test_id)
@@ -305,6 +310,11 @@ def bulk_convert_questions(
 ) -> JobEnqueueResponse:
     if current_user.id is None:
         raise HTTPException(status_code=401, detail="User ID is missing")
+    if not current_user.terms_accepted:
+        raise HTTPException(
+            status_code=403,
+            detail="Musisz zaakceptować regulamin, aby korzystać z funkcji AI (zmiana typu pytań). Przejdź do ustawień konta.",
+        )
     try:
         # Sprawdzamy czy test należy do usera
         test_service.get_test_detail(owner_id=current_user.id, test_id=test_id)
@@ -509,6 +519,11 @@ def generate_group_ai_variant(
 ) -> JobEnqueueResponse:
     if current_user.id is None:
         raise HTTPException(status_code=401, detail="User ID is missing")
+    if not current_user.terms_accepted:
+        raise HTTPException(
+            status_code=403,
+            detail="Musisz zaakceptować regulamin, aby generować warianty AI. Przejdź do ustawień konta.",
+        )
     try:
         test_service.get_test_detail(owner_id=current_user.id, test_id=test_id)
     except ValueError as exc:
