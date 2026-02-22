@@ -38,6 +38,7 @@ export const darkPalette: ThemePalette = {
       success: "#81c784",
       error: "#e57373",
       warning: "#ffb74d",
+      warningBg: "rgba(255, 183, 77, 0.2)",
     },
     danger: {
       main: "#ef5350",

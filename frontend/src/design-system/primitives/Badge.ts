@@ -24,7 +24,7 @@ const getVariantStyles = (variant: BadgeVariant, theme: any) => {
     case "warning":
       return css`
         color: ${theme.colors.action.warning};
-        background: ${theme.colors.neutral.silver};
+        background: ${theme.colors.action.warningBg};
         border: 1px solid ${theme.colors.neutral.greyBlue};
       `;
     case "danger":

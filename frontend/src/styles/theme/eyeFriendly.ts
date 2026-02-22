@@ -37,6 +37,7 @@ export const eyeFriendlyPalette: ThemePalette = {
       success: "#2e7d31",
       error: "#dc322f",
       warning: "#b58900",
+      warningBg: "rgba(181, 137, 0, 0.18)",
     },
     danger: {
       main: "#dc322f",

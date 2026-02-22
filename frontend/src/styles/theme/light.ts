@@ -34,6 +34,7 @@ export const lightPalette: ThemePalette = {
       success: "#2e7d31",
       error: "#e53835",
       warning: "#fbc02d",
+      warningBg: "#fff8e1",
     },
     danger: {
       main: "#c62828",

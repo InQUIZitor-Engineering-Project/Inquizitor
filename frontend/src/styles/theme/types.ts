@@ -21,7 +21,7 @@ export interface ThemePalette {
     };
     shade: { s1: string; s2: string; s3: string; s5: string };
     tint: { t1: string; t2: string; t3: string; t4: string; t5: string };
-    action: { success: string; error: string; warning: string };
+    action: { success: string; error: string; warning: string; warningBg: string };
     danger: {
       main: string;
       bg: string;
