@@ -273,7 +273,7 @@ const SourceSection: React.FC<SourceSectionProps> = ({
                       </Text>
                       {upload.status === "uploading" && (
                         <Flex $align="center" style={{ gap: "6px" }}>
-                          <Ring size={12} speed={1.2} color="#2194f3" />
+                          <Ring size={12} speed={1.2} color={theme.colors.brand.info} />
                           <Text $variant="body3" $tone="info" $weight="medium">
                             Wgrywanie...
                           </Text>
@@ -328,7 +328,7 @@ const SourceSection: React.FC<SourceSectionProps> = ({
                             {material.filename}
                           </Text>
                           {isDone && (
-                            <Box style={{ display: "flex", alignItems: "center", color: "#48bb78" }}>
+                            <Box style={{ display: "flex", alignItems: "center", color: theme.colors.action.success }}>
                               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                                 <polyline points="20 6 9 17 4 12" />
                               </svg>
@@ -336,7 +336,7 @@ const SourceSection: React.FC<SourceSectionProps> = ({
                           )}
                           {isFailed && (
                             <Tooltip content={material.processing_error || "Błąd analizy pliku"}>
-                              <Box style={{ display: "flex", alignItems: "center", color: "#e53e3e" }}>
+                              <Box style={{ display: "flex", alignItems: "center", color: theme.colors.danger.main }}>
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                   <circle cx="12" cy="12" r="10" />
                                   <line x1="12" y1="8" x2="12" y2="12" />
@@ -364,7 +364,7 @@ const SourceSection: React.FC<SourceSectionProps> = ({
             {materialAnalyzing && !!materials.length && (
               <Stack $gap="sm">
                 <Flex $align="center" style={{ gap: "8px" }}>
-                  <Ring size={18} speed={1.2} color="#2194f3" />
+                  <Ring size={18} speed={1.2} color={theme.colors.brand.info} />
                   <Text $variant="body3" $tone="info" $weight="medium">
                     Analizuję pliki...
                   </Text>

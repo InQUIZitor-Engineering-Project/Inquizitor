@@ -12,20 +12,20 @@ const getVariantStyles = (variant: BadgeVariant, theme: any) => {
     case "info":
       return css`
         color: ${theme.colors.brand.info};
-        background: rgba(33, 148, 243, 0.12);
-        border: 1px solid rgba(33, 148, 243, 0.35);
+        background: ${theme.colors.neutral.silver};
+        border: 1px solid ${theme.colors.neutral.greyBlue};
       `;
     case "success":
       return css`
         color: ${theme.colors.shade.s2};
-        background: rgba(76, 175, 80, 0.12);
-        border: 1px solid rgba(76, 175, 80, 0.3);
+        background: ${theme.colors.tint.t5};
+        border: 1px solid ${theme.colors.neutral.greyBlue};
       `;
     case "warning":
       return css`
         color: ${theme.colors.action.warning};
-        background: rgba(251, 192, 45, 0.16);
-        border: 1px solid rgba(251, 192, 45, 0.4);
+        background: ${theme.colors.neutral.silver};
+        border: 1px solid ${theme.colors.neutral.greyBlue};
       `;
     case "danger":
       return css`
@@ -37,7 +37,7 @@ const getVariantStyles = (variant: BadgeVariant, theme: any) => {
       return css`
         color: ${theme.colors.brand.primary};
         background: ${theme.colors.tint.t4};
-        border: 1px solid rgba(76, 175, 80, 0.35);
+        border: 1px solid ${theme.colors.neutral.greyBlue};
       `;
     case "neutral":
     default:

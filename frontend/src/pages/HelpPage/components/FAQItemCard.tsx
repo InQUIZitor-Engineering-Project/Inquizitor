@@ -41,7 +41,7 @@ const FAQItemCard: React.FC<Props> = ({ item, active, onToggle }) => {
         <Badge
           $variant="neutral"
           style={{
-            background: "rgba(76, 175, 80, 0.14)",
+            background: theme.colors.tint.t5,
             color: theme.colors.brand.primary,
             border: `1px solid ${theme.colors.brand.primary}`,
             flexShrink: 0,

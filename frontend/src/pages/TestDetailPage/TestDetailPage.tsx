@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Link } from "react-router-dom";
-import styled from "styled-components";
+import styled, { useTheme } from "styled-components";
 import { Box, Button, Flex, Input, Stack, Text, Textarea } from "../../design-system/primitives";
 import useTestDetail from "./hooks/useTestDetail";
 import { useAuth } from "../../hooks/useAuth";
@@ -29,6 +29,7 @@ const VariantLoadingSpinner = styled(Box).attrs({ as: "span" })`
 `;
 
 const TestDetailPage: React.FC = () => {
+  const theme = useTheme();
   const { user } = useAuth();
   const { state, derived, actions } = useTestDetail();
   const isConsentRevoked = Boolean(user && !user.terms_accepted);
@@ -225,9 +226,9 @@ const TestDetailPage: React.FC = () => {
                     $gap="md"
                     style={{
                       minHeight: 220,
-                      background: "var(--color-neutral-white, #fff)",
-                      borderRadius: "var(--radii-md, 8px)",
-                      padding: "var(--spacing-2xl, 32px)",
+                      background: theme.colors.neutral.white,
+                      borderRadius: theme.radii.md,
+                      padding: theme.spacing["2xl"],
                     }}
                   >
                     <VariantLoadingSpinner aria-hidden>
@@ -236,7 +237,7 @@ const TestDetailPage: React.FC = () => {
                         height="48"
                         viewBox="0 0 24 24"
                         fill="none"
-                        stroke="#4CAF4F"
+                        stroke={theme.colors.brand.primary}
                         strokeWidth="2"
                         strokeLinecap="round"
                       >

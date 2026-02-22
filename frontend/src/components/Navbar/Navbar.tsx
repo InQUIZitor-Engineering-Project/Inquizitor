@@ -254,7 +254,7 @@ const Navbar: React.FC = () => {
           <DropdownItem onClick={() => handleNavClick("/settings")}>
             Ustawienia konta
           </DropdownItem>
-          <DropdownItem onClick={handleLogout} style={{ borderTop: isMobile ? "none" : `1px solid ${theme.colors.neutral.greyBlue}`, marginTop: isMobile ? 0 : 4, paddingTop: isMobile ? 12 : 12, color: "#d32f2f" }}>
+          <DropdownItem onClick={handleLogout} style={{ borderTop: isMobile ? "none" : `1px solid ${theme.colors.neutral.greyBlue}`, marginTop: isMobile ? 0 : 4, paddingTop: isMobile ? 12 : 12, color: theme.colors.danger.main }}>
             Wyloguj
           </DropdownItem>
         </DropdownMenu>

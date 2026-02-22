@@ -264,8 +264,8 @@ export const RegisterButton = styled.a`
 
 export const NotificationBadge = styled.span`
   position: absolute;
-  background-color: #ff4d4f;
-  color: white;
+  background-color: ${({ theme }) => theme.colors.danger.main};
+  color: ${({ theme }) => theme.tone.inverted};
   border-radius: 10px;
   min-width: 18px;
   height: 18px;
@@ -274,10 +274,10 @@ export const NotificationBadge = styled.span`
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid white;
+  border: 2px solid ${({ theme }) => theme.colors.neutral.white};
   font-weight: bold;
   z-index: 10;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  box-shadow: ${({ theme }) => theme.shadows["2px"]};
 
   top: 0;
   right: 0;
@@ -287,7 +287,7 @@ export const NotificationBadge = styled.span`
     top: 50%;
     right: 12px;
     transform: translateY(-50%);
-    border: 1px solid white;
+    border: 1px solid ${({ theme }) => theme.colors.neutral.white};
   }
 `;
 

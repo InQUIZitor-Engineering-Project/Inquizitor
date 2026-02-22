@@ -106,7 +106,7 @@ const SearchInput = styled(Input)<{ $focused?: boolean }>`
   &:focus {
     outline: none;
     border-color: ${({ theme }) => theme.colors.brand.primary};
-    box-shadow: 0 0 0 2px rgba(76, 175, 79, 0.15);
+    box-shadow: 0 0 0 2px ${({ theme }) => theme.colors.tint.t5};
   }
 `;
 
