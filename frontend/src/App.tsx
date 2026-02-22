@@ -13,6 +13,7 @@ import ProfilePage from "./pages/ProfilePage/ProfilePage";
 import TestDetailPage from "./pages/TestDetailPage/TestDetailPage";
 import AboutUsPage from './pages/AboutUsPage/AboutUsPage';
 import HelpPage from './pages/HelpPage/HelpPage';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage/PrivacyPolicyPage';
 import CreateTestSelectionPage from "./pages/CreateTestSelectionPage/CreateTestSelectionPage";
 import CreateTestAIPage from "./pages/CreateTestAIPage/CreateTestAIPage";
 import CreateManualTestPage from "./pages/CreateManualTestPage/CreateManualTestPage";
@@ -60,6 +61,7 @@ const App: React.FC = () => {
             <Route path="/" element={<HomePage />} />
             <Route path="/about" element={<AboutUsPage />} />
             <Route path="/pomoc" element={<HelpPage />} />
+            <Route path="/polityka-prywatnosci" element={<PrivacyPolicyPage />} />
             <Route 
               path="/register" 
               element={

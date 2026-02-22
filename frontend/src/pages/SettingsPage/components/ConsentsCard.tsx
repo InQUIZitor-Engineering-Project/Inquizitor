@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import { Card, Stack, Heading, Text, Checkbox, Button, Divider, Flex } from "../../../design-system/primitives";
 import { Modal } from "../../../design-system/patterns";
 import { useTheme } from "styled-components";
@@ -46,7 +47,11 @@ const ConsentsCard: React.FC<ConsentsCardProps> = ({
             />
             <Stack $gap="4px">
               <Text as="label" htmlFor="terms" $variant="body2" $weight="medium">
-                Akceptuję Warunki Użytkowania i Politykę Prywatności *
+                Akceptuję{" "}
+                <Link to="/polityka-prywatnosci" target="_blank" rel="noopener noreferrer" style={{ color: theme.colors.brand.primary, textDecoration: "underline" }}>
+                  Warunki Użytkowania i Politykę Prywatności
+                </Link>
+                {" "}*
               </Text>
               <Text $variant="body3" $tone="muted">
                 Wymagane do korzystania z generatora testów AI.{" "}
@@ -106,6 +111,13 @@ const ConsentsCard: React.FC<ConsentsCardProps> = ({
         onConfirm={() => setIsModalOpen(false)}
       >
         <Stack $gap="lg">
+          <Text $variant="body3" $tone="muted">
+            Pełna{" "}
+            <Link to="/polityka-prywatnosci" target="_blank" rel="noopener noreferrer" style={{ color: theme.colors.brand.primary, textDecoration: "underline" }}>
+              Polityka prywatności
+            </Link>
+            {" "}dostępna jest na osobnej stronie.
+          </Text>
           <Stack $gap="sm">
             <Heading $level="h4" as="h4">
               1. Prawa Własności Intelektualnej

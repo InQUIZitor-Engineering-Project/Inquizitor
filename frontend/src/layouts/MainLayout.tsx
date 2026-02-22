@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import styled from "styled-components";
 import Sidebar from "../components/Sidebar/Sidebar";
-import Footer from "../components/Footer/Footer";
 import { Modal } from "../design-system/patterns";
 import { getMyTests, deleteTest } from "../services/test";
 import type { TestOut } from "../services/test";
@@ -166,7 +165,6 @@ const MainLayout: React.FC = () => {
           <PageContentWrapper>
             <Outlet context={{ refreshSidebarTests }} /> 
           </PageContentWrapper>
-          <Footer />
         </ScrollableContent>
       </ContentArea>
 

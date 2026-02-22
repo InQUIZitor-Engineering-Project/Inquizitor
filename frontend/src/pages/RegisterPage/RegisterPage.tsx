@@ -254,8 +254,11 @@ const RegisterPage: React.FC = () => {
                       required
                     />
                     <Text $variant="body3" $tone="muted">
-                      Akceptuję Warunki Użytkowania i Politykę Prywatności. * Oświadczam, że posiadam
-                      prawa do materiałów i wyrażam zgodę na ich przetworzenie przez AI.{" "}
+                      Akceptuję{" "}
+                      <Link to="/polityka-prywatnosci" target="_blank" rel="noopener noreferrer" style={{ color: theme.colors.brand.primary, textDecoration: "underline" }}>
+                        Warunki Użytkowania i Politykę Prywatności
+                      </Link>
+                      . * Oświadczam, że posiadam prawa do materiałów i wyrażam zgodę na ich przetworzenie przez AI.{" "}
                       <button
                         type="button"
                         onClick={() => setIsModalOpen(true)}
@@ -303,6 +306,13 @@ const RegisterPage: React.FC = () => {
         onConfirm={() => setIsModalOpen(false)}
       >
         <Stack $gap="lg">
+          <Text $variant="body3" $tone="muted">
+            Pełna{" "}
+            <Link to="/polityka-prywatnosci" target="_blank" rel="noopener noreferrer" style={{ color: theme.colors.brand.primary, textDecoration: "underline" }}>
+              Polityka prywatności
+            </Link>
+            {" "}dostępna jest na osobnej stronie.
+          </Text>
           <Stack $gap="sm">
             <Heading $level="h4" as="h4">
               1. Prawa Własności Intelektualnej
