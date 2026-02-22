@@ -14,15 +14,18 @@ from app.domain.models import (
     PdfExportCache,
     PendingVerification,
     Question,
+    QuestionGroup,
     RefreshToken,
     Test,
     User,
 )
 from app.domain.models.enums import (
+    AnalysisStatus,
     JobStatus,
     JobType,
     ProcessingStatus,
     QuestionDifficulty,
+    RoutingTier,
 )
 
 
@@ -34,6 +37,8 @@ def user_to_domain(row: db_models.User) -> User:
         first_name=row.first_name,
         last_name=row.last_name,
         created_at=row.created_at,
+        terms_accepted=row.terms_accepted,
+        marketing_accepted=row.marketing_accepted,
     )
 
 
@@ -45,6 +50,8 @@ def user_to_row(user: User) -> db_models.User:
         first_name=user.first_name,
         last_name=user.last_name,
         created_at=user.created_at or datetime.utcnow(),
+        terms_accepted=user.terms_accepted,
+        marketing_accepted=user.marketing_accepted,
     )
 
 
@@ -72,20 +79,45 @@ def question_to_domain(row: db_models.Question) -> Question:
         text=row.text,
         is_closed=row.is_closed,
         difficulty=QuestionDifficulty(row.difficulty),
+        group_id=getattr(row, "group_id", None),
         choices=choices,
         correct_choices=correct_choices,
+        citations=row.citations or [],
     )
 
 
-def question_to_row(question: Question, test_id: int) -> db_models.Question:
+def question_to_row(
+    question: Question, test_id: int, group_id: int | None = None
+) -> db_models.Question:
+    gid = group_id if group_id is not None else question.group_id
     return db_models.Question(
         id=question.id,
         test_id=test_id,
+        group_id=gid,
         text=question.text,
         is_closed=question.is_closed,
         difficulty=question.difficulty.value,
         choices=question.choices or None,
         correct_choices=question.correct_choices or None,
+        citations=question.citations or None,
+    )
+
+
+def question_group_to_domain(row: db_models.QuestionGroup) -> QuestionGroup:
+    return QuestionGroup(
+        id=row.id,
+        test_id=row.test_id,
+        label=row.label,
+        position=row.position,
+    )
+
+
+def question_group_to_row(group: QuestionGroup) -> db_models.QuestionGroup:
+    return db_models.QuestionGroup(
+        id=group.id,
+        test_id=group.test_id,
+        label=group.label,
+        position=group.position,
     )
 
 
@@ -157,6 +189,23 @@ def material_to_domain(
         status=ProcessingStatus(status_value),
         extracted_text=row.extracted_text,
         processing_error=row.processing_error,
+        analysis_status=AnalysisStatus(
+            row.analysis_status.value
+            if isinstance(row.analysis_status, db_models.AnalysisStatus)
+            else str(row.analysis_status)
+        ),
+        routing_tier=(
+            RoutingTier(row.routing_tier.value)
+            if isinstance(row.routing_tier, db_models.RoutingTier)
+            else (
+                RoutingTier(str(row.routing_tier))
+                if row.routing_tier
+                else None
+            )
+        ),
+        analysis_version=row.analysis_version,
+        markdown_twin=row.markdown_twin,
+        thumbnail_path=row.thumbnail_path,
     )
 
 
@@ -175,6 +224,11 @@ def material_to_row(material: Material) -> db_models.Material:
         extracted_text=material.extracted_text,
         processing_status=material.status.value,
         processing_error=material.processing_error,
+        analysis_status=material.analysis_status.value,
+        routing_tier=material.routing_tier.value if material.routing_tier else None,
+        analysis_version=material.analysis_version,
+        markdown_twin=material.markdown_twin,
+        thumbnail_path=material.thumbnail_path,
     )
 
 
@@ -351,6 +405,8 @@ __all__ = [
     "password_reset_token_to_row",
     "pending_verification_to_domain",
     "pending_verification_to_row",
+    "question_group_to_domain",
+    "question_group_to_row",
     "question_to_domain",
     "question_to_row",
     "refresh_token_to_domain",

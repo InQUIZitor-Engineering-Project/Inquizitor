@@ -35,12 +35,16 @@ def get_job(
 def list_jobs(
     current_user: Annotated[User, Depends(get_current_user)],
     job_service: Annotated[JobService, Depends(get_job_service)],
+    ids: list[int] | None = None,
 ) -> list[JobOut]:
     if current_user.id is None:
         raise HTTPException(
             status_code=401, detail="User ID is missing"
         )
-    jobs = job_service.list_jobs(owner_id=current_user.id)
+    if ids is not None and len(ids) > 0:
+        jobs = job_service.get_jobs(owner_id=current_user.id, job_ids=ids)
+    else:
+        jobs = job_service.list_jobs(owner_id=current_user.id)
     return [dto.to_job_out(job) for job in jobs]
 
 

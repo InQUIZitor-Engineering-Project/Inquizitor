@@ -47,5 +47,10 @@ Prerequisites: Docker Desktop 4.x
 - **Infrastructure layer** (`app/infrastructure/`): provides adapters for SQLModel persistence, LLM, OCR, storage, and registers them in `AppContainer`.
 - **Dependency Injection**: `AppContainer` exposes the UnitOfWork and services, while FastAPI injects them using `Depends(get_*_service)` with helpers from `app/api/dependencies.py`.
 
+#### One-off jobs (e.g. production / Hetzner)
+- **Backfill thumbnails** (for materials that don’t have one yet):
+  - `docker compose exec backend python -m app.cli backfill-thumbnails`
+  - Optional: `--limit N`, `--dry-run` (see `python -m app.cli backfill-thumbnails --help`).
+
 ### Notes
 - Backend hot‑reload: mounted `

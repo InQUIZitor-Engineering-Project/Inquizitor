@@ -66,7 +66,7 @@ const LoginPage: React.FC = () => {
   return (
     <AuthLayout
       illustrationSrc={loginIllustration}
-      illustrationAlt="Login Illustration"
+      illustrationAlt="Ilustracja logowania do systemu InQUIZitor"
       left={
         <Stack $gap="lg">
           <MobileHide>

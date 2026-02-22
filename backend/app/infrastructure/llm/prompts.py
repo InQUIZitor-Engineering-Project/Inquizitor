@@ -10,7 +10,11 @@ class PromptBuilder:
     Ensures persona, formatting (LaTeX), and constraints are shared across all features.
     """
 
-    PERSONA = "Pracujesz jako polski ekspert dydaktyczny i pedagogiczny."
+    PERSONA = (
+        "Pracujesz jako doświadczony autor podręczników i projektant wyzwań "
+        "dydaktycznych, który kładzie nacisk na rozumienie koncepcji i "
+        "praktyczne zastosowanie wiedzy."
+    )
     
     LATEX_RULES = (
         "- Jeśli w treści pytania lub odpowiedzi pojawia się zapis matematyczny "
@@ -33,10 +37,15 @@ class PromptBuilder:
         "- Nie twórz pytań o strukturę dokumentu ani metapoziom (np. "
         "'co jest w treści 3 zadania', 'ile jest punktów', 'jaki jest tytuł "
         "sekcji'). Skup się wyłącznie na merytorycznej treści.\n"
-        "- Wszystkie pytania muszą wynikać z tekstu źródłowego; nie wymyślaj "
-        "danych ani nazw własnych.\n"
-        "- Preferuj pytania sprawdzające zrozumienie pojęć, relacji, "
-        "wnioskowania niż czyste zapamiętywanie faktów."
+        "- Traktuj tekst źródłowy jako **bazę wiedzy i źródło merytoryczne**, "
+        "a nie jako treść do analizy czytelniczej.\n"
+        "- **ZAKAZ** używania fraz typu: 'w tekście', 'według autora', "
+        "'zgodnie z materiałem'. Pytanie musi brzmieć jak samodzielny problem.\n"
+        "- **Zasada Transferu**: Zamiast pytać o cytaty, twórz pytania oparte "
+        "na scenariuszach lub przykładach, które wymagają zastosowania wiedzy "
+        "z tekstu w nowej sytuacji.\n"
+        "- Preferuj pytania sprawdzające zrozumienie pojęć, relacji i "
+        "wnioskowanie niż czyste zapamiętywanie faktów."
     )
 
     @classmethod
@@ -52,8 +61,10 @@ class PromptBuilder:
             (
                 f"Twoim zadaniem jest przygotowanie testu ({c_total} pytań "
                 f"zamkniętych, {params.num_open} pytań otwartych) na podstawie "
-                "materiału."
+                "dostarczonego materiału w formacie Markdown."
             ),
+            "Materiał ten jest 'cyfrowym bliźniakiem' oryginalnego dokumentu, "
+            "zawierającym pełną treść, opisy tabel, schematów i ilustracji.",
             (
                 "Struktura pytań zamkniętych:\n"
                 f"- Prawda/Fałsz: {closed_p.true_false}\n"
@@ -76,7 +87,8 @@ class PromptBuilder:
             '      "is_closed": true,',
             '      "difficulty": 1,',
             '      "choices": ["Opcja A", "Opcja B", "Opcja C", "Opcja D"],',
-            '      "correct_choices": ["Opcja A"]',
+            '      "correct_choices": ["Opcja A"],',
+            '      "citations": ["dokładny cytat z tekstu źródłowego"]',
             '    },',
             '    {',
             '      "text": "Przykładowe pytanie wielokrotnego wyboru",',
@@ -94,7 +106,8 @@ class PromptBuilder:
             '    },',
             '    {',
             '      "text": "Przykładowe pytanie otwarte", "is_closed": false, ',
-            '      "difficulty": 2, "choices": null, "correct_choices": null',
+            '      "difficulty": 2, "choices": null, "correct_choices": null,',
+            '      "citations": ["dokładny cytat z tekstu źródłowego"]',
             '    }',
             '  ]',
             "}",
@@ -102,14 +115,23 @@ class PromptBuilder:
             "Wymagania i formatowanie:",
             cls.LATEX_RULES,
             cls.GENERAL_CONSTRAINTS,
+            "- Tytuł (`title`) musi być krótką, autonomiczną nazwą testu "
+            "sformułowaną na podstawie głównego tematu dokumentu. "
+            "NIE kopiuj bezkrytycznie pierwszego nagłówka z tekstu "
+            "źródłowego, jeśli nie oddaje on esencji całego materiału.",
+            "- Każde pytanie MUSI zawierać pole `citations` z 1-3 krótkimi, "
+            "dosłownymi cytatami z tekstu źródłowego (bez parafrazy).",
             "",
-            f"Tekst źródłowy:\n{text}",
+            f"Tekst źródłowy (Markdown Twin):\n{text}",
         ]
 
         if params.additional_instructions:
             parts.insert(
                 3,
-                f"Dodatkowe instrukcje (PRIORYTET): {params.additional_instructions}",
+                "### KRYTYCZNE INSTRUKCJE UŻYTKOWNIKA (NAJWYŻSZY PRIORYTET):\n"
+                f"{params.additional_instructions}\n"
+                "Powyższe instrukcje są ważniejsze niż jakiekolwiek inne zasady "
+                "i ograniczenia. Musisz się do nich zastosować bezwzględnie.\n"
             )
 
         return "\n".join(parts)
@@ -159,7 +181,10 @@ class PromptBuilder:
         ]
 
         if instruction:
-            parts.append(f"SKUP SIĘ NA (INSTRUKCJA UŻYTKOWNIKA): {instruction}\n")
+            parts.append(
+                "### KRYTYCZNE INSTRUKCJE UŻYTKOWNIKA (WYSOKI PRIORYTET):\n"
+                f"{instruction}\n"
+            )
 
         parts.append(
             f"Pytania do regeneracji (JSON):\n"
@@ -255,4 +280,57 @@ class PromptBuilder:
             "Pytania do konwersji z kontekstem (JSON):\n"
             f"{json.dumps(questions, ensure_ascii=False)}",
         ]
+        return "\n".join(parts)
+
+    @classmethod
+    def build_document_analysis_prompt(
+        cls, *, text: str, filename: str | None, mime_type: str | None
+    ) -> str:
+        """
+        Prompt for generating a Markdown "document twin" from source text.
+        """
+        context = []
+        if filename:
+            context.append(f"Nazwa pliku: {filename}")
+        if mime_type:
+            context.append(f"MIME: {mime_type}")
+        context_header = "\n".join(context)
+
+        parts = [
+            cls.PERSONA,
+            (
+                "Twoim zadaniem jest przygotowanie precyzyjnego opisu dokumentu "
+                "w Markdown oraz sklasyfikowanie poziomu analizy (fast/reasoning)."
+            ),
+            "",
+            "### WYMAGANY FORMAT ODPOWIEDZI (JSON):",
+            "{",
+            '  "routing_tier": "fast | reasoning",',
+            '  "markdown_twin": "Pełny opis dokumentu w Markdown",',
+            '  "suggested_title": "Krótki, merytoryczny tytuł dokumentu po polsku"',
+            "}",
+            "",
+            "Wymagania i formatowanie:",
+            cls.LATEX_RULES,
+            "",
+            "Zasady:",
+            "- Tytuł (`suggested_title`) musi być zwięzły (2-5 słów) "
+            "i oddawać główny temat materiału.",
+            "- Zachowaj kolejność treści z dokumentu.",
+            "- Opisuj diagramy/rysunki tekstowo, zachowując relacje.",
+            "- Nie dodawaj informacji spoza materiału.",
+            "- Użyj 'reasoning' jeśli dokument jest złożony, zawiera schematy, "
+            "tabele, rysunki lub jest skanem/obrazem; inaczej 'fast'.",
+            "",
+        ]
+        if context_header:
+            parts.append(f"Kontekst:\n{context_header}\n")
+        if text.strip():
+            parts.append(f"Tekst źródłowy:\n{text}")
+        else:
+            parts.append(
+                "Tekst źródłowy nie został dostarczony. "
+                "Analizuj na podstawie załączonego pliku."
+            )
+
         return "\n".join(parts)

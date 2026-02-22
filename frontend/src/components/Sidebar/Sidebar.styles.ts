@@ -1,15 +1,26 @@
 import styled from "styled-components";
 import { NAVBAR_HEIGHT, NAVBAR_HEIGHT_MOBILE } from "../Navbar/Navbar.styles";
 
-export const SidebarWrapper = styled.aside<{ $isDrawerOpen?: boolean }>`
+export const SidebarWrapper = styled.aside<{ $isDrawerOpen?: boolean; $isHidden?: boolean }>`
   display: flex;
   flex-direction: column;
   padding: 24px;
   background-color: ${({ theme }) => theme.colors.neutral.white};
-  box-shadow: ${({ theme }) => theme.shadows["2px"]};
+  box-shadow: ${({ theme, $isHidden }) => ($isHidden ? "none" : theme.shadows["2px"])};
   width: 280px;
   height: 100%; 
-  overflow: hidden;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), 
+              width 0.4s cubic-bezier(0.16, 1, 0.3, 1), 
+              padding 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.4s ease;
+  position: relative;
+  z-index: 100;
+
+  ${({ $isHidden }) => $isHidden && `
+    width: 0;
+    padding: 24px 0;
+    transform: translateX(-100%);
+  `}
 
   @media (max-width: 1024px) {
     position: fixed;
@@ -20,10 +31,13 @@ export const SidebarWrapper = styled.aside<{ $isDrawerOpen?: boolean }>`
     width: 280px;
     max-width: 82vw;
     transform: translateX(${({ $isDrawerOpen }) => ($isDrawerOpen ? "0" : "-100%")});
-    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 1200;
     border-right: 1px solid ${({ theme }) => theme.colors.neutral.greyBlue};
     padding-bottom: calc(24px + env(safe-area-inset-bottom));
+    padding-left: 24px;
+    padding-right: 24px;
+    overflow: hidden;
   }
 
   @media (max-width: 768px) {
@@ -33,12 +47,69 @@ export const SidebarWrapper = styled.aside<{ $isDrawerOpen?: boolean }>`
   }
 `;
 
+export const ToggleButton = styled.button<{ $isHidden?: boolean }>`
+  position: absolute;
+  top: 50%;
+  right: -12px;
+  transform: translate(${({ $isHidden }) => ($isHidden ? "40px" : "0")}, -50%);
+  width: 28px;
+  height: 56px;
+  background-color: ${({ theme }) => theme.colors.neutral.white};
+  border: 1px solid ${({ theme }) => theme.colors.neutral.greyBlue};
+  border-radius: ${({ $isHidden }) => ($isHidden ? "0 12px 12px 0" : "12px 0 0 12px")};
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 110;
+  box-shadow: ${({ $isHidden }) => ($isHidden ? "4px 0 10px rgba(0,0,0,0.08)" : "-2px 0 5px rgba(0,0,0,0.05)")};
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  padding: 0;
+
+  &:hover {
+    background-color: ${({ theme }) => theme.colors.tint.t5};
+    width: 32px;
+    border-color: ${({ theme }) => theme.colors.brand.primary};
+  }
+
+  @media (max-width: 1024px) {
+    display: none;
+  }
+
+  &::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-top: 2px solid ${({ theme }) => theme.colors.brand.primary};
+    border-right: 2px solid ${({ theme }) => theme.colors.brand.primary};
+    transform: rotate(${({ $isHidden }) => ($isHidden ? "45deg" : "225deg")});
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+`;
+
+export const SidebarInner = styled.div<{ $isHidden?: boolean }>`
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 232px; /* 280px - 48px padding */
+  flex-shrink: 0;
+  opacity: ${({ $isHidden }) => ($isHidden ? 0 : 1)};
+  visibility: ${({ $isHidden }) => ($isHidden ? "hidden" : "visible")};
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+`;
+
 export const SearchInput = styled.input`
   padding: 8px 12px;
   border: 1px solid ${({ theme }) => theme.colors.neutral.greyBlue};
   border-radius: 8px;
   margin-bottom: 24px;
   outline: none;
+  background-color: ${({ theme }) => theme.colors.neutral.white};
+  color: ${({ theme }) => theme.colors.neutral.black};
+
+  &::placeholder {
+    color: ${({ theme }) => theme.colors.neutral.grey};
+  }
 `;
 
 export const TestList = styled.div`
@@ -62,7 +133,7 @@ export const DeleteIcon = styled.img`
   object-fit: contain; /* Ensures the image scales properly */
 
   &:hover {
-    background-color: ${({ theme }) => theme.colors.tint.t5 || '#ffebee'};
+    background-color: ${({ theme }) => theme.colors.tint.t5};
   }
 `;
 
@@ -70,6 +141,7 @@ export const TestItem = styled.div`
   padding: 8px 12px;
   border-radius: 8px;
   cursor: pointer;
+  color: ${({ theme }) => theme.colors.neutral.black};
 
   display: flex;
   justify-content: space-between;

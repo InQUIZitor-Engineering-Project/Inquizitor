@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import styled from "styled-components";
 import Sidebar from "../components/Sidebar/Sidebar";
-import Footer from "../components/Footer/Footer";
 import { Modal } from "../design-system/patterns";
 import { getMyTests, deleteTest } from "../services/test";
 import type { TestOut } from "../services/test";
@@ -72,6 +71,7 @@ const MainLayout: React.FC = () => {
   const [tests, setTests] = useState<TestOut[]>([]);
   const [testIdToDelete, setTestIdToDelete] = useState<number | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarHidden, setSidebarHidden] = useState(location.pathname.startsWith("/biblioteka"));
 
   const refreshSidebarTests = async () => {
     try {
@@ -112,6 +112,12 @@ const MainLayout: React.FC = () => {
 
   useEffect(() => {
     setSidebarOpen(false);
+    // Set sidebar hidden state based on current page
+    if (location.pathname.startsWith("/biblioteka")) {
+      setSidebarHidden(true);
+    } else {
+      setSidebarHidden(false);
+    }
   }, [location.pathname]);
 
   const handleOpenDeleteModal = (testId: number) => {
@@ -141,6 +147,8 @@ const MainLayout: React.FC = () => {
         tests={tests}
         isDrawerOpen={sidebarOpen}
         onCloseDrawer={() => setSidebarOpen(false)}
+        isHidden={sidebarHidden}
+        onToggleHide={() => setSidebarHidden(!sidebarHidden)}
         onSelect={(testId) => {
           navigate(`/tests/${testId}`);
           setSidebarOpen(false);
@@ -157,7 +165,6 @@ const MainLayout: React.FC = () => {
           <PageContentWrapper>
             <Outlet context={{ refreshSidebarTests }} /> 
           </PageContentWrapper>
-          <Footer />
         </ScrollableContent>
       </ContentArea>
 

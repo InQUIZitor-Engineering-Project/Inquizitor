@@ -70,7 +70,7 @@ const AboutUsPage: React.FC = () => {
       $align="center"
       $justify="center"
       $bg={theme.colors.tint.t5}
-      $border="1px solid rgba(76, 175, 80, 0.12)"
+      $border={`1px solid ${theme.colors.neutral.greyBlue}`}
       $radius="xl"
       $p="md"
       $shadow="md"
@@ -79,7 +79,7 @@ const AboutUsPage: React.FC = () => {
       <Text $variant="body1" $weight="medium" style={{ color: theme.colors.brand.primary }}>
         {value}
       </Text>
-      <Text $variant="body3" $tone="muted">
+      <Text $variant="body3" $tone="default">
         {label}
       </Text>
     </Flex>
@@ -88,7 +88,7 @@ const AboutUsPage: React.FC = () => {
   return (
     <Flex
       $direction="column"
-      $bg={theme.colors.neutral.silver}
+      $bg="transparent"
       style={{ minHeight: "100%" }}
     >
       <Flex $flex={1} $width="100%" $justify="center" $overflow="hidden">
@@ -99,7 +99,7 @@ const AboutUsPage: React.FC = () => {
               <AboutGrid
                 $p="lg"
                 $radius="xl"
-                $bg="#fff"
+                $bg={theme.colors.neutral.white}
                 $shadow="md"
               >
                 <TitleSection $gap="md">
@@ -127,7 +127,7 @@ const AboutUsPage: React.FC = () => {
                 </StatsSection>
               </AboutGrid>
 
-              <Box $p="lg" $radius="xl" $bg="#fff" $shadow="md">
+              <Box $p="lg" $radius="xl" $bg={theme.colors.neutral.white} $shadow="md">
                 <Stack $gap="sm">
                   <Heading $level="h3" as="h3">
                     Kim jesteśmy?
@@ -158,7 +158,7 @@ const AboutUsPage: React.FC = () => {
                 </Stack>
               </Box>
 
-              <Box $p="lg" $radius="xl" $bg="#fff" $shadow="md">
+              <Box $p="lg" $radius="xl" $bg={theme.colors.neutral.white} $shadow="md">
                 <Stack $gap="sm">
                   <Heading $level="h3" as="h3">
                     Dokąd zmierzamy?

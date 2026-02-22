@@ -1,8 +1,8 @@
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from typing import Optional
 
-from sqlalchemy import Column, ForeignKey, Integer
+from sqlalchemy import Column, ForeignKey, Integer, Text, text
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Field, Relationship, SQLModel
@@ -15,11 +15,25 @@ class User(SQLModel, table=True):
     first_name: str | None = Field(default=None, max_length=50)
     last_name:  str | None = Field(default=None, max_length=50)
     created_at: datetime = Field(default_factory=datetime.utcnow)
+    
+    # Consents
+    terms_accepted: bool = Field(default=True)
+    terms_accepted_at: datetime | None = Field(default_factory=datetime.utcnow)
+    marketing_accepted: bool = Field(default=False)
+    marketing_accepted_at: datetime | None = Field(default=None)
 
-    tests: list["Test"] = Relationship(back_populates="owner")
-    files: list["File"] = Relationship(back_populates="owner")
-    materials: list["Material"] = Relationship(back_populates="owner")
-    refresh_tokens: list["RefreshToken"] = Relationship(back_populates="owner")
+    tests: list["Test"] = Relationship(
+        back_populates="owner", sa_relationship_kwargs={"cascade": "all, delete-orphan"}
+    )
+    files: list["File"] = Relationship(
+        back_populates="owner", sa_relationship_kwargs={"cascade": "all, delete-orphan"}
+    )
+    materials: list["Material"] = Relationship(
+        back_populates="owner", sa_relationship_kwargs={"cascade": "all, delete-orphan"}
+    )
+    refresh_tokens: list["RefreshToken"] = Relationship(
+        back_populates="owner", sa_relationship_kwargs={"cascade": "all, delete-orphan"}
+    )
 
 
 class RefreshToken(SQLModel, table=True):
@@ -60,13 +74,40 @@ class Test(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
     owner: User | None = Relationship(back_populates="tests")
+    question_groups: list["QuestionGroup"] = Relationship(
+        back_populates="test",
+        sa_relationship_kwargs={"cascade": "all, delete-orphan"},
+    )
     questions: list["Question"] = Relationship(
         back_populates="test",
         sa_relationship_kwargs={
             "cascade": "all, delete-orphan",
-            "order_by": "Question.id"
+            "order_by": "Question.position, Question.id",
         },
+    )
+
+
+class QuestionGroup(SQLModel, table=True):
+    __tablename__ = "question_group"
+    id: int | None = Field(default=None, primary_key=True)
+    test_id: int = Field(
+        sa_column=Column(
+            "test_id",
+            Integer,
+            ForeignKey("test.id", ondelete="CASCADE"),
+            nullable=False,
+            index=True,
         )
+    )
+    label: str = Field(max_length=200)
+    position: int = Field(
+        default=0,
+        sa_column=Column("position", Integer, nullable=False, server_default=text("0")),
+    )
+
+    test: Test | None = Relationship(back_populates="question_groups")
+    questions: list["Question"] = Relationship(back_populates="group")
+
 
 class Question(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
@@ -79,6 +120,19 @@ class Question(SQLModel, table=True):
             nullable=False
         )
     )
+    group_id: int = Field(
+        sa_column=Column(
+            "group_id",
+            Integer,
+            ForeignKey("question_group.id", ondelete="CASCADE"),
+            index=True,
+            nullable=False
+        )
+    )
+    position: int = Field(
+        default=0,
+        sa_column=Column("position", Integer, nullable=False, server_default=text("0")),
+    )
     text: str
     is_closed: bool = Field(default=True)
     difficulty: int = Field(default=1)  # 1-easy, 2-medium, 3-hard
@@ -89,58 +143,97 @@ class Question(SQLModel, table=True):
     correct_choices: list[str] | None = Field(
         default=None, sa_column=Column(JSONB)
     )
+    citations: list[str] | None = Field(
+        default=None, sa_column=Column(JSONB)
+    )
 
     test: Test | None = Relationship(back_populates="questions")
+    group: QuestionGroup | None = Relationship(back_populates="questions")
 
 class File(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
-    owner_id: int = Field(foreign_key="user.id", index=True)
+    owner_id: int = Field(
+        sa_column=Column(
+            Integer,
+            ForeignKey("user.id", ondelete="CASCADE"),
+            index=True,
+            nullable=False,
+        )
+    )
     filename: str
     filepath: str
     uploaded_at: datetime = Field(default_factory=datetime.utcnow)
 
     owner: User | None = Relationship(back_populates="files")
-    material: Optional["Material"] = Relationship(back_populates="file")
+    material: Optional["Material"] = Relationship(
+        back_populates="file", sa_relationship_kwargs={"cascade": "all, delete-orphan"}
+    )
 
 
-class FilePurpose(str, Enum):
+class FilePurpose(StrEnum):
     generic = "generic"
     material = "material"
 
-class ProcessingStatus(str, Enum):
+class ProcessingStatus(StrEnum):
     pending = "pending"
     done = "done"
     failed = "failed"
 
-class JobStatus(str, Enum):
+class JobStatus(StrEnum):
     pending = "pending"
     running = "running"
     done = "done"
     failed = "failed"
 
-class JobType(str, Enum):
+class JobType(StrEnum):
     test_generation = "test_generation"
     pdf_export = "pdf_export"
     material_processing = "material_processing"
+    material_analysis = "material_analysis"
     questions_regeneration = "questions_regeneration"
     questions_conversion = "questions_conversion"
+    group_ai_variant = "group_ai_variant"
 
-class SupportCategory(str, Enum):
+class AnalysisStatus(StrEnum):
+    pending = "pending"
+    done = "done"
+    failed = "failed"
+
+class RoutingTier(StrEnum):
+    fast = "fast"
+    reasoning = "reasoning"
+
+class SupportCategory(StrEnum):
     general = "general"
     bug = "bug"
     feature_request = "feature_request"
     account = "account"
     other = "other"
 
-class SupportStatus(str, Enum):
+class SupportStatus(StrEnum):
     new = "new"
     read = "read"
     resolved = "resolved"
 
 class Material(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
-    owner_id: int = Field(foreign_key="user.id", index=True)
-    file_id: int = Field(foreign_key="file.id", unique=True, index=True)
+    owner_id: int = Field(
+        sa_column=Column(
+            Integer,
+            ForeignKey("user.id", ondelete="CASCADE"),
+            index=True,
+            nullable=False,
+        )
+    )
+    file_id: int = Field(
+        sa_column=Column(
+            Integer,
+            ForeignKey("file.id", ondelete="CASCADE"),
+            unique=True,
+            index=True,
+            nullable=False,
+        )
+    )
     mime_type: str | None = Field(default=None, index=True)
     size_bytes: int | None = None
     checksum: str | None = Field(default=None, index=True)
@@ -150,6 +243,21 @@ class Material(SQLModel, table=True):
         default=ProcessingStatus.done, index=True
     )
     processing_error: str | None = None
+    analysis_status: AnalysisStatus = Field(
+        default=AnalysisStatus.pending,
+        sa_column=Column(
+            SAEnum(AnalysisStatus),
+            index=True,
+            nullable=False,
+            server_default=text("'pending'"),
+        ),
+    )
+    routing_tier: RoutingTier | None = Field(
+        default=None, sa_column=Column(SAEnum(RoutingTier), index=True)
+    )
+    analysis_version: str | None = Field(default=None, max_length=50)
+    markdown_twin: str | None = Field(default=None, sa_column=Column(Text))
+    thumbnail_path: str | None = Field(default=None)
     created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
 
     owner: User | None = Relationship(back_populates="materials")
@@ -158,7 +266,14 @@ class Material(SQLModel, table=True):
 
 class Job(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
-    owner_id: int = Field(foreign_key="user.id", index=True)
+    owner_id: int = Field(
+        sa_column=Column(
+            Integer,
+            ForeignKey("user.id", ondelete="CASCADE"),
+            index=True,
+            nullable=False,
+        )
+    )
     job_type: JobType = Field(sa_column=Column("job_type", SAEnum(JobType), index=True))
     status: JobStatus = Field(sa_column=Column("status", SAEnum(JobStatus), index=True))
     payload: dict = Field(default_factory=dict, sa_column=Column(JSONB))
@@ -184,7 +299,14 @@ class OcrCache(SQLModel, table=True):
     __tablename__ = "ocr_cache"
 
     id: int | None = Field(default=None, primary_key=True)
-    user_id: int = Field(foreign_key="user.id", index=True)
+    user_id: int = Field(
+        sa_column=Column(
+            Integer,
+            ForeignKey("user.id", ondelete="CASCADE"),
+            index=True,
+            nullable=False,
+        )
+    )
     file_hash: str = Field(index=True, max_length=64)
     ocr_options_hash: str = Field(index=True, max_length=64)
     pipeline_version: str = Field(max_length=20)
@@ -200,14 +322,26 @@ class SystemNotification(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     
     type: str = Field(default="info", max_length=20) 
-    recipient_id: int | None = Field(default=None, foreign_key="user.id", nullable=True)
+    recipient_id: int | None = Field(
+        sa_column=Column(
+            Integer, ForeignKey("user.id", ondelete="CASCADE"), nullable=True
+        )
+    )
 
 class UserReadNotification(SQLModel, table=True):
     __tablename__ = "user_read_notifications"
     
-    user_id: int = Field(foreign_key="user.id", primary_key=True)
+    user_id: int = Field(
+        sa_column=Column(
+            Integer, ForeignKey("user.id", ondelete="CASCADE"), primary_key=True
+        )
+    )
     notification_id: int = Field(
-        foreign_key="system_notifications.id", primary_key=True
+        sa_column=Column(
+            Integer,
+            ForeignKey("system_notifications.id", ondelete="CASCADE"),
+            primary_key=True,
+        )
     )
     read_at: datetime = Field(default_factory=datetime.utcnow)
 
@@ -215,7 +349,12 @@ class SupportTicket(SQLModel, table=True):
     __tablename__ = "support_tickets"
     id: int | None = Field(default=None, primary_key=True)
     user_id: int | None = Field(
-        default=None, foreign_key="user.id", index=True, nullable=True
+        sa_column=Column(
+            Integer,
+            ForeignKey("user.id", ondelete="CASCADE"),
+            index=True,
+            nullable=True,
+        )
     )
     email: str = Field(index=True, max_length=100)
     first_name: str | None = Field(default=None, max_length=50)

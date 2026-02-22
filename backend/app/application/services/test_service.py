@@ -9,20 +9,23 @@ import re
 import time
 import unicodedata
 from collections.abc import Callable
-from pathlib import Path
 from typing import Any, cast
 
 from fastapi import HTTPException
 
 from app.api.schemas.tests import (
+    AssignQuestionsToGroupRequest,
     BulkConvertQuestionsRequest,
     BulkDeleteQuestionsRequest,
     BulkRegenerateQuestionsRequest,
     BulkUpdateQuestionsRequest,
+    GroupOut,
+    GroupUpdate,
     PdfExportConfig,
     QuestionCreate,
     QuestionOut,
     QuestionUpdate,
+    ReorderQuestionsRequest,
     TestDetailOut,
     TestGenerateRequest,
     TestGenerateResponse,
@@ -31,14 +34,15 @@ from app.api.schemas.tests import (
 from app.application import dto
 from app.application.interfaces import (
     FileStorage,
-    OCRService,
     QuestionGenerator,
     UnitOfWork,
 )
 from app.db.models import Question as QuestionRow
 from app.db.models import Test as TestRow
+from app.db.models import User as UserRow
 from app.domain.events import TestGenerated
 from app.domain.models import PdfExportCache
+from app.domain.models import Question as QuestionDomain
 from app.domain.models import Test as TestDomain
 from app.domain.models.enums import QuestionDifficulty
 from app.infrastructure.cache.cache_utils import (
@@ -52,7 +56,6 @@ from app.infrastructure.exporting import (
     render_test_to_tex,
     test_to_xml_bytes,
 )
-from app.infrastructure.extractors.extract_composite import composite_text_extractor
 from app.infrastructure.llm.gemini import GeminiQuestionGenerator
 from app.infrastructure.llm.prompts import PromptBuilder
 from app.infrastructure.monitoring.posthog_client import analytics
@@ -65,8 +68,8 @@ class TestService:
         self,
         uow_factory: Callable[[], UnitOfWork],
         *,
-        question_generator: QuestionGenerator,
-        ocr_service: OCRService,
+        question_generator_fast: QuestionGenerator,
+        question_generator_reasoning: QuestionGenerator,
         storage: FileStorage,
         tex_renderer: Callable[..., str] = render_test_to_tex,
         pdf_compiler: Callable[[str], bytes] = compile_tex_to_pdf,
@@ -76,8 +79,8 @@ class TestService:
         ) = render_custom_test_to_tex,
     ) -> None:
         self._uow_factory = uow_factory
-        self._question_generator = question_generator
-        self._ocr_service = ocr_service
+        self._question_generator_fast = question_generator_fast
+        self._question_generator_reasoning = question_generator_reasoning
         self._storage = storage
         self._render_test_to_tex = tex_renderer
         self._compile_tex_to_pdf = pdf_compiler
@@ -290,9 +293,19 @@ class TestService:
         owner_id: int,
     ) -> TestGenerateResponse:
         with self._uow_factory() as uow:
+            session = getattr(uow, "session", None)
+            if session:
+                user = session.get(UserRow, owner_id)
+                if user and not user.terms_accepted:
+                    raise ValueError(
+                        "Musisz zaakceptować regulamin, aby generować testy. "
+                        "Przejdź do ustawień konta."
+                    )
+
             normalized_text = request.text.strip() if request.text else ""
             source_text: str
             base_title: str
+            routing_tier = None
 
             if normalized_text:
                 source_text = normalized_text
@@ -304,70 +317,75 @@ class TestService:
                 else:
                     base_title = "From raw text"
             elif request.material_ids:
-                # Pobieramy tekst ze wszystkich wskazanych materiałów
+                # We always use markdown_twin for materials
                 texts = []
                 base_title = "Z wielu plików"
+                routing_tiers: list[str] = []
                 for m_id in request.material_ids:
                     m = uow.materials.get(m_id)
-                    if m and m.owner_id == owner_id and m.extracted_text:
+                    if not m or m.owner_id != owner_id:
+                        continue
+                    
+                    # Markdown twin is our source of truth
+                    if m.markdown_twin:
+                        texts.append(m.markdown_twin)
+                    elif m.extracted_text:
+                        # Fallback for old materials without twin
                         texts.append(m.extracted_text)
-                        if len(request.material_ids) == 1:
-                            base_title = (
-                                m.file.filename if m.file else "Unknown file"
-                            )
-                
+                    
+                    if m.routing_tier:
+                        routing_tiers.append(m.routing_tier.value)
+                    if len(request.material_ids) == 1:
+                        base_title = m.file.filename if m.file else "Unknown file"
+
                 if not texts:
-                    raise ValueError("Nie znaleziono tekstu w wybranych plikach")
-                
+                    raise ValueError(
+                        "Materiał nie jest gotowy. "
+                        "Poczekaj na zakończenie przetwarzania."
+                    )
+
                 source_text = "\n\n".join(texts)
+                routing_tier = (
+                    "reasoning"
+                    if any(tier == "reasoning" for tier in routing_tiers)
+                    else "fast"
+                )
             elif request.file_id is not None:
                 existing_material = uow.materials.get_by_file_id(request.file_id)
 
                 if (
                     existing_material
-                    and existing_material.extracted_text
                     and existing_material.owner_id == owner_id
+                    and existing_material.markdown_twin
                 ):
                     logger.info(
                         f"Using cached text from material {existing_material.id} "
                         f"for file {request.file_id}"
                     )
-                    source_text = existing_material.extracted_text
+                    source_text = existing_material.markdown_twin
                     base_title = (
                         existing_material.file.filename
                         if existing_material.file
                         else "Unknown file"
                     )
+                    if existing_material.routing_tier:
+                        routing_tier = existing_material.routing_tier.value
 
                 else:
-                    source_file = uow.files.get(request.file_id)
-                    if not source_file or source_file.owner_id != owner_id:
-                        raise ValueError("Plik nie został znaleziony")
-                        raise ValueError("Plik nie został znaleziony")
-                    with self._storage.download_to_temp(
-                        stored_path=str(source_file.stored_path)
-                    ) as local_path:
-                        local_path = Path(local_path)
-                        # Prefer composite extractor (text layer + PDF OCR fallback).
-                        # If still empty, fallback to raw OCR.
-                        source_text = composite_text_extractor(local_path, None).strip()
-                        if not source_text:
-                            source_text = (
-                                self._ocr_service.extract_text(
-                                    file_path=str(local_path)
-                                )
-                                or ""
-                            ).strip()
-                    if not source_text:
-                        raise ValueError(
-                            "Could not extract text from the provided file."
-                        )
-                    base_title = source_file.filename
+                    raise ValueError(
+                        "Brak analizy dla wskazanego pliku. "
+                        "Uruchom analizę dokumentu przed generowaniem testu."
+                    )
             else:
                 raise ValueError("Either text or file_id must be provided")
 
             try:
-                llm_title, questions, usage = self._question_generator.generate(
+                generator = (
+                    self._question_generator_reasoning
+                    if routing_tier == "reasoning"
+                    else self._question_generator_fast
+                )
+                llm_title, questions, usage = generator.generate(
                     source_text=source_text,
                     params=request,
                 )
@@ -399,6 +417,12 @@ class TestService:
             if not questions:
                 raise ValueError("LLM zwrócił pustą listę pytań.")
 
+            missing_citations = [
+                q for q in questions if not getattr(q, "citations", None)
+            ]
+            if missing_citations:
+                raise ValueError("Brak wymaganych cytowań w wygenerowanych pytaniach.")
+
             questions = self._sort_questions(questions)
 
             final_title = (llm_title or "").strip() or base_title
@@ -412,8 +436,11 @@ class TestService:
             if persisted_test.id is None:
                 raise RuntimeError("Failed to persist test")
 
+            default_group = uow.tests.create_group(persisted_test.id, "Grupa A", 0)
+            if default_group.id is None:
+                raise RuntimeError("Failed to create default group")
             for question in questions:
-                uow.tests.add_question(persisted_test.id, question)
+                uow.tests.add_question(persisted_test.id, question, default_group.id)
 
             TestGenerated.create(
                 test_id=persisted_test.id,
@@ -443,10 +470,8 @@ class TestService:
             test = uow.tests.get_with_questions(test_id)
             if not test or test.owner_id != owner_id:
                 raise ValueError("Test nie został znaleziony")
-                raise ValueError("Test nie został znaleziony")
-
-            test.questions = self._sort_questions(test.questions)
-            return dto.to_test_detail(test)
+            groups = uow.tests.get_groups_for_test(test_id)
+            return dto.to_test_detail(test, groups)
 
     def list_tests_for_user(self, *, owner_id: int) -> list[TestOut]:
         with self._uow_factory() as uow:
@@ -461,13 +486,207 @@ class TestService:
                 title=title,
             )
             persisted_test = uow.tests.create(test)
+            if persisted_test.id is None:
+                raise RuntimeError("Failed to create test")
+            uow.tests.create_group(persisted_test.id, "Grupa A", 0)
             return dto.to_test_out(persisted_test)
+
+    def create_group(
+        self, *, owner_id: int, test_id: int, label: str, position: int = 0
+    ) -> GroupOut:
+        with self._uow_factory() as uow:
+            test = uow.tests.get(test_id)
+            if not test or test.owner_id != owner_id:
+                raise ValueError("Test nie został znaleziony")
+            group = uow.tests.create_group(test_id, label, position)
+            return dto.to_group_out(group)
+
+    def update_group(
+        self,
+        *,
+        owner_id: int,
+        test_id: int,
+        group_id: int,
+        payload: GroupUpdate,
+    ) -> GroupOut | None:
+        with self._uow_factory() as uow:
+            test = uow.tests.get(test_id)
+            if not test or test.owner_id != owner_id:
+                raise ValueError("Test nie został znaleziony")
+            group = uow.tests.get_group(group_id)
+            if not group or group.test_id != test_id:
+                raise ValueError("Grupa nie należy do tego testu")
+            data = payload.model_dump(exclude_unset=True)
+            updated = uow.tests.update_group(
+                group_id,
+                label=data.get("label"),
+                position=data.get("position"),
+            )
+            return dto.to_group_out(updated) if updated else None
+
+    def delete_group(self, *, owner_id: int, test_id: int, group_id: int) -> None:
+        with self._uow_factory() as uow:
+            test = uow.tests.get(test_id)
+            if not test or test.owner_id != owner_id:
+                raise ValueError("Test nie został znaleziony")
+            group = uow.tests.get_group(group_id)
+            if not group or group.test_id != test_id:
+                raise ValueError("Grupa nie należy do tego testu")
+            groups = uow.tests.get_groups_for_test(test_id)
+            if len(groups) <= 1:
+                raise ValueError("Nie można usunąć ostatniej grupy testu")
+            uow.tests.delete_group(group_id)
+
+    def duplicate_group(
+        self, *, owner_id: int, test_id: int, group_id: int
+    ) -> tuple[GroupOut, list[QuestionOut]]:
+        with self._uow_factory() as uow:
+            test = uow.tests.get(test_id)
+            if not test or test.owner_id != owner_id:
+                raise ValueError("Test nie został znaleziony")
+            new_group, new_questions = uow.tests.duplicate_group(test_id, group_id)
+            return dto.to_group_out(new_group), [
+                dto.to_question_out(q) for q in new_questions
+            ]
+
+    def create_shuffled_variant_group(
+        self, *, owner_id: int, test_id: int, group_id: int
+    ) -> GroupOut:
+        """Create a new group with the same questions as the source group but shuffled
+        (question order within difficulty + choice order within each question). Same as
+        former PDF 'generate two versions' with 'shuffle' mode."""
+        with self._uow_factory() as uow:
+            test = uow.tests.get_with_questions(test_id)
+            if not test or test.owner_id != owner_id:
+                raise ValueError("Test nie został znaleziony")
+            group = uow.tests.get_group(group_id)
+            if not group or group.test_id != test_id:
+                raise ValueError("Grupa nie należy do tego testu")
+            source_questions = [
+                q
+                for q in test.questions
+                if getattr(q, "group_id", None) == group_id
+            ]
+            if not source_questions:
+                raise ValueError("Grupa nie zawiera pytań")
+
+        payloads = [
+            {
+                "text": q.text,
+                "is_closed": q.is_closed,
+                "difficulty": getattr(q.difficulty, "value", q.difficulty),
+                "choices": list(q.choices or []),
+                "correct_choices": list(q.correct_choices or []),
+            }
+            for q in source_questions
+        ]
+        shuffled = self._shuffle_within_difficulty(payloads)
+
+        with self._uow_factory() as uow:
+            test = uow.tests.get(test_id)
+            if not test or test.owner_id != owner_id:
+                raise ValueError("Test nie został znaleziony")
+            groups = uow.tests.get_groups_for_test(test_id)
+            next_letter = chr(65 + len(groups))
+            new_group = uow.tests.create_group(
+                test_id, f"Grupa {next_letter}", position=len(groups)
+            )
+            if new_group.id is None:
+                raise RuntimeError("Nie udało się utworzyć grupy")
+            for p in shuffled:
+                q_domain = QuestionDomain(
+                    id=None,
+                    text=str(p.get("text", "")),
+                    is_closed=bool(p.get("is_closed", True)),
+                    difficulty=QuestionDifficulty(int(p.get("difficulty", 1))),
+                    group_id=new_group.id,
+                    choices=p.get("choices") or [],
+                    correct_choices=p.get("correct_choices") or [],
+                    citations=[],
+                )
+                uow.tests.add_question(test_id, q_domain, new_group.id)
+            return dto.to_group_out(new_group)
+
+    def assign_questions_to_group(
+        self,
+        *,
+        owner_id: int,
+        test_id: int,
+        payload: AssignQuestionsToGroupRequest,
+    ) -> None:
+        with self._uow_factory() as uow:
+            test = uow.tests.get(test_id)
+            if not test or test.owner_id != owner_id:
+                raise ValueError("Test nie został znaleziony")
+            group = uow.tests.get_group(payload.group_id)
+            if not group or group.test_id != test_id:
+                raise ValueError("Grupa nie należy do tego testu")
+            uow.tests.assign_questions_to_group(payload.question_ids, payload.group_id)
+
+    def generate_group_ai_variant(
+        self,
+        *,
+        owner_id: int,
+        test_id: int,
+        group_id: int,
+        instruction: str | None = None,
+    ) -> GroupOut:
+        """Create a new group with AI-generated variants of the source group."""
+        with self._uow_factory() as uow:
+            test = uow.tests.get_with_questions(test_id)
+            if not test or test.owner_id != owner_id:
+                raise ValueError("Test nie został znaleziony")
+            group = uow.tests.get_group(group_id)
+            if not group or group.test_id != test_id:
+                raise ValueError("Grupa nie należy do tego testu")
+            source_questions = [
+                q for q in test.questions if getattr(q, "group_id", None) == group_id
+            ]
+            if not source_questions:
+                raise ValueError("Grupa nie zawiera pytań do wygenerowania wariantu")
+
+        questions_payload = [
+            {
+                "id": q.id,
+                "text": q.text,
+                "is_closed": q.is_closed,
+                "difficulty": getattr(q.difficulty, "value", q.difficulty),
+                "choices": q.choices or [],
+                "correct_choices": q.correct_choices or [],
+            }
+            for q in source_questions
+        ]
+        variants = self._generate_llm_variant(questions_payload, instruction)
+
+        with self._uow_factory() as uow:
+            test = uow.tests.get(test_id)
+            if not test or test.owner_id != owner_id:
+                raise ValueError("Test nie został znaleziony")
+            groups = uow.tests.get_groups_for_test(test_id)
+            next_letter = chr(65 + len(groups))
+            new_group = uow.tests.create_group(
+                test_id, f"Grupa {next_letter}", position=len(groups)
+            )
+            if new_group.id is None:
+                raise RuntimeError("Nie udało się utworzyć grupy")
+            for v in variants:
+                q_domain = QuestionDomain(
+                    id=None,
+                    text=str(v.get("text", "")),
+                    is_closed=bool(v.get("is_closed", True)),
+                    difficulty=QuestionDifficulty(int(v.get("difficulty", 1))),
+                    group_id=new_group.id,
+                    choices=v.get("choices") or [],
+                    correct_choices=v.get("correct_choices") or [],
+                    citations=[],
+                )
+                uow.tests.add_question(test_id, q_domain, new_group.id)
+            return dto.to_group_out(new_group)
 
     def delete_test(self, *, owner_id: int, test_id: int) -> None:
         with self._uow_factory() as uow:
             test = uow.tests.get(test_id)
             if not test or test.owner_id != owner_id:
-                raise ValueError("Test nie został znaleziony")
                 raise ValueError("Test nie został znaleziony")
             uow.pdf_exports.remove_for_test(test_id)
             uow.tests.remove(test_id)
@@ -674,10 +893,27 @@ class TestService:
         Prepare context for the advanced PDF export template.
         Supports single-variant and A/B variants scenarios.
         """
+        # Use order from detail (custom order from UI)
         questions = [self._build_question_payload(q) for q in detail.questions]
-        questions = self._sort_questions(questions)
+        groups = getattr(detail, "groups", None) or []
 
-        if config.generate_variants and len(questions) > 0:
+        if groups:
+            sorted_groups = sorted(groups, key=lambda g: (g.position, g.id))
+            group_ids = {g.id for g in sorted_groups}
+            questions_by_group: dict[int, list[dict[str, Any]]] = {
+                g.id: [] for g in sorted_groups
+            }
+            for q in detail.questions:
+                gid = getattr(q, "group_id", None)
+                if gid is not None and gid in group_ids:
+                    questions_by_group.setdefault(gid, []).append(
+                        self._build_question_payload(q)
+                    )
+            variants = [
+                {"name": g.label, "questions": questions_by_group.get(g.id, [])}
+                for g in sorted_groups
+            ]
+        elif config.generate_variants and len(questions) > 0:
             variant_a = self._shuffle_within_difficulty(list(questions))
 
             if getattr(config, "variant_mode", "shuffle") == "llm_variant":
@@ -688,7 +924,7 @@ class TestService:
             else:  # default shuffle in-bucket
                 variant_b = self._shuffle_within_difficulty(list(questions))
 
-            variants: list[dict[str, Any]] = [
+            variants = [
                 {"name": "A", "questions": variant_a},
                 {"name": "B", "questions": variant_b},
             ]
@@ -794,7 +1030,6 @@ class TestService:
             test = uow.tests.get(test_id)
             if not test or test.owner_id != owner_id:
                 raise ValueError("Test nie został znaleziony")
-                raise ValueError("Test nie został znaleziony")
 
             session = getattr(uow, "session", None)
             if session is None:
@@ -802,7 +1037,6 @@ class TestService:
 
             question_row = session.get(QuestionRow, question_id)
             if not question_row or question_row.test_id != test_id:
-                raise ValueError("Pytanie nie zostało znalezione")
                 raise ValueError("Pytanie nie zostało znalezione")
 
             # ogarniamy payload niezależnie czy to Pydantic czy dict
@@ -851,6 +1085,7 @@ class TestService:
                 text=question_row.text,
                 is_closed=question_row.is_closed,
                 difficulty=question_row.difficulty,
+                group_id=getattr(question_row, "group_id", 0),
                 choices=question_row.choices,
                 correct_choices=question_row.correct_choices,
             )
@@ -918,6 +1153,19 @@ class TestService:
             )
             session.exec(statement)
             session.flush()
+
+    def reorder_questions(
+        self,
+        *,
+        owner_id: int,
+        test_id: int,
+        payload: ReorderQuestionsRequest,
+    ) -> None:
+        with self._uow_factory() as uow:
+            test = uow.tests.get_with_questions(test_id)
+            if not test or test.owner_id != owner_id:
+                raise ValueError("Test nie został znaleziony")
+            uow.tests.reorder_questions(test_id, payload.question_ids)
 
     def bulk_regenerate_questions(
         self,
@@ -1184,20 +1432,18 @@ class TestService:
         payload: QuestionCreate,
     ) -> QuestionOut:
         """
-        Dodaje nowe pytanie do testu użytkownika.
+        Dodaje nowe pytanie do testu użytkownika w podanej grupie.
         Zwraca QuestionOut, żeby endpoint mógł od razu odesłać aktualne dane.
         """
         with self._uow_factory() as uow:
             test = uow.tests.get(test_id)
             if not test or test.owner_id != owner_id:
                 raise ValueError("Test nie został znaleziony")
-                raise ValueError("Test nie został znaleziony")
 
-            session = getattr(uow, "session", None)
-            if session is None:
-                raise RuntimeError("UnitOfWork session is not initialized")
+            group = uow.tests.get_group(payload.group_id)
+            if not group or group.test_id != test_id:
+                raise ValueError("Grupa nie należy do tego testu")
 
-            # Bezpieczne ogarnięcie choices / correct_choices
             choices = (
                 self._coerce_to_list(payload.choices)
                 if payload.choices is not None
@@ -1208,33 +1454,22 @@ class TestService:
                 if payload.correct_choices is not None
                 else None
             )
-
-            # Dla otwartych pytań pola zamykamy
             if not payload.is_closed:
                 choices = None
                 correct_choices = None
 
-            # Tworzymy rekord w DB
-            new_question = QuestionRow(
-                test_id=test_id,
+            q_domain = QuestionDomain(
+                id=None,
                 text=payload.text,
                 is_closed=payload.is_closed,
-                difficulty=payload.difficulty,
-                choices=choices,
-                correct_choices=correct_choices,
+                difficulty=QuestionDifficulty(payload.difficulty),
+                group_id=payload.group_id,
+                choices=choices or [],
+                correct_choices=correct_choices or [],
+                citations=getattr(payload, "citations", None) or [],
             )
-
-            session.add(new_question)
-            session.flush()  # żeby mieć new_question.id
-
-            return QuestionOut(
-                id=new_question.id,
-                text=new_question.text,
-                is_closed=new_question.is_closed,
-                difficulty=new_question.difficulty,
-                choices=new_question.choices,
-                correct_choices=new_question.correct_choices,
-            )
+            created = uow.tests.add_question(test_id, q_domain, payload.group_id)
+            return dto.to_question_out(created)
 
     def delete_question(
         self,
@@ -1249,7 +1484,6 @@ class TestService:
         with self._uow_factory() as uow:
             test = uow.tests.get(test_id)
             if not test or test.owner_id != owner_id:
-                raise ValueError("Test nie został znaleziony")
                 raise ValueError("Test nie został znaleziony")
 
             session = getattr(uow, "session", None)
@@ -1329,7 +1563,30 @@ class TestService:
             job = uow.jobs.get_generation_job_by_test_id(test_id)
             if not job or job.owner_id != owner_id:
                 raise ValueError("Nie znaleziono konfiguracji dla tego testu")
-            return job.payload
+            
+            config = job.payload.copy()
+            
+            # Jeśli config ma material_ids, sprawdź które materiały jeszcze istnieją
+            if config.get("material_ids"):
+                existing_material_ids = []
+                for material_id in config["material_ids"]:
+                    material = uow.materials.get(material_id)
+                    # Tylko dodaj jeśli materiał istnieje i należy do użytkownika
+                    if material and material.owner_id == owner_id:
+                        existing_material_ids.append(material_id)
+                
+                # Jeśli wszystkie materiały zostały usunięte, usuń material_ids z config
+                # (test nadal działa, ale nie można go edytować z materiałami)
+                if existing_material_ids:
+                    config["material_ids"] = existing_material_ids
+                else:
+                    config.pop("material_ids", None)
+                    # Jeśli nie ma już materiałów, użyj tekstu jeśli jest dostępny
+                    if "text" not in config or not config.get("text"):
+                        # Jeśli nie ma ani materiałów ani tekstu, użyj pustego tekstu
+                        config["text"] = ""
+            
+            return config
 
 
 __all__ = ["TestService"]

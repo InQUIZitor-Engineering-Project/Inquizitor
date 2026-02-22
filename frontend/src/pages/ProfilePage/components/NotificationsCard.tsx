@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import styled from "styled-components";
+import styled, { useTheme } from "styled-components";
 import { Box, Heading, Text, Stack, Flex, Badge } from "../../../design-system/primitives";
 import { useAuth } from "../../../hooks/useAuth";
 
@@ -15,29 +15,30 @@ interface Notification {
 }
 
 const ScrollableList = styled(Stack)`
-  max-height: 350px;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding-right: 4px;
 
   &::-webkit-scrollbar { width: 6px; }
   &::-webkit-scrollbar-track { background: transparent; }
-  &::-webkit-scrollbar-thumb { background: #dcdcdc; border-radius: 4px; }
+  &::-webkit-scrollbar-thumb { background: ${({ theme }) => theme.colors.neutral.greyBlue}; border-radius: 4px; }
 `;
 
 const NotifItem = styled(Box)<{ $read: boolean }>`
   cursor: pointer;
-  background: ${({ $read }) => ($read ? "#fff" : "#f0f7ff")};
-  border: 1px solid ${({ $read }) => ($read ? "#eee" : "#d0e2ff")};
-  border-left: 4px solid ${({ $read, theme }) => ($read ? "#ddd" : theme.colors.brand.primary)};
+  border: 1px solid ${({ theme }) => theme.colors.neutral.greyBlue};
+  border-left: 4px solid ${({ $read, theme }) => ($read ? theme.colors.neutral.greyBlue : theme.colors.brand.primary)};
   transition: all 0.2s;
   
   &:hover {
-    background: #fafafa;
-    border-color: #ccc;
+    background: ${({ theme }) => theme.colors.tint.t5};
+    border-color: ${({ theme }) => theme.colors.brand.primary};
   }
 `;
 
 const NotificationsCard: React.FC = () => {
+  const theme = useTheme();
   const { refreshNotificationsCount } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
@@ -79,8 +80,8 @@ const NotificationsCard: React.FC = () => {
   };
 
   return (
-    <Box $bg="#fff" $p="lg" $radius="xl" $shadow="sm" style={{ height: "100%" }}>
-      <Stack $gap="md">
+    <Box $bg={theme.colors.neutral.white} $p="lg" $radius="xl" $shadow="sm" style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+      <Stack $gap="md" style={{ flex: 1, minHeight: 0 }}>
         <Heading $level="h3">Powiadomienia</Heading>
         <Text $variant="body2" $tone="muted">
           Kliknij na powiadomienie, aby oznaczyć je jako przeczytane.
@@ -101,6 +102,10 @@ const NotificationsCard: React.FC = () => {
                 $p="md"
                 $radius="md"
                 onClick={() => handleMarkAsRead(n)}
+                style={{
+                  background: n.is_read ? "transparent" : theme.colors.tint.t5,
+                  borderColor: n.is_read ? theme.colors.neutral.greyBlue : theme.colors.brand.info
+                }}
               >
                 <Flex $justify="space-between" $align="center" style={{ marginBottom: 4 }}>
                   <Text 
@@ -116,9 +121,9 @@ const NotificationsCard: React.FC = () => {
                       style={{ 
                         fontSize: 10, 
                         padding: "2px 6px",
-                        backgroundColor: "#e3f2fd",
-                        color: "#1976d2",
-                        borderColor: "#bbdefb"
+                        backgroundColor: theme.colors.tint.t5,
+                        color: theme.colors.brand.info,
+                        borderColor: theme.colors.neutral.greyBlue
                       }}
                     >
                       NOWE

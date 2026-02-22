@@ -26,7 +26,7 @@ const Backdrop = styled.div`
 `;
 
 const ModalContainer = styled(Box)`
-  background: white;
+  background: ${({ theme }) => theme.colors.neutral.white};
   border-radius: ${({ theme }) => theme.radii.lg};
   box-shadow: ${({ theme }) => theme.elevation.xl};
   width: 100%;
@@ -38,14 +38,14 @@ const ModalContainer = styled(Box)`
 export const SelectableItem = styled(Flex)<{ $active?: boolean }>`
   padding: ${({ theme }) => theme.spacing.md};
   border-radius: ${({ theme }) => theme.radii.md};
-  border: 2px solid ${({ theme, $active }) => ($active ? theme.colors.brand.primary : "rgba(0,0,0,0.05)")};
-  background: ${({ $active }) => ($active ? "rgba(76, 175, 80, 0.05)" : "white")};
+  border: 2px solid ${({ theme, $active }) => ($active ? theme.colors.brand.primary : theme.colors.neutral.greyBlue)};
+  background: ${({ theme, $active }) => ($active ? theme.colors.tint.t5 : theme.colors.neutral.white)};
   cursor: pointer;
   transition: all 0.2s ease;
 
   &:hover {
-    border-color: ${({ theme, $active }) => ($active ? theme.colors.brand.primary : "rgba(0,0,0,0.15)")};
-    background: ${({ $active }) => ($active ? "rgba(76, 175, 80, 0.08)" : "#f9f9f9")};
+    border-color: ${({ theme, $active }) => ($active ? theme.colors.brand.primary : theme.colors.neutral.grey)};
+    background: ${({ theme, $active }) => ($active ? theme.colors.tint.t4 : theme.colors.neutral.silver)};
   }
 `;
 
@@ -90,7 +90,7 @@ const Modal: React.FC<ModalProps> = ({
   };
 
   return (
-    <Backdrop onClick={onClose}>
+    <Backdrop onClick={onClose} role="presentation">
       <ModalContainer
         $p="lg"
         style={{ maxWidth }}

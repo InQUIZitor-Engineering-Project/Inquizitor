@@ -1,4 +1,5 @@
 import React from "react";
+import { useTheme } from "styled-components";
 import { Flex, Input, Text } from "../../../design-system/primitives";
 
 interface Props {
@@ -6,11 +7,13 @@ interface Props {
   onChange: (value: string) => void;
 }
 
-const SearchBar: React.FC<Props> = ({ value, onChange }) => (
+const SearchBar: React.FC<Props> = ({ value, onChange }) => {
+  const theme = useTheme();
+  return (
   <Flex
     $align="center"
     $gap="sm"
-    $bg="#fff"
+    $bg={theme.colors.neutral.white}
     $radius="pill"
     $shadow="md"
     $px="md"
@@ -29,6 +32,7 @@ const SearchBar: React.FC<Props> = ({ value, onChange }) => (
       style={{ border: "none", boxShadow: "none" }}
     />
   </Flex>
-);
+  );
+};
 
 export default SearchBar;

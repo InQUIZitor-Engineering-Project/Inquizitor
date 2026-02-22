@@ -1,6 +1,6 @@
 from .email import ResendEmailSender
 from .exporting import compile_tex_to_pdf, render_test_to_tex, test_to_xml_bytes
-from .llm import GeminiQuestionGenerator
+from .llm import GeminiDocumentAnalyzer, GeminiQuestionGenerator
 from .ocr import DefaultOCRService
 from .persistence.sqlmodel import (
     SqlModelFileRepository,
@@ -13,6 +13,7 @@ from .storage import LocalFileStorage, R2FileStorage
 
 __all__ = [
     "DefaultOCRService",
+    "GeminiDocumentAnalyzer",
     "GeminiQuestionGenerator",
     "LocalFileStorage",
     "R2FileStorage",

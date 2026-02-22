@@ -5,14 +5,20 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from app.api.dependencies import get_job_service, get_test_service
 from app.api.schemas.jobs import JobEnqueueResponse
 from app.api.schemas.tests import (
+    AssignQuestionsToGroupRequest,
     BulkConvertQuestionsRequest,
     BulkDeleteQuestionsRequest,
     BulkRegenerateQuestionsRequest,
     BulkUpdateQuestionsRequest,
+    GenerateGroupVariantRequest,
+    GroupCreate,
+    GroupOut,
+    GroupUpdate,
     PdfExportConfig,
     QuestionCreate,
     QuestionOut,
     QuestionUpdate,
+    ReorderQuestionsRequest,
     TestDetailOut,
     TestGenerateRequest,
     TestOut,
@@ -22,12 +28,13 @@ from app.application.services import JobService, TestService
 from app.core.limiter import limiter
 from app.core.security import get_current_user
 from app.db.models import User
-from app.domain.models.enums import JobType
+from app.domain.models.enums import JobStatus, JobType
 from app.tasks.tests import (
     bulk_convert_questions_task,
     bulk_regenerate_questions_task,
     export_custom_test_pdf_task,
     export_test_pdf_task,
+    generate_group_ai_variant_task,
     generate_test_task,
 )
 
@@ -53,7 +60,23 @@ def generate_test(
         job_type=JobType.TEST_GENERATION,
         payload=req.model_dump(),
     )
-    generate_test_task.delay(job.id, current_user.id, req.model_dump())
+    try:
+        if job.id is None:
+            raise HTTPException(
+                status_code=500, detail="Nie udało się utworzyć zadania"
+            )
+        generate_test_task.delay(job.id, current_user.id, req.model_dump())
+    except Exception as exc:
+        if job.id is not None:
+            job_service.update_job_status(
+                job_id=job.id,
+                status=JobStatus.FAILED,
+                error=f"Nie udało się uruchomić zadania: {exc}",
+            )
+        raise HTTPException(
+            status_code=503,
+            detail="Nie udało się uruchomić zadania generowania testu.",
+        ) from exc
     return JobEnqueueResponse(job_id=job.id, status=job.status.value)
 
 
@@ -215,6 +238,26 @@ def bulk_delete_questions(
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
+@router.put("/{test_id}/questions/reorder", status_code=status.HTTP_204_NO_CONTENT)
+def reorder_questions(
+    test_id: int,
+    payload: ReorderQuestionsRequest,
+    current_user: Annotated[User, Depends(get_current_user)],
+    test_service: Annotated[TestService, Depends(get_test_service)],
+) -> Response:
+    if current_user.id is None:
+        raise HTTPException(status_code=401, detail="User ID is missing")
+    try:
+        test_service.reorder_questions(
+            owner_id=current_user.id,
+            test_id=test_id,
+            payload=payload,
+        )
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
 @router.post(
     "/{test_id}/questions/bulk/regenerate", response_model=JobEnqueueResponse
 )
@@ -229,6 +272,15 @@ def bulk_regenerate_questions(
 ) -> JobEnqueueResponse:
     if current_user.id is None:
         raise HTTPException(status_code=401, detail="User ID is missing")
+    if not current_user.terms_accepted:
+        raise HTTPException(
+            status_code=403,
+            detail=(
+                "Musisz zaakceptować regulamin, aby korzystać z regeneracji "
+                "pytań z AI. "
+                "Przejdź do ustawień konta."
+            ),
+        )
     try:
         # Sprawdzamy czy test należy do usera
         test_service.get_test_detail(owner_id=current_user.id, test_id=test_id)
@@ -262,6 +314,14 @@ def bulk_convert_questions(
 ) -> JobEnqueueResponse:
     if current_user.id is None:
         raise HTTPException(status_code=401, detail="User ID is missing")
+    if not current_user.terms_accepted:
+        raise HTTPException(
+            status_code=403,
+            detail=(
+                "Musisz zaakceptować regulamin, aby korzystać z funkcji AI "
+                "(zmiana typu pytań). Przejdź do ustawień konta."
+            ),
+        )
     try:
         # Sprawdzamy czy test należy do usera
         test_service.get_test_detail(owner_id=current_user.id, test_id=test_id)
@@ -381,6 +441,179 @@ def update_test_title(
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except Exception as exc:
         raise HTTPException(status_code=500, detail="Failed to update title") from exc
+
+
+@router.post(
+    "/{test_id}/groups", response_model=GroupOut, status_code=status.HTTP_201_CREATED
+)
+def create_group(
+    test_id: int,
+    payload: GroupCreate,
+    current_user: Annotated[User, Depends(get_current_user)],
+    test_service: Annotated[TestService, Depends(get_test_service)],
+) -> GroupOut:
+    if current_user.id is None:
+        raise HTTPException(status_code=401, detail="User ID is missing")
+    try:
+        return test_service.create_group(
+            owner_id=current_user.id,
+            test_id=test_id,
+            label=payload.label,
+            position=payload.position,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.patch("/{test_id}/groups/{group_id}", response_model=GroupOut)
+def update_group(
+    test_id: int,
+    group_id: int,
+    payload: GroupUpdate,
+    current_user: Annotated[User, Depends(get_current_user)],
+    test_service: Annotated[TestService, Depends(get_test_service)],
+) -> GroupOut:
+    if current_user.id is None:
+        raise HTTPException(status_code=401, detail="User ID is missing")
+    try:
+        out = test_service.update_group(
+            owner_id=current_user.id,
+            test_id=test_id,
+            group_id=group_id,
+            payload=payload,
+        )
+        if out is None:
+            raise HTTPException(status_code=404, detail="Grupa nie została znaleziona")
+        return out
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.delete("/{test_id}/groups/{group_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_group(
+    test_id: int,
+    group_id: int,
+    current_user: Annotated[User, Depends(get_current_user)],
+    test_service: Annotated[TestService, Depends(get_test_service)],
+) -> Response:
+    if current_user.id is None:
+        raise HTTPException(status_code=401, detail="User ID is missing")
+    try:
+        test_service.delete_group(
+            owner_id=current_user.id,
+            test_id=test_id,
+            group_id=group_id,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post(
+    "/{test_id}/groups/{group_id}/generate-variant",
+    response_model=JobEnqueueResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+)
+@limiter.limit("10/minute")
+def generate_group_ai_variant(
+    request: Request,
+    test_id: int,
+    group_id: int,
+    current_user: Annotated[User, Depends(get_current_user)],
+    test_service: Annotated[TestService, Depends(get_test_service)],
+    job_service: Annotated[JobService, Depends(get_job_service)],
+    payload: GenerateGroupVariantRequest | None = None,
+) -> JobEnqueueResponse:
+    if current_user.id is None:
+        raise HTTPException(status_code=401, detail="User ID is missing")
+    if not current_user.terms_accepted:
+        raise HTTPException(
+            status_code=403,
+            detail=(
+                "Musisz zaakceptować regulamin, aby generować warianty AI. "
+                "Przejdź do ustawień konta."
+            ),
+        )
+    try:
+        test_service.get_test_detail(owner_id=current_user.id, test_id=test_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    instruction = payload.instruction if payload else None
+    job = job_service.create_job(
+        owner_id=current_user.id,
+        job_type=JobType.GROUP_AI_VARIANT,
+        payload={
+            "test_id": test_id,
+            "group_id": group_id,
+            "instruction": instruction,
+        },
+    )
+    if job.id is None:
+        raise HTTPException(status_code=500, detail="Nie udało się utworzyć zadania")
+    generate_group_ai_variant_task.delay(
+        job.id, current_user.id, test_id, group_id, instruction
+    )
+    return JobEnqueueResponse(job_id=job.id, status=job.status.value)
+
+
+@router.post("/{test_id}/groups/{group_id}/duplicate")
+def duplicate_group(
+    test_id: int,
+    group_id: int,
+    current_user: Annotated[User, Depends(get_current_user)],
+    test_service: Annotated[TestService, Depends(get_test_service)],
+):
+    if current_user.id is None:
+        raise HTTPException(status_code=401, detail="User ID is missing")
+    try:
+        new_group, new_questions = test_service.duplicate_group(
+            owner_id=current_user.id,
+            test_id=test_id,
+            group_id=group_id,
+        )
+        return {"group": new_group, "questions": new_questions}
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.post("/{test_id}/groups/{group_id}/shuffled-variant", response_model=GroupOut)
+def create_shuffled_variant_group(
+    test_id: int,
+    group_id: int,
+    current_user: Annotated[User, Depends(get_current_user)],
+    test_service: Annotated[TestService, Depends(get_test_service)],
+) -> GroupOut:
+    if current_user.id is None:
+        raise HTTPException(status_code=401, detail="User ID is missing")
+    try:
+        return test_service.create_shuffled_variant_group(
+            owner_id=current_user.id,
+            test_id=test_id,
+            group_id=group_id,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.put("/{test_id}/questions/assign-group", status_code=status.HTTP_204_NO_CONTENT)
+def assign_questions_to_group(
+    test_id: int,
+    payload: AssignQuestionsToGroupRequest,
+    current_user: Annotated[User, Depends(get_current_user)],
+    test_service: Annotated[TestService, Depends(get_test_service)],
+) -> Response:
+    if current_user.id is None:
+        raise HTTPException(status_code=401, detail="User ID is missing")
+    try:
+        test_service.assign_questions_to_group(
+            owner_id=current_user.id,
+            test_id=test_id,
+            payload=payload,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/{test_id}/config")

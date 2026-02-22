@@ -8,9 +8,9 @@ from typing import Any
 
 from app.api.schemas.jobs import JobOut
 from app.api.schemas.materials import MaterialOut
-from app.api.schemas.tests import QuestionOut, TestDetailOut, TestOut
+from app.api.schemas.tests import GroupOut, QuestionOut, TestDetailOut, TestOut
 from app.api.schemas.users import UserRead
-from app.domain.models import Job, Material, Question, Test, User
+from app.domain.models import Job, Material, Question, QuestionGroup, Test, User
 
 
 def _as_list(value: Any) -> list[str] | None:
@@ -58,6 +58,7 @@ def to_question_dict(question: Question) -> dict:
         "difficulty": getattr(question.difficulty, "value", question.difficulty),
         "choices": _as_list(getattr(question, "choices", None)) or [],
         "correct_choices": _as_list(getattr(question, "correct_choices", None)) or [],
+        "citations": _as_list(getattr(question, "citations", None)) or [],
     }
 
 
@@ -67,15 +68,26 @@ def to_question_out(question: Question) -> QuestionOut:
         text=question.text,
         is_closed=question.is_closed,
         difficulty=getattr(question.difficulty, "value", question.difficulty),
+        group_id=getattr(question, "group_id", None) or 0,
         choices=_as_list(getattr(question, "choices", None)),
         correct_choices=_as_list(getattr(question, "correct_choices", None)),
+        citations=_as_list(getattr(question, "citations", None)),
     )
 
 
-def to_test_detail(test: Test) -> TestDetailOut:
+def to_group_out(group: QuestionGroup) -> GroupOut:
+    return GroupOut(
+        id=group.id,
+        label=group.label,
+        position=group.position,
+    )
+
+
+def to_test_detail(test: Test, groups: list[QuestionGroup]) -> TestDetailOut:
     return TestDetailOut(
         test_id=test.id,
         title=test.title,
+        groups=[to_group_out(g) for g in groups],
         questions=[to_question_out(q) for q in test.questions],
     )
 
@@ -103,11 +115,20 @@ def to_material_out(
         page_count=material.page_count,
         checksum=material.checksum,
         processing_status=material.status.value,
+        analysis_status=material.analysis_status.value
+        if material.analysis_status
+        else None,
+        routing_tier=material.routing_tier.value
+        if material.routing_tier
+        else None,
+        analysis_version=material.analysis_version,
         created_at=material.file.uploaded_at,
         extracted_text=material.extracted_text,
+        markdown_twin=material.markdown_twin,
         processing_error=material.processing_error,
         cache_hit=cache_hit,
         duration_ocr_sec=duration_ocr_sec,
+        thumbnail_path=material.thumbnail_path,
     )
 
 

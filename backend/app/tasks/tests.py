@@ -236,6 +236,47 @@ def bulk_regenerate_questions_task(
         raise
 
 
+@celery_app.task(name="app.tasks.generate_group_ai_variant", bind=True)
+def generate_group_ai_variant_task(
+    self: Any,
+    job_id: int,
+    owner_id: int,
+    test_id: int,
+    group_id: int,
+    instruction: str | None = None,
+) -> dict[str, Any]:
+    _ = self
+    test_service, job_service, _ = _get_services()
+
+    try:
+        job_service.update_job_status(job_id=job_id, status=JobStatus.RUNNING)
+    except Exception as exc:
+        logger.exception("Failed to mark job %s as running: %s", job_id, exc)
+
+    try:
+        new_group = test_service.generate_group_ai_variant(
+            owner_id=owner_id,
+            test_id=test_id,
+            group_id=group_id,
+            instruction=instruction,
+        )
+        job_service.update_job_status(
+            job_id=job_id,
+            status=JobStatus.DONE,
+            result={"group_id": new_group.id, "test_id": test_id},
+        )
+        analytics.flush()
+        return {"group_id": new_group.id, "test_id": test_id}
+    except Exception as exc:
+        logger.exception("Group AI variant job %s failed: %s", job_id, exc)
+        job_service.update_job_status(
+            job_id=job_id,
+            status=JobStatus.FAILED,
+            error=str(exc),
+        )
+        raise
+
+
 @celery_app.task(name="app.tasks.bulk_convert_questions", bind=True)
 def bulk_convert_questions_task(
     self: Any, job_id: int, owner_id: int, test_id: int, payload_dict: dict[str, Any]

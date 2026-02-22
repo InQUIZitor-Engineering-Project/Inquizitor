@@ -37,7 +37,7 @@ export interface UseQuestionDraftResult {
     addDraftChoiceRow: () => void;
     removeChoiceRow: (index: number) => void;
     handleSaveEdit: (test: TestDetail | null) => Promise<TestDetail | null>;
-    handleAdd: (test: TestDetail | null, refresh: () => Promise<void>) => Promise<void>;
+    handleAdd: (test: TestDetail | null, refresh: () => Promise<void>, groupId: number) => Promise<void>;
     handleDeleteConfirmed: (test: TestDetail | null, qid: number, refresh: () => Promise<void>) => Promise<void>;
     handleDelete: (test: TestDetail | null, qid: number, refresh: () => Promise<void>) => Promise<void>;
   };
@@ -108,21 +108,30 @@ const useQuestionDraft = () => {
 
   const updateDraftChoice = (index: number, value: string) => {
     setDraft((d) => {
-      const choices = ensureChoices(d.choices);
-      choices[index] = value;
-      return { ...d, choices };
+      const oldChoices = ensureChoices(d.choices);
+      const oldVal = oldChoices[index];
+      const newChoices = [...oldChoices];
+      newChoices[index] = value;
+
+      // Jeśli edytowana opcja była na liście poprawnych, aktualizujemy jej treść również tam
+      const newCorrect = (d.correct_choices || []).map((c) =>
+        c === oldVal ? value : c
+      );
+
+      return { ...d, choices: newChoices, correct_choices: newCorrect };
     });
     setEditorError(null);
   };
 
   const toggleDraftCorrect = (value: string, checked: boolean) => {
     setDraft((d) => {
+      const v = (value || "").trim();
       const current = d.correct_choices || [];
       let next = [...current];
       if (checked) {
-        if (value && !next.includes(value)) next.push(value);
+        if (v && !next.includes(v)) next.push(v);
       } else {
-        next = next.filter((c) => c !== value);
+        next = next.filter((c) => c !== v);
       }
       return { ...d, correct_choices: next };
     });
@@ -157,9 +166,11 @@ const useQuestionDraft = () => {
       const cleanedChoices = (payload.choices || [])
         .map((c: string) => (c || "").trim())
         .filter((c: string) => c);
-      const cleanedCorrect = (payload.correct_choices || []).filter((c: string) =>
-        cleanedChoices.includes(c)
-      );
+
+      // Czyścimy i sprawdzamy poprawne odpowiedzi względem oczyszczonych opcji
+      const cleanedCorrect = (payload.correct_choices || [])
+        .map((c: string) => (c || "").trim())
+        .filter((c: string) => cleanedChoices.includes(c));
 
       if (cleanedChoices.length === 0) {
         setEditorError("Dodaj przynajmniej jedną odpowiedź.");
@@ -205,7 +216,11 @@ const useQuestionDraft = () => {
     }
   };
 
-  const handleAdd = async (test: TestDetail | null, refresh: () => Promise<void>) => {
+  const handleAdd = async (
+    test: TestDetail | null,
+    refresh: () => Promise<void>,
+    groupId: number
+  ) => {
     if (!test) return;
     setEditorError(null);
     setSavingAdd(true);
@@ -215,6 +230,7 @@ const useQuestionDraft = () => {
         text: (draft.text || "").trim(),
         is_closed: !!draft.is_closed,
         difficulty: draft.difficulty || 1,
+        group_id: groupId,
         choices: draft.choices,
         correct_choices: draft.correct_choices,
       };

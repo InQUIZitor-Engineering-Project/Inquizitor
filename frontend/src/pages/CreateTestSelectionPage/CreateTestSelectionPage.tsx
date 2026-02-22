@@ -27,17 +27,19 @@ const SelectionCard = styled(Box)<{ $selected: boolean }>`
   &:hover {
     transform: translateY(-4px);
     box-shadow: ${({ theme }) => theme.elevation.lg};
-    border-color: ${({ theme, $selected }) => ($selected ? theme.colors.brand.primary : theme.colors.tint.t3)};
+    border-color: ${({ theme, $selected }) => ($selected ? theme.colors.brand.primary : theme.colors.neutral.greyBlue)};
   }
 
   h3 {
     font-size: 20px;
     margin-bottom: ${({ theme }) => theme.spacing.xs};
+    color: ${({ theme }) => theme.colors.neutral.black};
   }
 
   p {
     font-size: 14px;
     line-height: 1.5;
+    color: ${({ theme }) => theme.colors.neutral.grey};
   }
 
   ${({ theme }) => theme.media.down("sm")} {
@@ -72,9 +74,10 @@ const IconWrapper = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  background: ${({ theme }) => theme.colors.neutral.silver};
+  background: ${({ theme }) => theme.colors.tint.t5};
   border-radius: ${({ theme }) => theme.radii.full};
   flex-shrink: 0;
+  border: 1px solid ${({ theme }) => theme.colors.neutral.greyBlue};
 
   img {
     width: 40px;
@@ -154,7 +157,7 @@ const CreateTestSelectionPage: React.FC = () => {
   };
 
   return (
-    <Flex $direction="column" $bg="#f5f6f8" style={{ height: "100%", overflow: "hidden" }}>
+    <Flex $direction="column" $bg="transparent" style={{ height: "100%", overflow: "hidden" }}>
       <Box $flex={1} $width="100%" style={{ height: "100%" }}>
         <ResponsivePageSection>
           <PageContainer style={{ height: "100%", display: "flex", alignItems: "center" }}>
@@ -178,7 +181,7 @@ const CreateTestSelectionPage: React.FC = () => {
                   onClick={() => setSelectedType('ai')}
                 >
                   <IconWrapper>
-                    <img src={uploadIcon} alt="AI" />
+                    <img src={uploadIcon} alt="Ikona przesyłania materiałów dla AI" />
                   </IconWrapper>
                   <Stack $gap="xs" $align="center">
                     <Heading as="h3" $level="h4">Przez AI</Heading>
@@ -193,7 +196,7 @@ const CreateTestSelectionPage: React.FC = () => {
                   onClick={() => setSelectedType('manual')}
                 >
                   <IconWrapper>
-                    <img src={quizIcon} alt="Manual" />
+                    <img src={quizIcon} alt="Ikona ręcznego tworzenia testu" />
                   </IconWrapper>
                   <Stack $gap="xs" $align="center">
                     <Heading as="h3" $level="h4">Od zera</Heading>

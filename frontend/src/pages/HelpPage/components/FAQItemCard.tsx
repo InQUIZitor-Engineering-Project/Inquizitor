@@ -16,12 +16,12 @@ const FAQItemCard: React.FC<Props> = ({ item, active, onToggle }) => {
     <Box
       as="button"
       onClick={onToggle}
-      $bg="#fff"
+      $bg={theme.colors.neutral.white}
       $radius="xl"
       $p="md"
       $shadow={active ? "8px" : "4px"}
       style={{
-        border: "1px solid rgba(0,0,0,0.04)",
+        border: `1px solid ${active ? theme.colors.brand.primary : theme.colors.neutral.greyBlue}`,
         cursor: "pointer",
         textAlign: "left",
         width: "100%",
@@ -33,6 +33,7 @@ const FAQItemCard: React.FC<Props> = ({ item, active, onToggle }) => {
           as="span"
           $variant="body2"
           $weight="medium"
+          $tone="default"
           style={{ flex: 1, minWidth: 0, overflowWrap: "break-word", wordBreak: "break-word" }}
         >
           {item.question}
@@ -40,9 +41,9 @@ const FAQItemCard: React.FC<Props> = ({ item, active, onToggle }) => {
         <Badge
           $variant="neutral"
           style={{
-            background: "rgba(76, 175, 80, 0.14)",
+            background: theme.colors.tint.t5,
             color: theme.colors.brand.primary,
-            border: "1px solid rgba(76, 175, 80, 0.35)",
+            border: `1px solid ${theme.colors.brand.primary}`,
             flexShrink: 0,
           }}
         >
@@ -50,7 +51,7 @@ const FAQItemCard: React.FC<Props> = ({ item, active, onToggle }) => {
         </Badge>
       </Flex>
       {active && (
-        <Text $variant="body3" $tone="muted" style={{ marginTop: 6 }}>
+        <Text $variant="body3" $tone="default" style={{ marginTop: 12, borderTop: `1px solid ${theme.colors.neutral.greyBlue}`, paddingTop: 12, color: theme.colors.neutral.dGrey }}>
           {item.answer}
         </Text>
       )}
