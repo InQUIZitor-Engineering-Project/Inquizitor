@@ -27,7 +27,7 @@ const StyledCloseButton = styled.button<CloseButtonProps>`
   padding: 0;
 
   &:hover {
-    background: rgba(0, 0, 0, 0.05);
+    background: ${({ theme }) => theme.colors.neutral.silver};
     color: ${({ theme }) => theme.colors.neutral.black};
   }
 

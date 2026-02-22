@@ -44,14 +44,14 @@ const GroupTabsWrapper = styled(Flex).attrs({
   flex-wrap: wrap;
 `;
 
-/** Track (container): must have visible background for contrast with white active card */
+/** Track (container): light background so segmented control is not too dark */
 const TabBar = styled.nav`
   display: inline-flex;
   align-items: stretch;
   position: relative;
   padding: 4px; /* p-1: gap between track and tabs */
   border-radius: ${({ theme }) => theme.radii.lg};
-  background: ${({ theme }) => theme.colors.neutral.greyBlue};
+  background: ${({ theme }) => theme.colors.neutral.silver};
   isolation: isolate;
 `;
 
@@ -95,7 +95,7 @@ const Tab = styled.div<{ $active: boolean }>`
   }
 
   &:not([aria-selected="true"]):hover {
-    background: rgba(229, 231, 235, 0.5); /* gray-200/50 */
+    background: ${({ theme }) => theme.colors.neutral.silver};
   }
 
   &:focus-within {
@@ -136,7 +136,7 @@ const TabMenuTrigger = styled.button.attrs({ type: "button" })<{ $active?: boole
 
   &:hover {
     opacity: 1;
-    background: rgba(0, 0, 0, 0.06);
+    background: ${({ theme }) => theme.colors.neutral.silver};
   }
 
   &:focus-visible {
@@ -194,11 +194,11 @@ const AddMenuPopover = styled.div<{ $visible: boolean }>`
 
 const AddMenuDivider = styled.div`
   height: 1px;
-  background: #f3f4f6;
+  background: ${({ theme }) => theme.colors.neutral.greyBlue};
   margin: ${({ theme }) => theme.spacing.xxs} 0;
 `;
 
-/** Standard item: gray-700, hover:gray-50 */
+/** Standard item: theme text, hover: theme surface */
 const AddMenuItem = styled.button`
   display: flex;
   align-items: center;
@@ -208,7 +208,7 @@ const AddMenuItem = styled.button`
   border: none;
   border-radius: ${({ theme }) => theme.radii.sm};
   background: transparent;
-  color: #374151; /* gray-700 */
+  color: ${({ theme }) => theme.colors.neutral.dGrey};
   font-size: 14px;
   font-weight: 400;
   text-align: left;
@@ -216,7 +216,7 @@ const AddMenuItem = styled.button`
   transition: background-color 0.15s ease;
 
   &:hover:not(:disabled) {
-    background: #f9fafb; /* gray-50 */
+    background: ${({ theme }) => theme.colors.neutral.silver};
   }
 
   &:disabled {
@@ -225,20 +225,20 @@ const AddMenuItem = styled.button`
   }
 `;
 
-/** Featured AI item: blue-600 icon, blue-700 text, hover:blue-50 */
+/** Featured AI item: theme info color, hover: theme tint */
 const AddMenuItemFeatured = styled(AddMenuItem)`
-  color: #1d4ed8; /* blue-700 */
+  color: ${({ theme }) => theme.colors.brand.info};
   font-weight: 500;
 
   &:hover:not(:disabled) {
-    background: #eff6ff; /* blue-50 */
+    background: ${({ theme }) => theme.colors.tint.t5};
   }
 `;
 
 const AddMenuItemIcon = styled.span<{ $featured?: boolean }>`
   display: inline-flex;
   flex-shrink: 0;
-  color: ${({ $featured }) => ($featured ? "#2563eb" : "#374151")}; /* blue-600 / gray-700 */
+  color: ${({ theme, $featured }) => ($featured ? theme.colors.brand.info : theme.colors.neutral.dGrey)};
 `;
 
 const GroupMenuDropdown = styled(Box).attrs({ as: "div" })`

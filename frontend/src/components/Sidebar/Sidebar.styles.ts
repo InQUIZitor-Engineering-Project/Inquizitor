@@ -133,7 +133,7 @@ export const DeleteIcon = styled.img`
   object-fit: contain; /* Ensures the image scales properly */
 
   &:hover {
-    background-color: ${({ theme }) => theme.colors.tint.t5 || '#ffebee'};
+    background-color: ${({ theme }) => theme.colors.tint.t5};
   }
 `;
 

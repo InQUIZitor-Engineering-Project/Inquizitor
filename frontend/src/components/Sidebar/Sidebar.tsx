@@ -68,7 +68,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
         <TestList>
           {filtered.length === 0 ? (
-            <div style={{ padding: "12px", color: "#777", fontSize: 12 }}>
+            <div style={{ padding: "12px", color: theme.colors.neutral.grey, fontSize: 12 }}>
               Brak wyników.
             </div>
           ) : (

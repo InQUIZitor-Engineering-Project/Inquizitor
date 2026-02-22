@@ -35,7 +35,7 @@ const UserMenuContainer = styled.div`
 `;
 
 const AvatarButton = styled.button`
-  background: ${({ theme }) => theme.colorTheme === 'eye-friendly' ? theme.colors.neutral.white : '#ffffff'};
+  background: ${({ theme }) => theme.colors.neutral.white};
   border: none;
   padding: 0;
   cursor: pointer;
@@ -53,12 +53,12 @@ const AvatarButton = styled.button`
   transition: all 0.2s ease;
   line-height: 0;
   flex-shrink: 0;
-  box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, 0.1);
+  box-shadow: ${({ theme }) => theme.shadows["2px"]};
 
   &:hover {
     transform: scale(1.05);
-    background-color: ${({ theme }) => theme.colorTheme === 'eye-friendly' ? theme.colors.tint.t5 : '#f5f5f5'};
-    box-shadow: 0px 4px 8px 0px rgba(0, 0, 0, 0.15);
+    background-color: ${({ theme }) => theme.colors.neutral.silver};
+    box-shadow: ${({ theme }) => theme.shadows["4px"]};
   }
 `;
 
@@ -254,7 +254,7 @@ const Navbar: React.FC = () => {
           <DropdownItem onClick={() => handleNavClick("/settings")}>
             Ustawienia konta
           </DropdownItem>
-          <DropdownItem onClick={handleLogout} style={{ borderTop: isMobile ? "none" : `1px solid ${theme.colors.neutral.greyBlue}`, marginTop: isMobile ? 0 : 4, paddingTop: isMobile ? 12 : 12, color: "#d32f2f" }}>
+          <DropdownItem onClick={handleLogout} style={{ borderTop: isMobile ? "none" : `1px solid ${theme.colors.neutral.greyBlue}`, marginTop: isMobile ? 0 : 4, paddingTop: isMobile ? 12 : 12, color: theme.colors.danger.main }}>
             Wyloguj
           </DropdownItem>
         </DropdownMenu>

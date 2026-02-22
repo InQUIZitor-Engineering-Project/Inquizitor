@@ -20,9 +20,9 @@ const TooltipContent = styled.div<{ $visible: boolean }>`
   transform: translateX(-50%);
   margin-bottom: 12px;
   padding: 8px 14px;
-  background: #ffffff;
-  color: #1f2937;
-  border: 1px solid #d1d5db;
+  background: ${({ theme }) => theme.colors.neutral.white};
+  color: ${({ theme }) => theme.colors.neutral.black};
+  border: 1px solid ${({ theme }) => theme.colors.neutral.greyBlue};
   border-radius: ${({ theme }) => theme.radii.md};
   font-size: 13px;
   font-weight: 500;
@@ -38,7 +38,7 @@ const TooltipContent = styled.div<{ $visible: boolean }>`
     opacity 0.2s ease-in-out,
     visibility 0.2s,
     transform 0.2s ease-out;
-  box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 10px -2px rgba(0, 0, 0, 0.05);
+  box-shadow: ${({ theme }) => theme.elevation.lg};
 
   ${({ $visible }) =>
     $visible &&
@@ -56,7 +56,7 @@ const TooltipContent = styled.div<{ $visible: boolean }>`
     transform: translateX(-50%);
     border-width: 6px;
     border-style: solid;
-    border-color: #ffffff transparent transparent transparent;
+    border-color: ${({ theme }) => theme.colors.neutral.white} transparent transparent transparent;
   }
 
   &::before {
@@ -67,7 +67,7 @@ const TooltipContent = styled.div<{ $visible: boolean }>`
     transform: translateX(-50%);
     border-width: 7px;
     border-style: solid;
-    border-color: #d1d5db transparent transparent transparent;
+    border-color: ${({ theme }) => theme.colors.neutral.greyBlue} transparent transparent transparent;
   }
 `;
 

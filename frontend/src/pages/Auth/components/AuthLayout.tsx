@@ -1,5 +1,5 @@
 import React from "react";
-import styled from "styled-components";
+import styled, { useTheme } from "styled-components";
 import { Box, Flex } from "../../../design-system/primitives";
 import { NAVBAR_HEIGHT } from "../../../components/Navbar/Navbar.styles";
 import { PageContainer } from "../../../design-system/patterns";
@@ -95,13 +95,14 @@ interface AuthLayoutProps {
 }
 
 const AuthLayout: React.FC<AuthLayoutProps> = ({ left, illustrationSrc, illustrationAlt }) => {
+  const theme = useTheme();
   return (
     <Outer $direction="column">
       <Inner $flex={1} $align="center" $justify="center">
         <PageContainer>
           <Flex $justify="center">
             <Box
-              $bg="#fff"
+              $bg={theme.colors.neutral.white}
               $radius="xl"
               $shadow="md"
               $p="xl"

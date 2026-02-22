@@ -29,12 +29,12 @@ const DragHandle = styled.div<{ $disabled?: boolean }>`
   width: 40px;
   height: 40px;
   border-radius: 8px;
-  color: #6b7280;
+  color: ${({ theme }) => theme.colors.neutral.grey};
   cursor: ${({ $disabled }) => ($disabled ? "default" : "grab")};
   touch-action: none;
   &:hover {
-    background: ${({ $disabled }) => ($disabled ? "transparent" : "#f3f4f6")};
-    color: ${({ $disabled }) => ($disabled ? "#6b7280" : "#374151")};
+    background: ${({ theme, $disabled }) => ($disabled ? "transparent" : theme.colors.neutral.silver)};
+    color: ${({ theme, $disabled }) => ($disabled ? theme.colors.neutral.grey : theme.colors.neutral.dGrey)};
   }
   &:active {
     cursor: ${({ $disabled }) => ($disabled ? "default" : "grabbing")};
@@ -179,17 +179,21 @@ const QuestionsSection: React.FC<QuestionsSectionProps> = ({
             $align="center"
             $p="sm"
             $radius="md"
-            $bg={isCorrect ? "rgba(76, 175, 80, 0.25)" : "transparent"}
+            $bg={
+              isCorrect
+                ? theme.colors.tint.t5
+                : theme.colors.neutral.silver
+            }
             $border={
               isCorrect
-                ? "2px solid #4caf50"
+                ? `2px solid ${theme.colors.brand.primary}`
                 : `1px solid ${theme.colors.neutral.greyBlue}`
             }
           >
-            <Text $variant="body3" $weight="medium" $tone={isCorrect ? "default" : "default"}>
+            <Text $variant="body3" $weight="medium" $tone="default">
               {String.fromCharCode(65 + ci)}.
             </Text>
-            <Box style={{ color: isCorrect ? "#4caf50" : "inherit", fontWeight: isCorrect ? 700 : 400 }}>
+            <Box>
               <MathText text={choice} />
             </Box>
           </Flex>

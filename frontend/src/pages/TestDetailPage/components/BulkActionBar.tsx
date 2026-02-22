@@ -33,10 +33,10 @@ const FloatingContainer = styled(Box)`
   width: 100%;
   max-width: 840px;
   margin: 0 auto;
-  background: white;
+  background: ${({ theme }) => theme.colors.neutral.white};
   border-radius: 16px;
-  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: ${({ theme }) => theme.elevation["2xl"]};
+  border: 1px solid ${({ theme }) => theme.colors.neutral.greyBlue};
   padding: 12px 16px;
   animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 
@@ -61,7 +61,7 @@ const CountCircle = styled.div`
   height: 32px;
   border-radius: 50%;
   background: ${({ theme }) => theme.colors.brand.primary};
-  color: white;
+  color: ${({ theme }) => theme.tone.inverted};
   display: flex;
   align-items: center;
   justify-content: center;
@@ -120,6 +120,8 @@ const getPluralGenitive = (count: number): string => {
   return "pytań";
 };
 
+const REGENERATE_DISABLED_TITLE = "Zaakceptuj regulamin w ustawieniach, aby odblokować funkcje AI.";
+
 export interface BulkActionBarProps {
   selectedCount: number;
   onDelete: () => void;
@@ -130,6 +132,10 @@ export interface BulkActionBarProps {
   isMenuOpen: boolean;
   onOpenMenu: () => void;
   onCloseMenu: () => void;
+  /** Gdy true, przycisk „Regeneruj z AI” jest nieaktywny (np. brak zgody na regulamin). */
+  regenerateDisabled?: boolean;
+  /** Gdy true, przycisk „Zmień typ” jest nieaktywny (np. brak zgody na regulamin). */
+  typeChangeDisabled?: boolean;
 }
 
 const BulkActionBar: React.FC<BulkActionBarProps> = ({
@@ -142,6 +148,8 @@ const BulkActionBar: React.FC<BulkActionBarProps> = ({
   isMenuOpen,
   onOpenMenu,
   onCloseMenu,
+  regenerateDisabled = false,
+  typeChangeDisabled = false,
 }) => {
   if (selectedCount === 0) return null;
 
@@ -178,7 +186,14 @@ const BulkActionBar: React.FC<BulkActionBarProps> = ({
               </HeaderWrapper>
 
               <DesktopActions $justify="center" $align="center" $gap="md" $wrap="wrap">
-                <Button $variant="info" $size="sm" onClick={onRegenerate} style={{ gap: "6px" }}>
+                <Button
+                  $variant="info"
+                  $size="sm"
+                  onClick={onRegenerate}
+                  disabled={regenerateDisabled}
+                  title={regenerateDisabled ? REGENERATE_DISABLED_TITLE : undefined}
+                  style={{ gap: "6px" }}
+                >
                   ✨ Regeneruj z AI
                 </Button>
 
@@ -186,7 +201,13 @@ const BulkActionBar: React.FC<BulkActionBarProps> = ({
                   📊 Zmień trudność
                 </Button>
 
-                <Button $variant="outline" $size="sm" onClick={onOpenTypeChange}>
+                <Button
+                  $variant="outline"
+                  $size="sm"
+                  onClick={onOpenTypeChange}
+                  disabled={typeChangeDisabled}
+                  title={typeChangeDisabled ? REGENERATE_DISABLED_TITLE : undefined}
+                >
                   🔄 Zmień typ
                 </Button>
 
@@ -208,9 +229,15 @@ const BulkActionBar: React.FC<BulkActionBarProps> = ({
         title={`Opcje dla ${selectedCount} ${getPluralGenitive(selectedCount)}`}
       >
         <Stack $gap="sm">
-          <SelectableItem onClick={() => handleMobileAction(onRegenerate)}>
+          <SelectableItem
+            onClick={regenerateDisabled ? undefined : () => handleMobileAction(onRegenerate)}
+            style={regenerateDisabled ? { opacity: 0.6, pointerEvents: "none" } : undefined}
+          >
             <Flex $gap="sm" $align="center">
               <Text $variant="body1">✨ Regeneruj z AI</Text>
+              {regenerateDisabled && (
+                <Text $variant="body3" $tone="muted">(wymagana zgoda na regulamin)</Text>
+              )}
             </Flex>
           </SelectableItem>
 
@@ -220,15 +247,21 @@ const BulkActionBar: React.FC<BulkActionBarProps> = ({
             </Flex>
           </SelectableItem>
 
-          <SelectableItem onClick={() => handleMobileAction(onOpenTypeChange)}>
+          <SelectableItem
+            onClick={typeChangeDisabled ? undefined : () => handleMobileAction(onOpenTypeChange)}
+            style={typeChangeDisabled ? { opacity: 0.6, pointerEvents: "none" } : undefined}
+          >
             <Flex $gap="sm" $align="center">
               <Text $variant="body1">🔄 Zmień typ (Otwarte/Zamknięte)</Text>
+              {typeChangeDisabled && (
+                <Text $variant="body3" $tone="muted">(wymagana zgoda na regulamin)</Text>
+              )}
             </Flex>
           </SelectableItem>
 
           <SelectableItem onClick={() => handleMobileAction(onDelete)}>
             <Flex $gap="sm" $align="center">
-              <Text $variant="body1" style={{ color: "#d32f2f" }}>🗑️ Usuń zaznaczone</Text>
+              <Text $variant="body1" style={{ color: "var(--color-danger-main)" }}>🗑️ Usuń zaznaczone</Text>
             </Flex>
           </SelectableItem>
         </Stack>

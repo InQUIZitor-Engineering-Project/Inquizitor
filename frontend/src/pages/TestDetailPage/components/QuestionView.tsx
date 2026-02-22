@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import styled from "styled-components";
+import styled, { useTheme } from "styled-components";
 import { MathText } from "../../../components/MathText/MathText";
 import { Badge, Flex, Text, Checkbox } from "../../../design-system/primitives";
 import { QuestionCard, IndexChip, Tooltip } from "../../../design-system/patterns";
@@ -72,15 +72,15 @@ const ToolbarButton = styled.button<{ $danger?: boolean }>`
   border: none;
   border-radius: 6px;
   background: transparent;
-  color: #6b7280;
+  color: ${({ theme }) => theme.colors.neutral.grey};
   cursor: pointer;
   transition: background-color 0.15s, color 0.15s;
 
   &:hover:not(:disabled) {
     background: ${({ $danger, theme }) =>
-      $danger ? "#fef2f2" : (theme.colors?.tint?.t5 ?? "rgba(76, 175, 79, 0.12)")};
+      $danger ? theme.colors.danger.bg : theme.colors.tint.t5};
     color: ${({ $danger, theme }) =>
-      $danger ? "#dc2626" : (theme.colors?.brand?.primary ?? "#4caf4f")};
+      $danger ? theme.colors.danger.main : theme.colors.brand.primary};
   }
 
   &:disabled {
@@ -89,7 +89,7 @@ const ToolbarButton = styled.button<{ $danger?: boolean }>`
   }
 
   &:focus-visible {
-    outline: 2px solid #4f46e5;
+    outline: 2px solid ${({ theme }) => theme.colors.brand.primary};
     outline-offset: 2px;
   }
 `;
@@ -97,7 +97,7 @@ const ToolbarButton = styled.button<{ $danger?: boolean }>`
 const ToolbarDivider = styled.div`
   width: 1px;
   height: 18px;
-  background: #e5e7eb;
+  background: ${({ theme }) => theme.colors.neutral.greyBlue};
   margin: 0 4px;
 `;
 
@@ -113,6 +113,7 @@ const QuestionView: React.FC<QuestionViewProps> = ({
   onSelect,
   dragHandle,
 }) => {
+  const theme = useTheme();
   const [isCardHovered, setIsCardHovered] = useState(false);
   const showCheckbox = isCardHovered || (isSelected ?? false);
 
@@ -197,7 +198,7 @@ const QuestionView: React.FC<QuestionViewProps> = ({
         className="ph-no-capture"
         style={
           isSelected
-            ? { border: "2px solid #4CAF50", backgroundColor: "rgba(76, 175, 80, 0.1)" }
+            ? { border: `2px solid ${theme.colors.brand.primary}`, backgroundColor: theme.colors.tint.t5 }
             : undefined
         }
         leftGutter={dragHandle != null || onSelect ? leftGutter : undefined}
@@ -225,7 +226,7 @@ const QuestionView: React.FC<QuestionViewProps> = ({
               style={
                 question.is_closed
                   ? undefined
-                  : { backgroundColor: "rgba(156, 39, 176, 0.12)", color: "#6a1b9a" }
+                  : { backgroundColor: theme.colors.tint.t5, color: theme.colors.brand.primary }
               }
             >
               {question.is_closed ? "Zamknięte" : "Otwarte"}

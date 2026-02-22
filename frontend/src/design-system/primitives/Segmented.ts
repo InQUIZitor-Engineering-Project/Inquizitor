@@ -46,12 +46,12 @@ export const Segmented = styled.div`
 
   /* Legacy dual-color states kept for backwards compatibility */
   .is-active-closed {
-    background: rgba(33, 150, 243, 0.12);
-    color: #1565c0;
+    background: ${({ theme }) => theme.colors.neutral.silver};
+    color: ${({ theme }) => theme.colors.brand.info};
   }
   .is-active-open {
-    background: rgba(156, 39, 176, 0.12);
-    color: #6a1b9a;
+    background: ${({ theme }) => theme.colors.tint.t5};
+    color: ${({ theme }) => theme.colors.brand.primary};
   }
 `;
 
@@ -63,7 +63,7 @@ export const SegmentedIndicator = styled.div`
   left: 0;
   background: ${({ theme }) => theme.colors.brand.primary};
   border-radius: ${({ theme }) => theme.radii.pill};
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  box-shadow: ${({ theme }) => theme.shadows["4px"]};
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
   ${({ theme }) => theme.media.down("sm")} {
