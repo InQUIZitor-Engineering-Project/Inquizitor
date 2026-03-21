@@ -16,6 +16,8 @@ export interface CustomSelectProps {
   placeholder?: string;
   $fullWidth?: boolean;
   disabled?: boolean;
+  /** Opcjonalny styl dla etykiety w każdej opcji (np. różna wielkość czcionki w dropdownie). */
+  getOptionLabelStyle?: (option: SelectOption) => React.CSSProperties;
 }
 
 const SelectContainer = styled(Box)<{ $fullWidth?: boolean; $disabled?: boolean }>`
@@ -30,7 +32,7 @@ const SelectTrigger = styled(Box)<{ $isOpen: boolean }>`
   align-items: center;
   justify-content: space-between;
   padding: 10px 12px;
-  background: #fff;
+  background: ${({ theme }) => theme.colors.neutral.white};
   border: 1px solid ${({ theme, $isOpen }) => ($isOpen ? theme.colors.brand.primary : theme.colors.neutral.greyBlue)};
   border-radius: ${({ theme }) => theme.radii.sm};
   transition: all 0.2s ease;
@@ -41,8 +43,8 @@ const SelectTrigger = styled(Box)<{ $isOpen: boolean }>`
     border-color: ${({ theme, $isOpen }) => (!$isOpen ? theme.colors.neutral.grey : theme.colors.brand.primary)};
   }
 
-  ${({ $isOpen }) => $isOpen && css`
-    box-shadow: 0 0 0 3px rgba(76, 175, 79, 0.1);
+  ${({ theme, $isOpen }) => $isOpen && css`
+    box-shadow: 0 0 0 3px ${theme.colors.tint.t5};
   `}
 `;
 
@@ -61,7 +63,7 @@ const DropdownMenu = styled(Box)`
   top: calc(100% + 4px);
   left: 0;
   right: 0;
-  background: #fff;
+  background: ${({ theme }) => theme.colors.neutral.white};
   border: 1px solid ${({ theme }) => theme.colors.neutral.greyBlue};
   border-radius: ${({ theme }) => theme.radii.sm};
   box-shadow: ${({ theme }) => theme.elevation.lg};
@@ -96,6 +98,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
   placeholder = "Wybierz opcję...",
   $fullWidth = true,
   disabled = false,
+  getOptionLabelStyle,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -130,9 +133,13 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
       )}
       <SelectContainer ref={containerRef} $fullWidth={$fullWidth} $disabled={disabled}>
         <SelectTrigger $isOpen={isOpen} onClick={handleToggle}>
-          <Text 
+          <Text
             $tone={selectedOption ? "default" : "muted"}
-            style={{ fontSize: "14px", lineHeight: "1.4" }}
+            style={
+              selectedOption && getOptionLabelStyle
+                ? { fontSize: "14px", lineHeight: "1.4", ...getOptionLabelStyle(selectedOption) }
+                : { fontSize: "14px", lineHeight: "1.4" }
+            }
           >
             {selectedOption ? selectedOption.label : placeholder}
           </Text>
@@ -141,21 +148,30 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
 
         {isOpen && (
           <DropdownMenu>
-            {options.map((option) => (
-              <OptionItem
-                key={option.value}
-                $isSelected={option.value === value}
-                onClick={() => handleSelect(option.value)}
-              >
-                {option.icon && <Box $mr="xs" style={{ display: 'flex', alignItems: 'center' }}>{option.icon}</Box>}
-                <Text 
-                  $weight={option.value === value ? ("medium" as const) : ("regular" as const)}
-                  style={{ fontSize: "14px", lineHeight: "1.4" }}
+            {options.map((option) => {
+              const labelStyle = getOptionLabelStyle?.(option) ?? { fontSize: "14px", lineHeight: "1.4" };
+              const baseStyle = { fontSize: "14px", lineHeight: "1.4" as const };
+              const style = getOptionLabelStyle ? { ...baseStyle, ...labelStyle } : baseStyle;
+              return (
+                <OptionItem
+                  key={option.value}
+                  $isSelected={option.value === value}
+                  onClick={() => handleSelect(option.value)}
                 >
-                  {option.label}
-                </Text>
-              </OptionItem>
-            ))}
+                  {option.icon && (
+                    <Box $mr="xs" style={{ display: "flex", alignItems: "center", fontSize: style.fontSize }}>
+                      {option.icon}
+                    </Box>
+                  )}
+                  <Text
+                    $weight={option.value === value ? ("medium" as const) : ("regular" as const)}
+                    style={style}
+                  >
+                    {option.label}
+                  </Text>
+                </OptionItem>
+              );
+            })}
           </DropdownMenu>
         )}
       </SelectContainer>

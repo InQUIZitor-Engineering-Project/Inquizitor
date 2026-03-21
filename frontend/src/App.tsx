@@ -14,14 +14,18 @@ import ProfilePage from "./pages/ProfilePage/ProfilePage";
 import TestDetailPage from "./pages/TestDetailPage/TestDetailPage";
 import AboutUsPage from './pages/AboutUsPage/AboutUsPage';
 import HelpPage from './pages/HelpPage/HelpPage';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage/PrivacyPolicyPage';
 import CreateTestSelectionPage from "./pages/CreateTestSelectionPage/CreateTestSelectionPage";
 import CreateTestAIPage from "./pages/CreateTestAIPage/CreateTestAIPage";
 import CreateManualTestPage from "./pages/CreateManualTestPage/CreateManualTestPage";
+import LibraryPage from "./pages/LibraryPage/LibraryPage";
+import MaterialPreviewPage from "./pages/LibraryPage/MaterialPreviewPage";
 import MainLayout from "./layouts/MainLayout";
 import PublicLayout from "./layouts/PublicLayout";
 import VerifyEmailPage from "./pages/VerifyEmailPage/VerifyEmailPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage/ResetPasswordPage";
+import SettingsPage from "./pages/SettingsPage/SettingsPage";
 import ScrollToTop from "./components/ScrollToTop/ScrollToTop";
 
 const ProtectedRoute: React.FC<{ children: JSX.Element }> = ({ children }) => {
@@ -57,6 +61,7 @@ const App: React.FC = () => {
             <Route path="/" element={<HomePage />} />
             <Route path="/about" element={<AboutUsPage />} />
             <Route path="/pomoc" element={<HelpPage />} />
+            <Route path="/polityka-prywatnosci" element={<PrivacyPolicyPage />} />
             <Route 
               path="/register" 
               element={
@@ -125,17 +130,33 @@ const App: React.FC = () => {
                 </ProtectedRoute>
               } 
             />
-            <Route 
-              path="/tests/:testId" 
+            <Route
+              path="/tests/:testId"
               element={
                 <ProtectedRoute>
                   <TestDetailPage />
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/biblioteka"
+              element={
+                <ProtectedRoute>
+                  <LibraryPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/biblioteka/materials/:id/preview"
+              element={
+                <ProtectedRoute>
+                  <MaterialPreviewPage />
+                </ProtectedRoute>
+              }
+            />
           </Route>
-          <Route 
-            path="/tests/:testId/preview" 
+          <Route
+            path="/tests/:testId/preview"
             element={
               <ProtectedRoute>
                 <PdfPreviewPage />
@@ -147,6 +168,14 @@ const App: React.FC = () => {
             element={
               <ProtectedRoute>
                 <ProfilePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute>
+                <SettingsPage />
               </ProtectedRoute>
             }
           />

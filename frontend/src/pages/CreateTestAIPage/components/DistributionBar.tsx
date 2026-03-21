@@ -13,8 +13,8 @@ const Bar = styled.div<{ $disabled?: boolean }>`
   position: relative;
   height: 12px;
   border-radius: 999px;
-  background: #eef4ee;
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+  background: ${({ theme }) => theme.colors.tint.t5};
+  box-shadow: inset 0 0 0 1px ${({ theme }) => theme.colors.neutral.greyBlue};
   overflow: hidden;
   display: flex;
   gap: 0;

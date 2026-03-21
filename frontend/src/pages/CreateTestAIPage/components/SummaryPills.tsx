@@ -18,9 +18,10 @@ const Pill = styled.span<{ $bg?: string; $fg?: string }>`
   border-radius: 999px;
   font-weight: 600;
   font-size: 12px;
-  background: ${({ $bg }) => $bg || "rgba(0,0,0,.06)"};
-  color: ${({ $fg }) => $fg || "#333"};
+  background: ${({ $bg, theme }) => $bg || theme.colors.tint.t5};
+  color: ${({ $fg, theme }) => $fg || theme.colors.neutral.dGrey};
   white-space: nowrap;
+  border: 1px solid ${({ theme }) => theme.colors.neutral.greyBlue};
 `;
 
 const SummaryPills: React.FC<SummaryPillsProps> = ({ items }) => {

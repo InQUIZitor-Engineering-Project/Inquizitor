@@ -60,18 +60,30 @@ class R2FileStorage(FileStorage):
             return f"{self._base_prefix}/{unique_name}"
         return unique_name
 
-    def save(self, *, owner_id: int, filename: str, content: bytes) -> str:
+    def save(
+        self,
+        *,
+        owner_id: int,
+        filename: str,
+        content: bytes,
+        metadata: dict[str, str] | None = None,
+    ) -> str:
         key = self._build_key(filename)
         content_type, _ = mimetypes.guess_type(filename)
         extra_args = {}
         if content_type:
             extra_args["ContentType"] = content_type
 
+        meta = {"owner_id": str(owner_id)}
+        if metadata:
+            for k, v in metadata.items():
+                meta[k] = str(v)
+
         self._client.put_object(
             Bucket=self._bucket,
             Key=key,
             Body=content,
-            Metadata={"owner_id": str(owner_id)},
+            Metadata=meta,
             **extra_args,
         )
         return key

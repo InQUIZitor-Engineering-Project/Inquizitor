@@ -68,7 +68,6 @@ const PdfConfigSection: React.FC<PdfConfigSectionProps> = ({
     config.answer_space_style !== "blank" ||
     config.space_height_cm !== 3 ||
     config.include_answer_key ||
-    config.generate_variants ||
     config.use_scratchpad ||
     !config.mark_multi_choice;
 
@@ -295,11 +294,11 @@ const PdfConfigSection: React.FC<PdfConfigSectionProps> = ({
           </VariantModeWrapper>
         )}
 
-       <Flex $justify="space-between" $align="center" $gap="sm" $wrap="wrap" $mt="sm">
-          <Button 
-            $variant="outline" 
-            type="button" 
-            onClick={() => navigate(`/tests/${testId}/preview`)} 
+        <Flex $justify="space-between" $align="center" $gap="sm" $wrap="wrap" $mt="sm">
+          <Button
+            $variant="outline"
+            type="button"
+            onClick={() => navigate(`/tests/${testId}/preview`)}
           >
             Ustawienia zaawansowane
           </Button>

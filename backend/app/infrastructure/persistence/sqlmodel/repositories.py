@@ -4,7 +4,8 @@ from collections.abc import Iterable
 from datetime import datetime
 from typing import Any, cast
 
-from sqlalchemy import delete
+from sqlalchemy import delete, func
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import joinedload
 from sqlmodel import Session, select
 
@@ -18,6 +19,7 @@ from app.domain.models import (
     PdfExportCache,
     PendingVerification,
     Question,
+    QuestionGroup,
     RefreshToken,
     Test,
     User,
@@ -91,8 +93,15 @@ class SqlModelTestRepository(TestRepository):
         self._session.refresh(db_test)
         return mappers.test_to_domain(db_test)
 
-    def add_question(self, test_id: int, question: Question) -> Question:
-        db_question = mappers.question_to_row(question, test_id=test_id)
+    def add_question(self, test_id: int, question: Question, group_id: int) -> Question:
+        db_question = mappers.question_to_row(
+            question, test_id=test_id, group_id=group_id
+        )
+        # Append at end: position = current count within this group
+        count_stmt = select(func.count()).select_from(db_models.Question).where(
+            db_models.Question.group_id == group_id
+        )
+        db_question.position = (self._session.exec(count_stmt).one() or 0)
         self._session.add(db_question)
         self._session.commit()
         self._session.refresh(db_question)
@@ -126,6 +135,128 @@ class SqlModelTestRepository(TestRepository):
         if db_test:
             self._session.delete(db_test)
             self._session.commit()
+
+    def reorder_questions(self, test_id: int, question_ids: list[int]) -> None:
+        if not question_ids:
+            return
+        stmt = select(db_models.Question).where(db_models.Question.test_id == test_id)
+        rows = list(self._session.exec(stmt).all())
+        id_to_row = {r.id: r for r in rows}
+        if set(id_to_row) != set(question_ids):
+            raise ValueError("question_ids must match exactly the test's questions")
+        for position, qid in enumerate(question_ids):
+            id_to_row[qid].position = position
+            self._session.add(id_to_row[qid])
+        self._session.flush()
+
+    def get_groups_for_test(self, test_id: int) -> list[QuestionGroup]:
+        stmt = (
+            select(db_models.QuestionGroup)
+            .where(db_models.QuestionGroup.test_id == test_id)
+            .order_by(db_models.QuestionGroup.position, db_models.QuestionGroup.id)
+        )
+        rows = list(self._session.exec(stmt).all())
+        return [mappers.question_group_to_domain(r) for r in rows]
+
+    def get_group(self, group_id: int) -> QuestionGroup | None:
+        row = self._session.get(db_models.QuestionGroup, group_id)
+        return mappers.question_group_to_domain(row) if row else None
+
+    def create_group(
+        self, test_id: int, label: str, position: int = 0
+    ) -> QuestionGroup:
+        count_stmt = select(func.count()).select_from(db_models.QuestionGroup).where(
+            db_models.QuestionGroup.test_id == test_id
+        )
+        pos = (
+            position
+            if position >= 0
+            else (self._session.exec(count_stmt).one() or 0)
+        )
+        db_group = db_models.QuestionGroup(
+            test_id=test_id,
+            label=label,
+            position=pos,
+        )
+        self._session.add(db_group)
+        self._session.commit()
+        self._session.refresh(db_group)
+        return mappers.question_group_to_domain(db_group)
+
+    def update_group(
+        self, group_id: int, *, label: str | None = None, position: int | None = None
+    ) -> QuestionGroup | None:
+        row = self._session.get(db_models.QuestionGroup, group_id)
+        if not row:
+            return None
+        if label is not None:
+            row.label = label
+        if position is not None:
+            row.position = position
+        self._session.add(row)
+        self._session.flush()
+        return mappers.question_group_to_domain(row)
+
+    def delete_group(self, group_id: int) -> None:
+        stmt = delete(db_models.Question).where(db_models.Question.group_id == group_id)
+        self._session.execute(stmt)
+        group_row = self._session.get(db_models.QuestionGroup, group_id)
+        if group_row:
+            self._session.delete(group_row)
+        self._session.flush()
+
+    def duplicate_group(
+        self, test_id: int, group_id: int
+    ) -> tuple[QuestionGroup, list[Question]]:
+        group_row = self._session.get(db_models.QuestionGroup, group_id)
+        if not group_row or group_row.test_id != test_id:
+            raise ValueError("Group not found or does not belong to test")
+        groups = self.get_groups_for_test(test_id)
+        new_position = len(groups)
+        new_group = self.create_group(
+            test_id, f"{group_row.label} (kopia)", position=new_position
+        )
+        if new_group.id is None:
+            raise RuntimeError("Failed to create group")
+        stmt = (
+            select(db_models.Question)
+            .where(db_models.Question.group_id == group_id)
+            .order_by(db_models.Question.position, db_models.Question.id)
+        )
+        source_questions = list(self._session.exec(stmt).all())
+        new_questions: list[Question] = []
+        for idx, sq in enumerate(source_questions):
+            db_new = db_models.Question(
+                test_id=test_id,
+                group_id=new_group.id,
+                position=idx,
+                text=sq.text,
+                is_closed=sq.is_closed,
+                difficulty=sq.difficulty,
+                choices=sq.choices,
+                correct_choices=sq.correct_choices,
+                citations=sq.citations,
+            )
+            self._session.add(db_new)
+        self._session.flush()
+        stmt_new = select(db_models.Question).where(
+            db_models.Question.group_id == new_group.id
+        )
+        for db_new in self._session.exec(stmt_new).all():
+            new_questions.append(mappers.question_to_domain(db_new))
+        return new_group, new_questions
+
+    def assign_questions_to_group(self, question_ids: list[int], group_id: int) -> None:
+        if not question_ids:
+            return
+        stmt = select(db_models.Question).where(
+            cast(Any, db_models.Question.id).in_(question_ids)
+        )
+        rows = list(self._session.exec(stmt).all())
+        for row in rows:
+            row.group_id = group_id
+            self._session.add(row)
+        self._session.flush()
 
 
 class SqlModelFileRepository(FileRepository):
@@ -167,7 +298,12 @@ class SqlModelMaterialRepository(MaterialRepository):
         return mappers.material_to_domain(db_material)
 
     def get(self, material_id: int) -> Material | None:
-        db_material = self._session.get(db_models.Material, material_id)
+        stmt = (
+            select(db_models.Material)
+            .where(db_models.Material.id == material_id)
+            .options(joinedload(db_models.Material.file))
+        )
+        db_material = cast(Any, self._session).exec(stmt).first()
         return mappers.material_to_domain(db_material) if db_material else None
     
     def get_by_file_id(self, file_id: int) -> Material | None:
@@ -179,27 +315,83 @@ class SqlModelMaterialRepository(MaterialRepository):
         row = cast(Any, self._session).exec(stmt).first()
         return mappers.material_to_domain(row) if row else None
 
+    def get_by_checksum(self, owner_id: int, checksum: str) -> Material | None:
+        """Find a material by checksum for the given owner."""
+        stmt = (
+            select(db_models.Material)
+            .where(
+                db_models.Material.owner_id == owner_id,
+                db_models.Material.checksum == checksum,
+            )
+            .options(joinedload(db_models.Material.file))
+            .order_by(cast(Any, db_models.Material.created_at).desc())
+        )
+        row = cast(Any, self._session).exec(stmt).first()
+        return mappers.material_to_domain(row) if row else None
+
     def list_for_user(self, user_id: int) -> Iterable[Material]:
-        stmt = select(db_models.Material).where(db_models.Material.owner_id == user_id)
+        stmt = (
+            select(db_models.Material)
+            .where(db_models.Material.owner_id == user_id)
+            .options(joinedload(db_models.Material.file))
+            .order_by(cast(Any, db_models.Material.created_at).desc())
+        )
         rows = cast(Any, self._session).exec(stmt).all()
         materials: list[Material] = []
+        seen_checksums: set[str] = set()
         for row in rows:
+            # Jeśli materiał ma checksum i już widzieliśmy ten checksum, pomiń go
+            if row.checksum and row.checksum in seen_checksums:
+                continue
+            if row.checksum:
+                seen_checksums.add(row.checksum)
             materials.append(mappers.material_to_domain(row))
         return materials
+
+    def list_without_thumbnail(self) -> Iterable[Material]:
+        stmt = (
+            select(db_models.Material)
+            .where(
+                db_models.Material.thumbnail_path == None,  # noqa: E711
+                db_models.Material.file_id != None,  # noqa: E711
+            )
+            .options(joinedload(db_models.Material.file))
+            .order_by(cast(Any, db_models.Material.id).asc())
+        )
+        rows = cast(Any, self._session).exec(stmt).all()
+        return [mappers.material_to_domain(row) for row in rows]
 
     def update(self, material: Material) -> Material:
         db_material = self._session.get(db_models.Material, material.id)
         if not db_material:
             raise ValueError(f"Material {material.id} not found")
 
+        if material.file is not None and material.file.id is not None:
+            db_file = self._session.get(db_models.File, material.file.id)
+            if db_file is not None:
+                db_file.filename = material.file.filename
+                self._session.add(db_file)
+
         db_material.mime_type = material.mime_type
         db_material.size_bytes = material.size_bytes
         db_material.checksum = material.checksum
+        db_material.page_count = material.page_count
         db_material.extracted_text = material.extracted_text
         db_material.processing_status = db_models.ProcessingStatus(
             material.status.value
         )
         db_material.processing_error = material.processing_error
+        db_material.analysis_status = db_models.AnalysisStatus(
+            material.analysis_status.value
+        )
+        db_material.routing_tier = (
+            db_models.RoutingTier(material.routing_tier.value)
+            if material.routing_tier
+            else None
+        )
+        db_material.analysis_version = material.analysis_version
+        db_material.markdown_twin = material.markdown_twin
+        db_material.thumbnail_path = material.thumbnail_path
 
         self._session.add(db_material)
         self._session.commit()
@@ -250,6 +442,20 @@ class SqlModelJobRepository(JobRepository):
             select(db_models.Job)
             .where(db_models.Job.owner_id == owner_id)
             .order_by(cast(Any, db_models.Job.created_at).desc())
+        )
+        rows = cast(Any, self._session).exec(stmt).all()
+        return [mappers.job_to_domain(row) for row in rows]
+
+    def get_many(self, owner_id: int, job_ids: list[int]) -> list[Job]:
+        if not job_ids:
+            return []
+        job_id_col = cast(Any, db_models.Job.id)
+        stmt = (
+            select(db_models.Job)
+            .where(
+                db_models.Job.owner_id == owner_id,
+                job_id_col.in_(job_ids),
+            )
         )
         rows = cast(Any, self._session).exec(stmt).all()
         return [mappers.job_to_domain(row) for row in rows]
@@ -307,9 +513,16 @@ class SqlModelOcrCacheRepository(OcrCacheRepository):
     def add(self, entry: OcrCache) -> OcrCache:
         row = mappers.ocr_cache_to_row(entry)
         self._session.add(row)
-        self._session.commit()
-        self._session.refresh(row)
-        return mappers.ocr_cache_to_domain(row)
+        try:
+            self._session.commit()
+            self._session.refresh(row)
+            return mappers.ocr_cache_to_domain(row)
+        except IntegrityError:
+            self._session.rollback()
+            existing = self.get_by_key(entry.cache_key)
+            if existing is not None:
+                return existing
+            raise
 
     def get_by_key(self, cache_key: str) -> OcrCache | None:
         stmt = select(db_models.OcrCache).where(

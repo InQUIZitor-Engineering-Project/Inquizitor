@@ -13,6 +13,8 @@ export interface UserRead {
   last_name: string;
   email: string;
   created_at: string;
+  terms_accepted: boolean;
+  marketing_accepted: boolean;
 }
 
 export interface Token {

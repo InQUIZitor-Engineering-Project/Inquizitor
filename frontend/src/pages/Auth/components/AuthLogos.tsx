@@ -5,8 +5,8 @@ import logoText from "../../../assets/logo_text.webp";
 
 const AuthLogos: React.FC = () => (
   <Flex $align="center" $gap="md" $wrap="wrap">
-    <Box as="img" src={logoBook} alt="Inquizitor logo" style={{ height: 48 }} />
-    <Box as="img" src={logoText} alt="Inquizitor wordmark" style={{ height: 32 }} />
+    <Box as="img" src={logoBook} alt="Logo Inquizitor - ikona książki" style={{ height: 48 }} />
+    <Box as="img" src={logoText} alt="Napis Inquizitor" style={{ height: 32 }} />
   </Flex>
 );
 

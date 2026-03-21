@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from "react";
-import styled, { css } from "styled-components";
+import styled, { css, useTheme } from "styled-components";
 import {
   Box,
   Flex,
@@ -19,7 +19,7 @@ const SegmentedWrapper = styled(Box)`
   display: inline-flex;
   max-width: 100%;
 
-  ${({ theme }) => theme.media.down("sm")} {
+  ${({ theme }: any) => theme.media.down("sm")} {
     display: flex;
     width: 100%;
   }
@@ -29,7 +29,7 @@ const DropZone = styled(Flex)<{ $isDragging: boolean }>`
   cursor: pointer;
   transition: all 0.2s ease-in-out;
 
-  ${({ $isDragging, theme }) =>
+  ${({ $isDragging, theme }: any) =>
     $isDragging &&
     css`
       background-color: ${theme.colors.tint.t5};
@@ -74,6 +74,7 @@ export interface SourceSectionProps {
   onMaterialButtonClick: () => void;
   onRemoveMaterial: (materialId: number) => void;
   onRemoveUpload: (tempId: string) => void;
+  onSelectFromLibrary?: () => void;
 }
 
 const SourceSection: React.FC<SourceSectionProps> = ({
@@ -93,8 +94,10 @@ const SourceSection: React.FC<SourceSectionProps> = ({
   onMaterialButtonClick,
   onRemoveMaterial,
   onRemoveUpload,
+  onSelectFromLibrary,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
+  const theme = useTheme();
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -123,7 +126,7 @@ const SourceSection: React.FC<SourceSectionProps> = ({
   );
 
   return (
-    <Box as={Stack} $gap="md" $p="lg" $bg="#fff" $radius="xl" $shadow="md">
+    <Box as={Stack} $gap="md" $p="lg" $bg={theme.colors.neutral.white} $radius="xl" $shadow="md">
       <Stack $gap="xs">
         <Heading as="h3" $level="h4">
           Źródło treści
@@ -157,58 +160,72 @@ const SourceSection: React.FC<SourceSectionProps> = ({
             />
 
             {uploadingMaterials.length === 0 && materials.length === 0 ? (
-              <DropZone
-                $p="xl"
-                $direction="column"
-                $align="center"
-                $justify="center"
-                $bg="#f9fafb"
-                $radius="xl"
-                $border="2px dashed #e5e7eb"
-                $height="200px"
-                $isDragging={isDragging}
-                onClick={onMaterialButtonClick}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-              >
-                <Box $mb="sm" style={{ opacity: 0.5 }}>
-                  <svg
-                    width="32"
-                    height="32"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                    <polyline points="17 8 12 3 7 8" />
-                    <line x1="12" y1="3" x2="12" y2="15" />
-                  </svg>
-                </Box>
-              <Text $variant="body2" $weight="medium" $tone="default" $align="center">
-                <DesktopOnly>Kliknij lub przeciągnij, aby wgrać pliki</DesktopOnly>
-                <MobileOnly>Kliknij, aby wgrać pliki</MobileOnly>
-              </Text>
-              <Text $variant="body3" $tone="muted" $align="center">
-                PDF, Docx, TXT lub zdjęcia (maksymalnie 20 stron łącznie)
-              </Text>
-              </DropZone>
+              <Stack $gap="md">
+                <DropZone
+                  $p="xl"
+                  $direction="column"
+                  $align="center"
+                  $justify="center"
+                  $bg="transparent"
+                  $radius="xl"
+                  $border={`2px dashed ${theme.colors.neutral.greyBlue}`}
+                  $height="200px"
+                  $isDragging={isDragging}
+                  onClick={onMaterialButtonClick}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                >
+                  <Box $mb="sm" style={{ opacity: 0.5 }}>
+                    <svg
+                      width="32"
+                      height="32"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                      <polyline points="17 8 12 3 7 8" />
+                      <line x1="12" y1="3" x2="12" y2="15" />
+                    </svg>
+                  </Box>
+                <Text $variant="body2" $weight="medium" $tone="default" $align="center">
+                  <DesktopOnly>Kliknij lub przeciągnij, aby wgrać pliki</DesktopOnly>
+                  <MobileOnly>Kliknij, aby wgrać pliki</MobileOnly>
+                </Text>
+                <Text $variant="body3" $tone="muted" $align="center">
+                  PDF, Docx, TXT lub zdjęcia (maksymalnie 20 stron łącznie)
+                </Text>
+                </DropZone>
+                {onSelectFromLibrary && (
+                  <Flex $justify="center">
+                    <Button $variant="outline" onClick={onSelectFromLibrary}>
+                      Lub wybierz z biblioteki
+                    </Button>
+                  </Flex>
+                )}
+              </Stack>
             ) : (
-              <Box $display="inline-flex" style={{ gap: "12px" }}>
+              <Box $display="inline-flex" style={{ gap: "12px", flexWrap: "wrap" }}>
                 <Button $variant="info" onClick={onMaterialButtonClick}>
                   Dodaj kolejne pliki
                 </Button>
+                {onSelectFromLibrary && (
+                  <Button $variant="outline" onClick={onSelectFromLibrary}>
+                    Wybierz z biblioteki
+                  </Button>
+                )}
                 <DesktopOnly>
                   <DropZone
                     $px="lg"
                     $direction="row"
                     $align="center"
-                    $bg="#f9fafb"
+                    $bg="transparent"
                     $radius="lg"
-                    $border="1px dashed #e5e7eb"
+                    $border={`1px dashed ${theme.colors.neutral.greyBlue}`}
                     $isDragging={isDragging}
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
@@ -236,8 +253,8 @@ const SourceSection: React.FC<SourceSectionProps> = ({
                   <Flex
                     key={upload.tempId}
                     $p="sm"
-                    $bg="#f9fafb"
-                    $border="1px solid #e5e7eb"
+                    $bg="transparent"
+                    $border={`1px solid ${theme.colors.neutral.greyBlue}`}
                     $radius="md"
                     $align="center"
                     $justify="space-between"
@@ -256,7 +273,7 @@ const SourceSection: React.FC<SourceSectionProps> = ({
                       </Text>
                       {upload.status === "uploading" && (
                         <Flex $align="center" style={{ gap: "6px" }}>
-                          <Ring size={12} speed={1.2} color="#2194f3" />
+                          <Ring size={12} speed={1.2} color={theme.colors.brand.info} />
                           <Text $variant="body3" $tone="info" $weight="medium">
                             Wgrywanie...
                           </Text>
@@ -283,14 +300,15 @@ const SourceSection: React.FC<SourceSectionProps> = ({
                   ))}
 
                 {materials.map((material) => {
-                  const isFailed = material.processing_status === "failed";
-                  const isDone = material.processing_status === "done";
+                  const status = material.analysis_status || material.processing_status;
+                  const isFailed = status === "failed";
+                  const isDone = status === "done";
                   return (
                     <Flex
                       key={material.id}
                       $p="sm"
-                      $bg={isFailed ? "#fff5f5" : "#f9fafb"}
-                      $border={isFailed ? "1px solid #feb2b2" : "1px solid #e5e7eb"}
+                      $bg={isFailed ? theme.colors.danger.bg : "transparent"}
+                      $border={isFailed ? `1px solid ${theme.colors.danger.main}` : `1px solid ${theme.colors.neutral.greyBlue}`}
                       $radius="md"
                       $align="center"
                       $justify="space-between"
@@ -310,15 +328,15 @@ const SourceSection: React.FC<SourceSectionProps> = ({
                             {material.filename}
                           </Text>
                           {isDone && (
-                            <Box style={{ display: "flex", alignItems: "center", color: "#48bb78" }}>
+                            <Box style={{ display: "flex", alignItems: "center", color: theme.colors.action.success }}>
                               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                                 <polyline points="20 6 9 17 4 12" />
                               </svg>
                             </Box>
                           )}
                           {isFailed && (
-                            <Tooltip content={material.processing_error || "Błąd przetwarzania pliku"}>
-                              <Box style={{ display: "flex", alignItems: "center", color: "#e53e3e" }}>
+                            <Tooltip content={material.processing_error || "Błąd analizy pliku"}>
+                              <Box style={{ display: "flex", alignItems: "center", color: theme.colors.danger.main }}>
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                   <circle cx="12" cy="12" r="10" />
                                   <line x1="12" y1="8" x2="12" y2="12" />
@@ -346,13 +364,14 @@ const SourceSection: React.FC<SourceSectionProps> = ({
             {materialAnalyzing && !!materials.length && (
               <Stack $gap="sm">
                 <Flex $align="center" style={{ gap: "8px" }}>
-                  <Ring size={18} speed={1.2} color="#2194f3" />
+                  <Ring size={18} speed={1.2} color={theme.colors.brand.info} />
                   <Text $variant="body3" $tone="info" $weight="medium">
                     Analizuję pliki...
                   </Text>
                 </Flex>
               </Stack>
             )}
+
           </Stack>
         )}
 

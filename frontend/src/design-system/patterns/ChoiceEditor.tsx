@@ -53,8 +53,8 @@ const LetterBubble = styled.span`
   justify-content: center;
   font-weight: 700;
   font-size: 12px;
-  color: #1565c0;
-  background: rgba(33, 150, 243, 0.12);
+  color: ${({ theme }) => theme.colors.brand.info};
+  background: ${({ theme }) => theme.colors.neutral.silver};
 `;
 
 const ChoiceEditor: React.FC<ChoiceEditorProps> = ({

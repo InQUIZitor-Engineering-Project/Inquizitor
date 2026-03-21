@@ -54,7 +54,7 @@ const ForgotPasswordPage: React.FC = () => {
   return (
     <AuthLayout
       illustrationSrc={loginIllustration}
-      illustrationAlt="Forgot Password Illustration"
+      illustrationAlt="Ilustracja przypominania hasła w systemie InQUIZitor"
       left={
         <Stack $gap="lg">
           <MobileHide>

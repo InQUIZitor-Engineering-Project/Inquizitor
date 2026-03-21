@@ -23,11 +23,18 @@ export interface JobOut {
   updated_at: string;
 }
 
+export interface GroupOut {
+  id: number;
+  label: string;
+  position: number;
+}
+
 export interface QuestionOut {
   id: number;
   text: string;
   is_closed: boolean;
   difficulty: number;
+  group_id: number;
   choices?: string[];
   correct_choices?: string[];
 }
@@ -35,6 +42,7 @@ export interface QuestionOut {
 export interface TestDetail {
   test_id: number;
   title: string;
+  groups: GroupOut[];
   questions: QuestionOut[];
 }
 
@@ -58,6 +66,7 @@ export interface QuestionCreatePayload {
   text: string;
   is_closed: boolean;
   difficulty: number;
+  group_id: number;
   choices?: string[] | null;
   correct_choices?: string[] | null;
 }
@@ -178,6 +187,86 @@ export async function addQuestion(
   return handleJson<QuestionOut>(res, "Nie udało się dodać pytania");
 }
 
+// --- Grupy pytań ---
+
+export async function createGroup(
+  testId: number,
+  payload: { label: string; position?: number }
+): Promise<GroupOut> {
+  const res = await apiRequest(`/tests/${testId}/groups`, {
+    method: "POST",
+    body: JSON.stringify({ label: payload.label, position: payload.position ?? 0 }),
+  });
+  return handleJson<GroupOut>(res, "Nie udało się dodać grupy");
+}
+
+export async function updateGroup(
+  testId: number,
+  groupId: number,
+  payload: { label?: string; position?: number }
+): Promise<GroupOut> {
+  const res = await apiRequest(`/tests/${testId}/groups/${groupId}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+  return handleJson<GroupOut>(res, "Nie udało się zaktualizować grupy");
+}
+
+export async function deleteGroup(testId: number, groupId: number): Promise<void> {
+  const res = await apiRequest(`/tests/${testId}/groups/${groupId}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.detail || "Nie udało się usunąć grupy");
+  }
+}
+
+export async function duplicateGroup(
+  testId: number,
+  groupId: number
+): Promise<{ group: GroupOut; questions: QuestionOut[] }> {
+  const res = await apiRequest(`/tests/${testId}/groups/${groupId}/duplicate`, {
+    method: "POST",
+  });
+  return handleJson<{ group: GroupOut; questions: QuestionOut[] }>(
+    res,
+    "Nie udało się skopiować grupy"
+  );
+}
+
+export async function createShuffledVariantGroup(
+  testId: number,
+  groupId: number
+): Promise<GroupOut> {
+  const res = await apiRequest(
+    `/tests/${testId}/groups/${groupId}/shuffled-variant`,
+    { method: "POST" }
+  );
+  return handleJson<GroupOut>(
+    res,
+    "Nie udało się utworzyć wariantu z inną kolejnością"
+  );
+}
+
+export async function generateGroupAIVariant(
+  testId: number,
+  groupId: number,
+  instruction?: string
+): Promise<JobEnqueueResponse> {
+  const res = await apiRequest(
+    `/tests/${testId}/groups/${groupId}/generate-variant`,
+    {
+      method: "POST",
+      body: JSON.stringify(instruction != null ? { instruction } : {}),
+    }
+  );
+  return handleJson<JobEnqueueResponse>(
+    res,
+    "Nie udało się uruchomić generowania wariantu AI"
+  );
+}
+
 export async function updateQuestion(
   testId: number,
   questionId: number,
@@ -243,6 +332,24 @@ export async function bulkDeleteQuestions(
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
     throw new Error(data.detail || "Nie udało się usunąć pytań");
+  }
+}
+
+export interface ReorderQuestionsPayload {
+  question_ids: number[];
+}
+
+export async function reorderQuestions(
+  testId: number,
+  questionIds: number[]
+): Promise<void> {
+  const res = await apiRequest(`/tests/${testId}/questions/reorder`, {
+    method: "PUT",
+    body: JSON.stringify({ question_ids: questionIds }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.detail || "Nie udało się zmienić kolejności pytań");
   }
 }
 
@@ -315,4 +422,13 @@ export async function exportPdf(
 export async function getJob(jobId: number): Promise<JobOut> {
   const res = await apiRequest(`/jobs/${jobId}`);
   return handleJson<JobOut>(res, "Nie udało się pobrać statusu zadania");
+}
+
+/** Batch fetch jobs by ids (one request instead of N – avoids rate limits when polling many material jobs). */
+export async function getJobs(jobIds: number[]): Promise<JobOut[]> {
+  if (jobIds.length === 0) return [];
+  const params = new URLSearchParams();
+  jobIds.forEach((id) => params.append("ids", String(id)));
+  const res = await apiRequest(`/jobs?${params.toString()}`);
+  return handleJson<JobOut[]>(res, "Nie udało się pobrać statusów zadań");
 }

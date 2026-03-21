@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useOutletContext, useSearchParams } from "react-router-dom";
-import { generateTest, getJob, getTestConfig, type JobOut } from "../../../services/test";
+import { generateTest, getJobs, getTestConfig } from "../../../services/test";
 import {
   analyzeMaterials,
   deleteMaterial,
@@ -46,6 +46,9 @@ export interface UseGenerateTestFormResult {
     totalAll: number;
     totalDifficulty: number;
     easyPct: number;
+    libraryModalOpen: boolean;
+    onCloseLibraryModal: () => void;
+    onSelectMaterialsFromLibrary: (materialIds: number[]) => Promise<void>;
     medPct: number;
     hardPct: number;
     hasStructure: boolean;
@@ -88,6 +91,7 @@ export interface UseGenerateTestFormResult {
     handleRemoveMaterial: (materialId: number) => Promise<void>;
     handleRemoveUpload: (tempId: string) => void;
     handleGenerate: () => Promise<void>;
+    handleSelectFromLibrary: () => void;
   };
 }
 
@@ -95,6 +99,7 @@ const useGenerateTestForm = (): UseGenerateTestFormResult => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const fromTestId = searchParams.get("from");
+  const materialIdsParam = searchParams.get("materialIds");
   const { refreshSidebarTests } = useOutletContext<LayoutCtx>();
   const { startLoading, stopLoading } = useLoader();
   const {
@@ -141,7 +146,7 @@ const useGenerateTestForm = (): UseGenerateTestFormResult => {
               setMaterials(materialData);
               // Odtwarzamy połączony tekst
               const combinedText = materialData
-                .map(m => m.extracted_text)
+                .map(m => m.markdown_twin)
                 .filter(Boolean)
                 .join("\n\n");
               setSourceContent(combinedText);
@@ -182,6 +187,34 @@ const useGenerateTestForm = (): UseGenerateTestFormResult => {
   }, [fromTestId]);
 
   const [materials, setMaterials] = useState<MaterialUploadResponse[]>([]);
+
+  // Pre-fill from library: ?materialIds=1 or ?materialIds=1,2
+  useEffect(() => {
+    if (fromTestId || !materialIdsParam) return;
+    const ids = materialIdsParam
+      .split(",")
+      .map((s) => parseInt(s.trim(), 10))
+      .filter((n) => !Number.isNaN(n));
+    if (ids.length === 0) return;
+    const fetchMaterials = async () => {
+      try {
+        startLoading();
+        const materialData = await Promise.all(ids.map((id) => getMaterial(id)));
+        setMaterials(materialData);
+        setSourceType("material");
+        const combinedText = materialData
+          .map((m) => m.markdown_twin)
+          .filter(Boolean)
+          .join("\n\n");
+        setSourceContent(combinedText);
+      } catch (err) {
+        console.error("Failed to fetch materials from URL:", err);
+      } finally {
+        stopLoading();
+      }
+    };
+    fetchMaterials();
+  }, [fromTestId, materialIdsParam]);
   const [materialUploading, setMaterialUploading] = useState(false);
   const [materialError, setMaterialError] = useState<string | null>(null);
   const [materialAnalyzing, setMaterialAnalyzing] = useState(false);
@@ -195,7 +228,9 @@ const useGenerateTestForm = (): UseGenerateTestFormResult => {
       error?: string;
     }[]
   >([]);
+  const [libraryModalOpen, setLibraryModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const materialJobsRef = useRef<MaterialAnalyzeJob[]>([]);
 
   useDocumentTitle("Stwórz nowy | Inquizitor");
 
@@ -346,7 +381,7 @@ const useGenerateTestForm = (): UseGenerateTestFormResult => {
 
   const buildSourceFromMaterials = (items: MaterialUploadResponse[]) =>
     items
-      .map((item) => item.extracted_text)
+      .map((item) => item.markdown_twin)
       .filter(Boolean)
       .join("\n\n");
 
@@ -368,6 +403,65 @@ const useGenerateTestForm = (): UseGenerateTestFormResult => {
 
   const handleRemoveUpload = (tempId: string) => {
     setUploadingMaterials((prev) => prev.filter((item) => item.tempId !== tempId));
+  };
+
+  const handleSelectMaterialsFromLibrary = async (selectedMaterialIds: number[]) => {
+    if (selectedMaterialIds.length === 0) {
+      setLibraryModalOpen(false);
+      return;
+    }
+
+    try {
+      setMaterialError(null);
+      // Pobierz szczegóły wybranych materiałów
+      const selectedMaterials = await Promise.all(
+        selectedMaterialIds.map((id) => getMaterial(id))
+      );
+
+      // Sprawdź czy materiały są gotowe
+      const notReady = selectedMaterials.filter(
+        (m) => m.processing_status !== "done"
+      );
+      if (notReady.length > 0) {
+        setMaterialError(
+          `Niektóre materiały nie są jeszcze gotowe: ${notReady.map((m) => m.filename).join(", ")}`
+        );
+        return;
+      }
+
+      // Sprawdź limit stron
+      const currentPages = materials.reduce(
+        (sum, m) => sum + (m.page_count ?? 1),
+        0
+      );
+      const newPages = selectedMaterials.reduce(
+        (sum, m) => sum + (m.page_count ?? 1),
+        0
+      );
+      if (currentPages + newPages > MAX_TOTAL_PAGES) {
+        setMaterialError(
+          `Przekroczono limit 20 stron. Obecnie: ${currentPages}, nowe: ${newPages}`
+        );
+        return;
+      }
+
+      // Dodaj wybrane materiały (unikaj duplikatów)
+      setMaterials((prev) => {
+        const existingIds = new Set(prev.map((m) => m.id));
+        const newMaterials = selectedMaterials.filter(
+          (m) => !existingIds.has(m.id)
+        );
+        const combined = [...prev, ...newMaterials];
+        if (sourceType === "material") {
+          setSourceContent(buildSourceFromMaterials(combined));
+        }
+        return combined;
+      });
+
+      setLibraryModalOpen(false);
+    } catch (error: any) {
+      setMaterialError(error.message || "Nie udało się dodać materiałów z biblioteki.");
+    }
   };
 
 
@@ -415,8 +509,8 @@ const useGenerateTestForm = (): UseGenerateTestFormResult => {
         easy: easyCount,
         medium: mediumCount,
         hard: hardCount,
-        text: textPayload || undefined,
-        material_ids: sourceType === "material" ? materials.map(m => m.id) : undefined,
+        text: sourceType === "text" ? textPayload || undefined : undefined,
+        material_ids: sourceType === "material" ? materials.map((m) => m.id) : undefined,
         additional_instructions: instructions.trim() || undefined,
       });
 
@@ -461,60 +555,66 @@ const useGenerateTestForm = (): UseGenerateTestFormResult => {
     stopLoading,
   ]);
 
+  // Keep ref in sync so polling callback always sees latest list without re-running effect
   useEffect(() => {
-    if (!materialAnalyzing || !materialJobs.length) return;
+    materialJobsRef.current = materialJobs;
+  }, [materialJobs]);
+
+  useEffect(() => {
+    if (!materialAnalyzing) return;
+    const jobs = materialJobsRef.current;
+    if (jobs.length === 0) return;
 
     let cancelled = false;
     let timeoutId: number | null = null;
 
     const pollJobs = async () => {
+      const currentJobs = materialJobsRef.current;
+      if (currentJobs.length === 0 || cancelled) return;
+
       try {
-        const results: JobOut[] = await Promise.all(
-          materialJobs.map((job) => getJob(job.job_id))
-        );
+        const jobIds = currentJobs.map((j) => j.job_id);
+        const results = await getJobs(jobIds);
         if (cancelled) return;
 
-        const statuses = results.map((job) => (job.status || "").toLowerCase());
-        const allFinished = statuses.every(
-          (status) => status === "done" || status === "failed"
-        );
+        const byId = new Map(results.map((j) => [j.id, j]));
+        const finishedJobs: { mId: number; result: any; status: string; error?: string }[] = [];
+        const pendingJobs: MaterialAnalyzeJob[] = [];
 
-        if (allFinished) {
-          const failures = results.filter(
-            (job) => (job.status || "").toLowerCase() === "failed"
-          );
-          if (failures.length) {
-            setMaterialError(
-              failures[0].error ||
-                "Nie udało się wyodrębnić tekstu z części plików."
-            );
-          }
+        currentJobs.forEach((mj) => {
+          const job = byId.get(mj.job_id);
+          if (!job) return;
+          const status = (job.status || "").toLowerCase();
+          const mId = mj.material.id;
 
-          const statusUpdateByMaterialId = new Map<number, { status: string; error?: string; text?: string }>();
-          results.forEach((job, index) => {
-            const mId = materialJobs[index].material.id;
-            const res = job.result as any;
-            statusUpdateByMaterialId.set(mId, {
-              status: (job.status || "").toLowerCase(),
-              error: job.error || res?.processing_error || res?.error,
-              text: res?.extracted_text,
+          if (status === "done" || status === "failed") {
+            finishedJobs.push({
+              mId,
+              status,
+              result: job.result,
+              error: job.error || (job.result as any)?.processing_error || (job.result as any)?.error,
             });
-          });
+          } else {
+            pendingJobs.push(mj);
+          }
+        });
 
+        if (finishedJobs.length > 0) {
           setMaterials((prev) => {
             const updated = prev.map((item) => {
-              const info = statusUpdateByMaterialId.get(item.id);
+              const info = finishedJobs.find(f => f.mId === item.id);
               if (!info) return item;
+
               return {
                 ...item,
-                processing_status: info.status === "done" ? "done" : info.status === "failed" ? "failed" : item.processing_status,
-                extracted_text: info.text ?? item.extracted_text,
+                analysis_status: info.status === "done" ? "done" : "failed",
+                markdown_twin: info.result?.markdown_twin ?? item.markdown_twin,
                 processing_error: info.error ?? item.processing_error,
               };
             });
 
             const combinedText = updated
-              .map((item) => item.extracted_text)
+              .map((item) => item.markdown_twin)
               .filter(Boolean)
               .join("\n\n");
 
@@ -525,20 +625,31 @@ const useGenerateTestForm = (): UseGenerateTestFormResult => {
             return updated;
           });
 
+          const firstFailure = finishedJobs.find(f => f.status === "failed");
+          if (firstFailure) {
+            setMaterialError(firstFailure.error || "Nie udało się przeanalizować części plików.");
+          }
+        }
+
+        if (pendingJobs.length === 0) {
           setMaterialAnalyzing(false);
           setMaterialJobs([]);
+          materialJobsRef.current = [];
           return;
         }
 
-        timeoutId = window.setTimeout(pollJobs, 1500);
+        materialJobsRef.current = pendingJobs;
+        setMaterialJobs(pendingJobs);
+        timeoutId = window.setTimeout(pollJobs, 1000);
       } catch (err: any) {
         if (cancelled) return;
         setMaterialError(err.message || "Nie udało się pobrać statusu analizy.");
-        timeoutId = window.setTimeout(pollJobs, 1500);
+        timeoutId = window.setTimeout(pollJobs, 1000);
       }
     };
 
-    pollJobs();
+    // Schedule first poll in 1s (never call pollJobs() immediately → avoids effect re-run request storm)
+    timeoutId = window.setTimeout(pollJobs, 1000);
 
     return () => {
       cancelled = true;
@@ -579,6 +690,9 @@ const useGenerateTestForm = (): UseGenerateTestFormResult => {
       materialLimitExceeded,
       canGenerate,
       primaryValidationError,
+      libraryModalOpen,
+      onCloseLibraryModal: () => setLibraryModalOpen(false),
+      onSelectMaterialsFromLibrary: handleSelectMaterialsFromLibrary,
     },
     status: { 
       genError, 
@@ -610,6 +724,9 @@ const useGenerateTestForm = (): UseGenerateTestFormResult => {
       handleRemoveMaterial,
       handleRemoveUpload,
       handleGenerate,
+      handleSelectFromLibrary: () => {
+        setLibraryModalOpen(true);
+      },
     },
   };
 };

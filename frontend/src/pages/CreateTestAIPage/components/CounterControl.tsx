@@ -27,13 +27,13 @@ const CounterButton = styled(Button)`
   border-radius: 0;
   min-width: 40px;
   height: 100%;
-  background: rgba(76, 175, 80, 0.12);
+  background: ${({ theme }) => theme.colors.tint.t5};
   color: ${({ theme }) => theme.colors.shade.s2};
   box-shadow: none;
   border: none;
 
   &:hover:enabled {
-    background: rgba(76, 175, 80, 0.18);
+    background: ${({ theme }) => theme.colors.tint.t4};
   }
 `;
 

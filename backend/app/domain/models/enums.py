@@ -24,20 +24,33 @@ class JobType(Enum):
     TEST_GENERATION = "test_generation"
     PDF_EXPORT = "pdf_export"
     MATERIAL_PROCESSING = "material_processing"
+    MATERIAL_ANALYSIS = "material_analysis"
     QUESTIONS_REGENERATION = "questions_regeneration"
     QUESTIONS_CONVERSION = "questions_conversion"
+    GROUP_AI_VARIANT = "group_ai_variant"
 
 
 class MaterialType(Enum):
     FILE = "file"
     TEXT = "text"
 
+class AnalysisStatus(Enum):
+    PENDING = "pending"
+    DONE = "done"
+    FAILED = "failed"
+
+class RoutingTier(Enum):
+    FAST = "fast"
+    REASONING = "reasoning"
+
 
 __all__ = [
+    "AnalysisStatus",
     "JobStatus",
     "JobType",
     "MaterialType",
     "ProcessingStatus",
     "QuestionDifficulty",
+    "RoutingTier",
 ]
 

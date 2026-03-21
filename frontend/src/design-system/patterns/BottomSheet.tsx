@@ -29,7 +29,7 @@ const Backdrop = styled.div<{ $isClosing?: boolean }>`
 `;
 
 const SheetContainer = styled(Box)<{ $offset?: number, $isDragging?: boolean, $isClosing?: boolean }>`
-  background: white;
+  background: ${({ theme }) => theme.colors.neutral.white};
   border-radius: ${({ theme }) => `${theme.radii.xl} ${theme.radii.xl} 0 0`};
   box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.15);
   width: 100%;
@@ -53,7 +53,7 @@ const SheetContainer = styled(Box)<{ $offset?: number, $isDragging?: boolean, $i
 const Handle = styled.div`
   width: 40px;
   height: 4px;
-  background: rgba(0, 0, 0, 0.1);
+  background: ${({ theme }) => theme.colors.neutral.greyBlue};
   border-radius: 2px;
   margin: 12px auto;
   cursor: grab;

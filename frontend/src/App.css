@@ -10,7 +10,8 @@ html, body {
   height: 100vh;
   height: 100dvh;
   overflow: hidden; /* Blokujemy scroll przeglądarki */
-  background-color: #f9f9f9;
+  /* Synced from theme by ThemeSync – matches light/dark/eye-friendly */
+  background-color: var(--surface-page, #f5f7fa);
 }
 
 #root {

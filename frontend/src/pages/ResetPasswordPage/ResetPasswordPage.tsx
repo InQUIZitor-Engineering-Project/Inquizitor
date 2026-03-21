@@ -66,10 +66,10 @@ const ResetPasswordPage: React.FC = () => {
 
   if (!token) {
     return (
-        <AuthLayout
-          illustrationSrc={loginIllustration}
-          illustrationAlt="Reset Password Error"
-          left={
+      <AuthLayout
+        illustrationSrc={loginIllustration}
+        illustrationAlt="Ilustracja błędu resetowania hasła"
+        left={
             <Stack $gap="lg">
               <MobileHide>
                 <AuthLogos />
@@ -88,7 +88,7 @@ const ResetPasswordPage: React.FC = () => {
   return (
     <AuthLayout
       illustrationSrc={loginIllustration}
-      illustrationAlt="Reset Password Illustration"
+      illustrationAlt="Ilustracja resetowania hasła w systemie InQUIZitor"
       left={
         <Stack $gap="lg">
           <MobileHide>

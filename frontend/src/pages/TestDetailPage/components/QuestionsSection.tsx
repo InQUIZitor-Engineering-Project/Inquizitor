@@ -1,4 +1,18 @@
 import React from "react";
+import styled, { useTheme } from "styled-components";
+import {
+  DndContext,
+  type DragEndEvent,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { Box, Button, Flex, Stack, Text } from "../../../design-system/primitives";
 import { QuestionCard } from "../../../design-system/patterns";
 import QuestionView from "./QuestionView";
@@ -7,6 +21,25 @@ import MetaSummary from "./MetaSummary";
 import type { QuestionOut } from "../../../services/test";
 import { MathText } from "../../../components/MathText/MathText";
 import { MAX_QUESTIONS_TOTAL } from "../../CreateTestAIPage/constants";
+
+const DragHandle = styled.div<{ $disabled?: boolean }>`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  color: ${({ theme }) => theme.colors.neutral.grey};
+  cursor: ${({ $disabled }) => ($disabled ? "default" : "grab")};
+  touch-action: none;
+  &:hover {
+    background: ${({ theme, $disabled }) => ($disabled ? "transparent" : theme.colors.neutral.silver)};
+    color: ${({ theme, $disabled }) => ($disabled ? theme.colors.neutral.grey : theme.colors.neutral.dGrey)};
+  }
+  &:active {
+    cursor: ${({ $disabled }) => ($disabled ? "default" : "grabbing")};
+  }
+`;
 
 export interface QuestionsSectionProps {
   questions: QuestionOut[];
@@ -37,6 +70,11 @@ export interface QuestionsSectionProps {
     toggleSelect: (qid: number) => void;
     selectAll: () => void;
     clearSelection: () => void;
+    onReorderQuestions?: (questionIds: number[]) => Promise<void>;
+    /** Select this question and open regenerate modal. */
+    onRegenerateForQuestion?: (qId: number) => void;
+    /** Select this question and open type (open/closed) modal. */
+    onSettingsForQuestion?: (qId: number) => void;
   };
   stateFlags: {
     savingEdit: boolean;
@@ -45,6 +83,58 @@ export interface QuestionsSectionProps {
     missingCorrectLive: boolean;
     ensureChoices: (choices?: string[] | null) => string[];
   };
+}
+
+function SortableQuestionRow({
+  id,
+  disabled,
+  children,
+  renderView,
+}: {
+  id: number;
+  disabled: boolean;
+  children?: React.ReactNode;
+  renderView: (handle: React.ReactNode) => React.ReactNode;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id, disabled });
+
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  const handle = disabled ? null : (
+    <DragHandle
+      $disabled={disabled}
+      {...listeners}
+      {...attributes}
+      title="Zmień kolejność"
+      aria-label="Zmień kolejność"
+    >
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+        <circle cx="8" cy="6" r="2" />
+        <circle cx="16" cy="6" r="2" />
+        <circle cx="8" cy="12" r="2" />
+        <circle cx="16" cy="12" r="2" />
+        <circle cx="8" cy="18" r="2" />
+        <circle cx="16" cy="18" r="2" />
+      </svg>
+    </DragHandle>
+  );
+
+  return (
+    <div ref={setNodeRef} style={style}>
+      {children ?? renderView(handle)}
+    </div>
+  );
 }
 
 const QuestionsSection: React.FC<QuestionsSectionProps> = ({
@@ -57,7 +147,27 @@ const QuestionsSection: React.FC<QuestionsSectionProps> = ({
   actions,
   stateFlags,
 }) => {
+  const theme = useTheme();
   const canAdd = questions.length < MAX_QUESTIONS_TOTAL;
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 8 },
+    })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id || !actions.onReorderQuestions) return;
+    const oldIndex = questions.findIndex((q) => q.id === active.id);
+    const newIndex = questions.findIndex((q) => q.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+    const reordered = [...questions];
+    const [removed] = reordered.splice(oldIndex, 1);
+    reordered.splice(newIndex, 0, removed);
+    actions.onReorderQuestions(reordered.map((q) => q.id));
+  };
+
   const renderChoiceList = (question: QuestionOut) => (
     <Stack $gap="sm" className="ph-no-capture">
       {(question.choices || []).map((choice, ci) => {
@@ -69,17 +179,23 @@ const QuestionsSection: React.FC<QuestionsSectionProps> = ({
             $align="center"
             $p="sm"
             $radius="md"
-            $bg={isCorrect ? "rgba(76, 175, 80, 0.12)" : "#f3f4f6"}
+            $bg={
+              isCorrect
+                ? theme.colors.tint.t5
+                : theme.colors.neutral.silver
+            }
             $border={
               isCorrect
-                ? "2px solid #4caf50"
-                : "1px solid rgba(0,0,0,0.08)"
+                ? `2px solid ${theme.colors.brand.primary}`
+                : `1px solid ${theme.colors.neutral.greyBlue}`
             }
           >
-            <Text $variant="body3" $weight="medium">
+            <Text $variant="body3" $weight="medium" $tone="default">
               {String.fromCharCode(65 + ci)}.
             </Text>
-            <MathText text={choice} />
+            <Box>
+              <MathText text={choice} />
+            </Box>
           </Flex>
         );
       })}
@@ -87,7 +203,7 @@ const QuestionsSection: React.FC<QuestionsSectionProps> = ({
   );
 
   const renderOpenAnswerPlaceholder = () => (
-    <Box $border="1px dashed #ccc" $radius="md" $bg="#fff" $p="sm" $height="80px" className="ph-no-capture">
+    <Box $border={`1px dashed ${theme.colors.neutral.greyBlue}`} $radius="md" $bg="transparent" $p="sm" $height="80px" className="ph-no-capture">
       <Text $variant="body4" $tone="muted" style={{ fontStyle: "italic" }}>
         Odpowiedź otwarta…
       </Text>
@@ -110,51 +226,79 @@ const QuestionsSection: React.FC<QuestionsSectionProps> = ({
         </Flex>
       </Flex>
 
-      {questions.map((q, idx) => {
-        const isEditing = editingId === q.id;
-        if (isEditing) {
-          return (
-            <QuestionCard
-              key={q.id}
-              index={idx}
-              title={
-                <Text $variant="body2" $weight="medium">
-                  Edytuj pytanie
-                </Text>
-              }
-            >
-              <QuestionEditor
-                draft={draft}
-                missingCorrectLive={stateFlags.missingCorrectLive}
-                editorError={stateFlags.editorError}
-                saving={stateFlags.savingEdit}
-                onToggleClosed={actions.toggleDraftClosed}
-                onSetDifficulty={actions.setDraftDifficulty}
-                onTextChange={actions.onTextChange}
-                onChangeChoice={actions.updateDraftChoice}
-                onToggleCorrect={(value, next) => actions.toggleDraftCorrect(value, next)}
-                onRemoveChoice={actions.removeChoiceRow}
-                onAddChoice={actions.addDraftChoiceRow}
-                onSave={actions.handleSaveEdit}
-                onCancel={actions.cancelEdit}
-                ensureChoices={stateFlags.ensureChoices}
+      <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+        <SortableContext
+          items={questions.map((q) => q.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          {questions.map((q, idx) => {
+            const isEditing = editingId === q.id;
+            return (
+              <SortableQuestionRow
+                key={q.id}
+                id={q.id}
+                disabled={isAdding || isEditing}
+                renderView={(dragHandle) =>
+                  isEditing ? (
+                    <QuestionCard
+                      index={idx}
+                      title={
+                        <Text $variant="body2" $weight="medium">
+                          Edytuj pytanie
+                        </Text>
+                      }
+                    >
+                      <QuestionEditor
+                        draft={draft}
+                        missingCorrectLive={stateFlags.missingCorrectLive}
+                        editorError={stateFlags.editorError}
+                        saving={stateFlags.savingEdit}
+                        onToggleClosed={actions.toggleDraftClosed}
+                        onSetDifficulty={actions.setDraftDifficulty}
+                        onTextChange={actions.onTextChange}
+                        onChangeChoice={actions.updateDraftChoice}
+                        onToggleCorrect={(value, next) =>
+                          actions.toggleDraftCorrect(value, next)
+                        }
+                        onRemoveChoice={actions.removeChoiceRow}
+                        onAddChoice={actions.addDraftChoiceRow}
+                        onSave={actions.handleSaveEdit}
+                        onCancel={actions.cancelEdit}
+                        ensureChoices={stateFlags.ensureChoices}
+                      />
+                    </QuestionCard>
+                  ) : (
+                    <QuestionView
+                      question={q}
+                      index={idx}
+                      onEdit={() => actions.startEdit(q)}
+                      onDelete={() => actions.handleDelete(q.id)}
+                      onRegenerate={
+                        actions.onRegenerateForQuestion
+                          ? () => actions.onRegenerateForQuestion!(q.id)
+                          : undefined
+                      }
+                      onSettings={
+                        actions.onSettingsForQuestion
+                          ? () => actions.onSettingsForQuestion!(q.id)
+                          : undefined
+                      }
+                      choiceRenderer={() =>
+                        q.is_closed
+                          ? renderChoiceList(q)
+                          : renderOpenAnswerPlaceholder()
+                      }
+                      isSelected={selectedIds.includes(q.id)}
+                      onSelect={actions.toggleSelect}
+                      dragHandle={dragHandle}
+                    />
+                  )
+                }
               />
-            </QuestionCard>
-          );
-        }
-        return (
-          <QuestionView
-            key={q.id}
-            question={q}
-            index={idx}
-            onEdit={() => actions.startEdit(q)}
-            onDelete={() => actions.handleDelete(q.id)}
-            choiceRenderer={() => (q.is_closed ? renderChoiceList(q) : renderOpenAnswerPlaceholder())}
-            isSelected={selectedIds.includes(q.id)}
-            onSelect={actions.toggleSelect}
-          />
-        );
-      })}
+            );
+          })}
+        </SortableContext>
+      </DndContext>
 
       {isAdding && (
         <QuestionCard

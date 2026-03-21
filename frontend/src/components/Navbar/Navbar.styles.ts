@@ -151,19 +151,39 @@ export const NavLinks = styled.div`
   }
 `;
 
-export const StyledLink = styled(Link)`
-  ${({ theme }) => `
+export const StyledLink = styled(Link)<{ $active?: boolean }>`
+  ${({ theme, $active }) => `
     font-family: ${theme.typography.body.medium.body2.fontFamily};
     font-size: ${theme.typography.body.medium.body2.fontSize};
-    font-weight: ${theme.typography.body.medium.body2.fontWeight};
+    font-weight: 600;
     line-height: ${theme.typography.body.medium.body2.lineHeight};
-    color: ${theme.colors.neutral.lGrey};
+    color: ${$active ? theme.colors.brand.primary : theme.colors.neutral.dGrey};
   `}
   white-space: nowrap;      /* żeby się nie łamały słowa w połowie */
-  transition: color 0.2s;
+  transition: all 0.2s ease;
+  padding: 6px 12px;
+  border-radius: 6px;
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 12px;
+    right: 12px;
+    height: 2px;
+    background-color: ${({ theme }) => theme.colors.brand.primary};
+    transform: scaleX(${({ $active }) => ($active ? 1 : 0)});
+    transition: transform 0.2s ease;
+    border-radius: 2px;
+  }
 
   &:hover {
     color: ${({ theme }) => theme.colors.brand.primary};
+    
+    &::after {
+      transform: scaleX(1);
+    }
   }
 `;
 
@@ -244,8 +264,8 @@ export const RegisterButton = styled.a`
 
 export const NotificationBadge = styled.span`
   position: absolute;
-  background-color: #ff4d4f;
-  color: white;
+  background-color: ${({ theme }) => theme.colors.danger.main};
+  color: ${({ theme }) => theme.tone.inverted};
   border-radius: 10px;
   min-width: 18px;
   height: 18px;
@@ -254,10 +274,10 @@ export const NotificationBadge = styled.span`
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid white;
+  border: 2px solid ${({ theme }) => theme.colors.neutral.white};
   font-weight: bold;
   z-index: 10;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  box-shadow: ${({ theme }) => theme.shadows["2px"]};
 
   top: 0;
   right: 0;
@@ -267,7 +287,7 @@ export const NotificationBadge = styled.span`
     top: 50%;
     right: 12px;
     transform: translateY(-50%);
-    border: 1px solid white;
+    border: 1px solid ${({ theme }) => theme.colors.neutral.white};
   }
 `;
 

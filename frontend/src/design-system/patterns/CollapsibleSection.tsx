@@ -24,7 +24,7 @@ const HeaderButton = styled.button`
 const Chevron = styled.div<{ $open?: boolean }>`
   display: flex;
   align-items: center;
-  color: #666;
+  color: ${({ theme }) => theme.colors.neutral.grey};
   transition: transform 0.2s ease;
   transform: ${({ $open }) => ($open ? "rotate(180deg)" : "rotate(0deg)")};
 `;

@@ -89,14 +89,14 @@ const Hero: React.FC = () => {
   };
 
   return (
-    <HeroSection $bg="#f5f6f8" $py="xxl">
+    <HeroSection $bg="transparent" $py="xxl">
       <PageContainer>
         <HeroGrid>
           <HeroImage>
             <Box
               as="img"
               src={heroImg}
-              alt="Hero Illustration"
+              alt="Ilustracja główna Inquizitor - tworzenie quizów"
               style={{ width: "100%", maxWidth: "100%", objectFit: "contain" }}
             />
           </HeroImage>

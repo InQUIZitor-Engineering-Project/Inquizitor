@@ -1,23 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useOutletContext, useParams } from "react-router-dom";
-import {
-  getTestDetail,
-  deleteTest,
-  type TestDetail,
-  type QuestionOut,
-} from "../../../services/test";
+import { getTestDetail, deleteTest, type TestDetail } from "../../../services/test";
 
 type LayoutCtx = { refreshSidebarTests: () => Promise<void> };
-
-const difficultyOrder: Record<number, number> = { 1: 0, 2: 1, 3: 2 };
-
-const sortQuestions = (qs: QuestionOut[]) =>
-  [...qs].sort((a, b) => {
-    const oa = difficultyOrder[a.difficulty] ?? 99;
-    const ob = difficultyOrder[b.difficulty] ?? 99;
-    if (oa !== ob) return oa - ob;
-    return (a.id || 0) - (b.id || 0);
-  });
 
 export interface UseTestDataResult {
   data: TestDetail | null;
@@ -50,7 +35,7 @@ const useTestData = (): UseTestDataResult => {
     }
     getTestDetail(id)
       .then((detail) => {
-        setData({ ...detail, questions: sortQuestions(detail.questions) });
+        setData(detail);
         setError(null);
       })
       .catch((e) => setError(e.message))
@@ -60,7 +45,7 @@ const useTestData = (): UseTestDataResult => {
   const refresh = async () => {
     if (!testIdNum) return;
     const detail = await getTestDetail(testIdNum);
-    setData({ ...detail, questions: sortQuestions(detail.questions) });
+    setData(detail);
   };
 
   const deleteCurrent = async (id: number) => {
@@ -72,5 +57,4 @@ const useTestData = (): UseTestDataResult => {
   return { data, loading, error, refresh, deleteCurrent, setData };
 };
 
-export { sortQuestions };
 export default useTestData;

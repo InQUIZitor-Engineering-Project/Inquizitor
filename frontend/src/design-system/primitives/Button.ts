@@ -28,7 +28,7 @@ const sizeStyles = {
 const variantStyles = (theme: DefaultTheme, variant: ButtonVariant) => {
   const base = css`
     border: none;
-    color: #ffffff;
+    color: ${theme.tone.inverted};
     background: ${theme.colors.brand.primary};
     box-shadow: ${theme.elevation.md};
     &:hover {
@@ -38,14 +38,14 @@ const variantStyles = (theme: DefaultTheme, variant: ButtonVariant) => {
   `;
 
   const info = css`
-    color: #ffffff;
+    color: ${theme.tone.inverted};
     background: ${theme.colors.brand.info};
     border: none;
     box-shadow: ${theme.elevation.md};
     &:hover {
       transform: translateY(-1px);
       box-shadow: ${theme.elevation.lg};
-      background: #1e88e5;
+      filter: brightness(1.08);
     }
   `;
 
@@ -55,7 +55,7 @@ const variantStyles = (theme: DefaultTheme, variant: ButtonVariant) => {
     border: 1px solid ${theme.colors.neutral.whiteStroke};
     box-shadow: none;
     &:hover {
-      background: #eef2f5;
+      background: ${theme.colors.tint.t5};
       border-color: ${theme.colors.neutral.greyBlue};
       color: ${theme.colors.neutral.black};
       box-shadow: ${theme.elevation.sm};
@@ -65,10 +65,10 @@ const variantStyles = (theme: DefaultTheme, variant: ButtonVariant) => {
   const outline = css`
     background: transparent;
     color: ${theme.colors.brand.primary};
-    border: 1px solid rgba(76, 175, 80, 0.5);
+    border: 1px solid ${theme.colors.brand.primary};
     box-shadow: none;
     &:hover {
-      background: rgba(76, 175, 80, 0.08);
+      background: ${theme.colors.tint.t5};
     }
   `;
 
@@ -84,13 +84,13 @@ const variantStyles = (theme: DefaultTheme, variant: ButtonVariant) => {
   `;
 
   const success = css`
-    background: rgba(76, 175, 80, 0.1);
+    background: ${theme.colors.tint.t5};
     color: ${theme.colors.shade.s2};
-    border: 1px solid rgba(76, 175, 80, 0.3);
+    border: 1px solid ${theme.colors.neutral.greyBlue};
     box-shadow: none;
     &:hover {
-      background: rgba(76, 175, 80, 0.16);
-      box-shadow: 0 3px 8px rgba(76, 175, 80, 0.18);
+      background: ${theme.colors.tint.t4};
+      box-shadow: ${theme.elevation.sm};
     }
   `;
 

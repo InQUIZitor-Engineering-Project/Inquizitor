@@ -4,7 +4,12 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 
 from app.api.dependencies import get_test_service, get_user_service
 from app.api.schemas.tests import TestOut
-from app.api.schemas.users import ChangePasswordRequest, UserRead, UserStatistics
+from app.api.schemas.users import (
+    ChangePasswordRequest,
+    UserConsentsUpdate,
+    UserRead,
+    UserStatistics,
+)
 from app.application.services import TestService, UserService
 from app.core.security import get_current_user
 from app.db.models import User
@@ -75,6 +80,36 @@ def change_my_password(
         ) from exc
 
     return {"detail": "Hasło zostało pomyślnie zmienione."}
+
+
+@router.put("/me/consents", status_code=status.HTTP_200_OK)
+def update_my_consents(
+    payload: UserConsentsUpdate,
+    current_user: Annotated[User, Depends(get_current_user)],
+    user_service: Annotated[UserService, Depends(get_user_service)],
+) -> dict[str, str]:
+    if current_user.id is None:
+        raise HTTPException(status_code=401, detail="User ID is missing")
+
+    user_service.update_consents(
+        user_id=current_user.id,
+        terms_accepted=payload.terms_accepted,
+        marketing_accepted=payload.marketing_accepted,
+    )
+    return {"detail": "Zgody zostały zaktualizowane."}
+
+
+@router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
+def delete_my_account(
+    current_user: Annotated[User, Depends(get_current_user)],
+    user_service: Annotated[UserService, Depends(get_user_service)],
+) -> Response:
+    if current_user.id is None:
+        raise HTTPException(status_code=401, detail="User ID is missing")
+
+    user_service.delete_account(user_id=current_user.id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
 
 __all__ = ["router"]
 
