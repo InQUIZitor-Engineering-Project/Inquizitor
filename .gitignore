@@ -49,6 +49,8 @@ coverage.xml
 dist/
 build/
 node_modules/
+.next/
+*.tsbuildinfo
 
 # Uploaded files
 backend/uploads/
