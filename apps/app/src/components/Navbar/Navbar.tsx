@@ -203,7 +203,7 @@ const Navbar: React.FC = () => {
     await withLoader(async () => {
       closeMenu();
       await logout();
-      navigate("/login", { replace: true });
+      window.location.replace(SITE_URL);
     });
   };
 
