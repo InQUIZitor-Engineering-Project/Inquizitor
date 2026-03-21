@@ -31,17 +31,6 @@ const FieldWrapper = styled.div`
   margin-bottom: 10px;
 `;
 
-const VariantModeWrapper = styled(Box)`
-  width: 100%;
-  max-width: 50%;
-  margin-left: 28px;
-  margin-top: 8px;
-
-  ${({ theme }) => theme.media.down("sm")} {
-    max-width: 100%;
-    margin-left: 0;
-  }
-`;
 
 const SectionHeader: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <Text 
@@ -204,34 +193,6 @@ const ConfigSection: React.FC<PdfConfigSectionProps> = ({
              checked={config.include_answer_key}
              onChange={(checked) => onChange(cfg => ({ ...cfg, include_answer_key: checked }))}
           />
-        </Stack>
-      </Box>
-
-      <Box>
-        <SectionHeader>Warianty</SectionHeader>
-        <Stack $gap="xs">
-          <ConfigCheckbox 
-             id="pdf-generate-variants"
-             label="Generuj Grupę A i B"
-             checked={config.generate_variants}
-             onChange={(checked) => onChange(cfg => ({ ...cfg, generate_variants: checked }))}
-          />
-
-          {config.generate_variants && (
-            <VariantModeWrapper>
-                <FormField label="Tryb drugiej grupy" fullWidth>
-                <CustomSelect
-                    value={config.variant_mode || "shuffle"}
-                    $fullWidth
-                    options={[
-                      { value: "shuffle", label: "Zamień kolejność pytań i odpowiedzi" },
-                      { value: "llm_variant", label: "Nowe pytania o tej samej trudności" },
-                    ]}
-                    onChange={(value) => onChange((cfg) => ({ ...cfg, variant_mode: value as any }))}
-                />
-                </FormField>
-            </VariantModeWrapper>
-            )}
         </Stack>
       </Box>
 

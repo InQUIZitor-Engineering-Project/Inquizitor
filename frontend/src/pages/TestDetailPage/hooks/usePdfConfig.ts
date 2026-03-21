@@ -11,8 +11,6 @@ const defaultPdfConfig: PdfExportConfig = {
   answer_space_style: "blank",
   space_height_cm: 3,
   include_answer_key: false,
-  generate_variants: false,
-  variant_mode: "shuffle",
   student_header: true,
   use_scratchpad: false,
   mark_multi_choice: true,

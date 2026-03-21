@@ -32,14 +32,6 @@ const FieldWrapper = styled.div`
   display: block;
 `;
 
-const VariantModeWrapper = styled(Box)`
-  width: 100%;
-  max-width: 50%;
-
-  ${({ theme }) => theme.media.down("sm")} {
-    max-width: 100%;
-  }
-`;
 
 export interface PdfConfigSectionProps {
   config: PdfExportConfig;
@@ -69,7 +61,6 @@ const PdfConfigSection: React.FC<PdfConfigSectionProps> = ({
     config.space_height_cm !== 3 ||
     config.include_answer_key ||
     config.use_scratchpad ||
-    config.generate_variants ||
     !config.mark_multi_choice;
 
   const [spaceHeight, setSpaceHeight] = useState(String(config.space_height_cm ?? 3));
@@ -255,45 +246,6 @@ const PdfConfigSection: React.FC<PdfConfigSectionProps> = ({
             </label>
           </Flex>
         </FormField>
-
-        <FormField fullWidth>
-          <Flex $align="center" $gap="xs">
-            <Checkbox
-              id="pdf-generate-variants"
-              checked={config.generate_variants}
-              onChange={(e) =>
-                onChange((cfg) => ({
-                  ...cfg,
-                  generate_variants: e.target.checked,
-                }))
-              }
-            />
-            <label htmlFor="pdf-generate-variants" style={{ cursor: "pointer" }}>
-              Wygeneruj dwie wersje (grupa A i B)
-            </label>
-          </Flex>
-        </FormField>
-
-        {config.generate_variants && (
-          <VariantModeWrapper>
-            <FormField label="Tryb drugiej grupy" fullWidth>
-              <CustomSelect
-                value={config.variant_mode || "shuffle"}
-                $fullWidth
-                options={[
-                  { value: "shuffle", label: "Zamień kolejność pytań i odpowiedzi" },
-                  { value: "llm_variant", label: "Nowe pytania o tej samej trudności" },
-                ]}
-                onChange={(value) =>
-                  onChange((cfg) => ({
-                    ...cfg,
-                    variant_mode: value as PdfExportConfig["variant_mode"],
-                  }))
-                }
-              />
-            </FormField>
-          </VariantModeWrapper>
-        )}
 
         <Flex $justify="space-between" $align="center" $gap="sm" $wrap="wrap" $mt="sm">
           <Button
