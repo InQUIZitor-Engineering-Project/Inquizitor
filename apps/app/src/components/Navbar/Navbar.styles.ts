@@ -303,3 +303,23 @@ export const RelativeContainer = styled.div`
   flex-shrink: 0;
   line-height: 1;
 `;
+
+export const ExternalStyledLink = styled.a<{ $active?: boolean }>`
+  ${({ theme, $active }) => `
+    font-family: ${theme.typography.body.medium.body2.fontFamily};
+    font-size: ${theme.typography.body.medium.body2.fontSize};
+    font-weight: 600;
+    line-height: ${theme.typography.body.medium.body2.lineHeight};
+    color: ${$active ? theme.colors.brand.primary : theme.colors.neutral.dGrey};
+  `}
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  padding: 6px 12px;
+  border-radius: 6px;
+  position: relative;
+  text-decoration: none;
+
+  &:hover {
+    color: ${({ theme }) => theme.colors.brand.primary};
+  }
+`;
