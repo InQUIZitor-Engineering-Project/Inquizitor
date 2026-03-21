@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom"; 
 import { Box, Flex, Stack, Text, Button } from "../../design-system/primitives";
 import { AlertBar } from "../../design-system/patterns";
@@ -11,13 +11,7 @@ const PdfPreviewPage: React.FC = () => {
   const navigate = useNavigate();
   const { state, actions } = usePdfPreview();
 
-  const NAVBAR_HEIGHT = "65px"; 
-
-  // Optimize key generation - only recalculate when relevant config values change
-  const previewKey = useMemo(() => {
-    const cfg = state.pdfConfig;
-    return `${cfg.answer_space_style}-${cfg.space_height_cm}-${cfg.generate_variants}-${cfg.variant_mode}-${cfg.student_header}-${cfg.use_scratchpad}-${cfg.include_answer_key}-${cfg.mark_multi_choice}`;
-  }, [state.pdfConfig]);
+  const NAVBAR_HEIGHT = "65px";
 
   useEffect(() => {
     const originalStyle = window.getComputedStyle(document.body).overflow;
@@ -107,10 +101,9 @@ const PdfPreviewPage: React.FC = () => {
         >
           <Flex $justify="center" $align="flex-start" $minHeight="100%">
             <Box>
-              <LiveTestPreview 
-                key={previewKey}
-                data={state.data} 
-                config={state.pdfConfig} 
+              <LiveTestPreview
+                data={state.data}
+                config={state.pdfConfig}
               />
             </Box>
           </Flex>

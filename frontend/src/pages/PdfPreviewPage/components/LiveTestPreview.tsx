@@ -10,10 +10,6 @@ const CONTENT_HEIGHT_PX = PAGE_HEIGHT_PX - PAGE_PADDING_Y_PX;
 const PX_TO_CM = 37.8; 
 
 // --- STYLES ---
-const FONT_MAP: Record<string, string> = {
-  roboto: "'Roboto', sans-serif",
-  serif: "'Merriweather', serif",
-};
 const hexToRgba = (hex: string, alpha: number) => {
     const r = parseInt(hex.slice(1, 3), 16);
     const g = parseInt(hex.slice(3, 5), 16);
@@ -22,7 +18,7 @@ const hexToRgba = (hex: string, alpha: number) => {
 };
 const BRAND_COLOR = "#4CAF4F"; 
 
-const A4Page = styled.div<{ $fontKey: string }>`
+const A4Page = styled.div`
   width: 210mm;
   height: 297mm;
   background: white;
@@ -32,7 +28,7 @@ const A4Page = styled.div<{ $fontKey: string }>`
   overflow: hidden;
   position: relative;
   box-sizing: border-box;
-  font-family: ${props => FONT_MAP[props.$fontKey] || FONT_MAP['roboto']};
+  font-family: 'Roboto', sans-serif;
   font-size: 11pt;
   line-height: 1.4;
   color: #000;
@@ -115,7 +111,6 @@ const SingleQuestionBlock: React.FC<{ q: QuestionOut, idx: number, config: PdfEx
 const LiveTestPreview: React.FC<LiveTestPreviewProps> = ({ data, config }) => {
   const [pages, setPages] = useState<PageLayout[]>([]);
   const measureRef = useRef<HTMLDivElement>(null);
-  const currentFont = (config as any).font || 'roboto'; 
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -208,13 +203,13 @@ const LiveTestPreview: React.FC<LiveTestPreviewProps> = ({ data, config }) => {
 
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             {pages.map((page, pageIdx) => (
-                <A4Page key={pageIdx} $fontKey={currentFont}>
+                <A4Page key={pageIdx}>
                     
                     {page.isAnswerKey ? (
                         <>
                             <h3 style={{ color: BRAND_COLOR, marginTop: 0 }}>Klucz odpowiedzi</h3>
                             
-                            <div style={{ columnCount: 4, columnGap: '1cm' }}>
+                            <div style={{ columnCount: Math.min(4, Math.ceil(data.questions.length / 5)) || 1, columnGap: '1cm' }}>
                                 <ol style={{ marginTop: 0, paddingLeft: '1.5em', margin: 0 }}>
                                     {data.questions.map((q) => (
                                         <li key={q.id} style={{ marginBottom: '4px', breakInside: 'avoid' }}>

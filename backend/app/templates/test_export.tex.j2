@@ -236,9 +236,14 @@
   
   \begin{enumerate}
   [% for q in variant.questions %]
-    \item 
+    \item
     [% if q.is_closed and q.correct_choices %]
-      {{ q.correct_choices|join(', ')|latex_math }}
+      [%- set letters = [] -%]
+      [%- for correct_txt in q.correct_choices -%]
+        [%- set idx = q.choices.index(correct_txt) if correct_txt in q.choices else -1 -%]
+        [%- if idx >= 0 -%][%- set _ = letters.append(('ABCDEFGHIJKLMNOPQRSTUVWXYZ')[idx]) -%][%- endif -%]
+      [%- endfor -%]
+      \textbf{ {{ letters|sort|join(', ') }} }
     [% else %]
       \textit{otwarte}
     [% endif %]

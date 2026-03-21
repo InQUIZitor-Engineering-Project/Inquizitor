@@ -69,6 +69,7 @@ const PdfConfigSection: React.FC<PdfConfigSectionProps> = ({
     config.space_height_cm !== 3 ||
     config.include_answer_key ||
     config.use_scratchpad ||
+    config.generate_variants ||
     !config.mark_multi_choice;
 
   const [spaceHeight, setSpaceHeight] = useState(String(config.space_height_cm ?? 3));

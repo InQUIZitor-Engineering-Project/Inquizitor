@@ -13,7 +13,6 @@ const defaultPdfConfig: PdfExportConfig = {
   include_answer_key: false,
   generate_variants: false,
   variant_mode: "shuffle",
-  swap_order_variants: null,
   student_header: true,
   use_scratchpad: false,
   mark_multi_choice: true,
@@ -26,12 +25,14 @@ export interface UsePdfConfigResult {
     pdfJobStatus: string | null;
     pdfJobId: number | null;
     pdfInProgress: boolean;
+    exportError: string | null;
   };
   actions: {
     setPdfConfigOpen: (next: boolean) => void;
     updatePdfConfig: (updater: (cfg: PdfExportConfig) => PdfExportConfig) => void;
     resetPdfConfig: () => void;
     downloadCustomPdf: (testId: number) => Promise<void>;
+    clearExportError: () => void;
   };
 }
 
@@ -54,6 +55,7 @@ const usePdfConfig = (): UsePdfConfigResult => {
 
   const [pdfConfigOpen, setPdfConfigOpen] = useState(false);
   const [pdfInProgress, setPdfInProgress] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
   
   const {
     jobId,
@@ -107,8 +109,11 @@ const usePdfConfig = (): UsePdfConfigResult => {
     URL.revokeObjectURL(a.href);
   };
 
+  const clearExportError = useCallback(() => setExportError(null), []);
+
   const downloadCustomPdf = async (targetTestId: number) => {
     if (!targetTestId) return;
+    setExportError(null);
     setPdfInProgress(true);
     try {
       startLoading();
@@ -118,7 +123,7 @@ const usePdfConfig = (): UsePdfConfigResult => {
     } catch (e: any) {
       setPdfInProgress(false);
       stopLoading();
-      alert(e.message || "Nie udało się zainicjować eksportu PDF.");
+      setExportError(e.message || "Nie udało się zainicjować eksportu PDF.");
       resetJobPolling();
     }
   };
@@ -131,13 +136,13 @@ const usePdfConfig = (): UsePdfConfigResult => {
       const fileUrl = (jobResult as any)?.file_url || (jobResult as any)?.file_path;
       const filename = (jobResult as any)?.filename || `test_${(jobResult as any)?.test_id || "export"}.pdf`;
       if (!fileUrl) {
-        alert("Brak ścieżki do pliku w wyniku zadania.");
+        setExportError("Brak ścieżki do pliku w wyniku zadania.");
         stopLoading();
       } else {
         const resolved = resolveUrl(fileUrl);
         downloadFromUrl(resolved, filename)
           .catch((err) => {
-            alert(err.message || "Nie udało się pobrać pliku PDF.");
+            setExportError(err.message || "Nie udało się pobrać pliku PDF.");
           })
           .finally(() => {
             stopLoading();
@@ -146,7 +151,7 @@ const usePdfConfig = (): UsePdfConfigResult => {
       setPdfInProgress(false);
       resetJobPolling();
     } else if (normalized === "failed") {
-      alert(jobError || (jobResult as any)?.error || "Eksport PDF nie powiódł się.");
+      setExportError(jobError || (jobResult as any)?.error || "Eksport PDF nie powiódł się.");
       setPdfInProgress(false);
       stopLoading();
       resetJobPolling();
@@ -160,12 +165,14 @@ const usePdfConfig = (): UsePdfConfigResult => {
       pdfJobStatus: jobStatus || null,
       pdfJobId: jobId,
       pdfInProgress: pdfInProgress || isPolling,
+      exportError,
     },
-    actions: { 
-      setPdfConfigOpen, 
-      updatePdfConfig, 
-      resetPdfConfig, 
-      downloadCustomPdf 
+    actions: {
+      setPdfConfigOpen,
+      updatePdfConfig,
+      resetPdfConfig,
+      downloadCustomPdf,
+      clearExportError,
     },
   };
 };
