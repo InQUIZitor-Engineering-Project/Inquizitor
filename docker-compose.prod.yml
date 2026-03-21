@@ -57,6 +57,8 @@ services:
     build:
       context: .
       dockerfile: apps/app/Dockerfile.prod
+      args:
+        VITE_API_URL: ${VITE_API_URL:?VITE_API_URL not set}
     ports:
       - "127.0.0.1:5173:80"
     restart: unless-stopped
@@ -66,9 +68,11 @@ services:
     build:
       context: .
       dockerfile: apps/web/Dockerfile.prod
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:?NEXT_PUBLIC_API_URL not set}
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:?NEXT_PUBLIC_APP_URL not set}
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:?NEXT_PUBLIC_SITE_URL not set}
     environment:
-      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:?NEXT_PUBLIC_API_URL not set}
-      - NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL:?NEXT_PUBLIC_SITE_URL not set}
       - NODE_ENV=production
     env_file:
       - .env
