@@ -7,6 +7,7 @@ import {
   MobileToggle,
   NavLinks,
   StyledLink,
+  ExternalStyledLink,
   ButtonGroup,
   LoginLink,
   RegisterButton,
@@ -153,6 +154,8 @@ const MobileGreeting = styled(Box)`
   text-align: center;
 `;
 
+const SITE_URL = import.meta.env.VITE_SITE_URL ?? "https://inquizitor.pl";
+
 const Navbar: React.FC = () => {
   const { user, logout, unreadNotificationsCount } = useAuth();
   const navigate = useNavigate();
@@ -271,12 +274,21 @@ const Navbar: React.FC = () => {
     <NavbarContainer>
       <PageContainer>
         <DesktopBar>
-          <Link to={user ? "/dashboard" : "/"} onClick={triggerQuickLoader} style={{ minWidth: 0 }}>
-            <LogosWrapper>
-              <Logo src={logoBook} alt="Inquizitor Book Logo" />
-              <Logo src={logoText} alt="Inquizitor Text Logo" />
-            </LogosWrapper>
-          </Link>
+          {user ? (
+            <Link to="/dashboard" onClick={triggerQuickLoader} style={{ minWidth: 0 }}>
+              <LogosWrapper>
+                <Logo src={logoBook} alt="Inquizitor Book Logo" />
+                <Logo src={logoText} alt="Inquizitor Text Logo" />
+              </LogosWrapper>
+            </Link>
+          ) : (
+            <a href={SITE_URL} style={{ minWidth: 0 }}>
+              <LogosWrapper>
+                <Logo src={logoBook} alt="Inquizitor Book Logo" />
+                <Logo src={logoText} alt="Inquizitor Text Logo" />
+              </LogosWrapper>
+            </a>
+          )}
 
           <NavLinks>
             {user ? (
@@ -293,15 +305,15 @@ const Navbar: React.FC = () => {
               </>
             ) : (
               <>
-                <StyledLink to="/" onClick={triggerQuickLoader} $active={isPathActive("/")}>
+                <ExternalStyledLink href={SITE_URL}>
                   Strona główna
-                </StyledLink>
-                <StyledLink to="/about" onClick={triggerQuickLoader} $active={isPathActive("/about")}>
+                </ExternalStyledLink>
+                <ExternalStyledLink href={`${SITE_URL}/o-nas`}>
                   O nas
-                </StyledLink>
-                <StyledLink to="/pomoc" onClick={triggerQuickLoader} $active={isPathActive("/pomoc")}>
+                </ExternalStyledLink>
+                <ExternalStyledLink href={`${SITE_URL}/pomoc`}>
                   Pomoc
-                </StyledLink>
+                </ExternalStyledLink>
               </>
             )}
           </NavLinks>
@@ -328,12 +340,21 @@ const Navbar: React.FC = () => {
         </DesktopBar>
 
         <NavHeader>
-          <Link to={user ? "/dashboard" : "/"} onClick={triggerQuickLoader} style={{ minWidth: 0 }}>
-            <LogosWrapper>
-              <Logo src={logoBook} alt="Inquizitor Book Logo" />
-              <Logo src={logoText} alt="Inquizitor Text Logo" />
-            </LogosWrapper>
-          </Link>
+          {user ? (
+            <Link to="/dashboard" onClick={triggerQuickLoader} style={{ minWidth: 0 }}>
+              <LogosWrapper>
+                <Logo src={logoBook} alt="Inquizitor Book Logo" />
+                <Logo src={logoText} alt="Inquizitor Text Logo" />
+              </LogosWrapper>
+            </Link>
+          ) : (
+            <a href={SITE_URL} style={{ minWidth: 0 }}>
+              <LogosWrapper>
+                <Logo src={logoBook} alt="Inquizitor Book Logo" />
+                <Logo src={logoText} alt="Inquizitor Text Logo" />
+              </LogosWrapper>
+            </a>
+          )}
 
           <Flex $align="center" $gap="xs">
             {user && showSidebarToggle && (
@@ -368,15 +389,15 @@ const Navbar: React.FC = () => {
               </>
             ) : (
               <>
-                <StyledLink to="/" onClick={triggerQuickLoader} $active={isPathActive("/")}>
+                <ExternalStyledLink href={SITE_URL}>
                   Strona główna
-                </StyledLink>
-                <StyledLink to="/about" onClick={triggerQuickLoader} $active={isPathActive("/about")}>
+                </ExternalStyledLink>
+                <ExternalStyledLink href={`${SITE_URL}/o-nas`}>
                   O nas
-                </StyledLink>
-                <StyledLink to="/pomoc" onClick={triggerQuickLoader} $active={isPathActive("/pomoc")}>
+                </ExternalStyledLink>
+                <ExternalStyledLink href={`${SITE_URL}/pomoc`}>
                   Pomoc
-                </StyledLink>
+                </ExternalStyledLink>
               </>
             )}
           </NavLinks>
