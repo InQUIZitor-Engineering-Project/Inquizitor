@@ -58,3 +58,4 @@ backend/uploads/
 # Alembic cache (migrations ARE kept)
 alembic/__pycache__/
 alembic/versions/__pycache__/
+.turbo/
