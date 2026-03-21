@@ -1,22 +1,40 @@
 import React, { useEffect } from "react";
-import { useNavigate } from "react-router-dom"; 
-import { Box, Flex, Stack, Text, Button } from "../../design-system/primitives";
+import styled from "styled-components";
+import { useNavigate } from "react-router-dom";
+import { Box, Flex, Stack, Text, Heading, Button, Divider } from "../../design-system/primitives";
 import { AlertBar } from "../../design-system/patterns";
-import usePdfPreview from "./hooks/usePdfPreview"; 
-import ConfigSection from "./components/ConfigSection"; 
+import usePdfPreview from "./hooks/usePdfPreview";
+import ConfigSection from "./components/ConfigSection";
 import DownloadPDF from "./components/DownloadPDF";
 import LiveTestPreview from "./components/LiveTestPreview";
+
+const BackLink = styled.button`
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: ${({ theme }) => theme.colors.neutral.grey};
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: color 0.15s ease;
+
+  &:hover {
+    color: ${({ theme }) => theme.colors.neutral.dGrey};
+  }
+`;
+
+const NAVBAR_HEIGHT = "65px";
 
 const PdfPreviewPage: React.FC = () => {
   const navigate = useNavigate();
   const { state, actions } = usePdfPreview();
 
-  const NAVBAR_HEIGHT = "65px";
-
   useEffect(() => {
     const originalStyle = window.getComputedStyle(document.body).overflow;
     document.body.style.overflow = "hidden";
-    
     return () => {
       document.body.style.overflow = originalStyle;
     };
@@ -27,89 +45,104 @@ const PdfPreviewPage: React.FC = () => {
   if (!state.data) return null;
 
   return (
-      <Box 
+    <Box
+      style={{
+        position: "fixed",
+        top: NAVBAR_HEIGHT,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: "#f5f6f8",
+        display: "flex",
+        overflow: "hidden",
+      }}
+    >
+      {/* Sidebar */}
+      <Box
         style={{
-          position: "fixed",
-          top: NAVBAR_HEIGHT,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: "#f5f6f8",
+          width: 420,
+          flexShrink: 0,
+          background: "white",
+          borderRight: "1px solid #e8e8e8",
           display: "flex",
-          overflow: "hidden"
+          flexDirection: "column",
+          height: "100%",
+          zIndex: 10,
         }}
       >
-        
-        <Box 
-          $width="500px" 
-          $bg="white" 
-          style={{ 
-            borderRight: "1px solid #e0e0e0", 
-            display: "flex", 
-            flexDirection: "column",
-            height: "100%",          
-            zIndex: 10 
-          }}
+        {/* Header */}
+        <Box
+          $px="lg"
+          $pt="lg"
+          $pb="md"
+          style={{ borderBottom: "1px solid #f0f0f0", flexShrink: 0 }}
         >
-          <Box $p="lg" style={{ borderBottom: "1px solid #eee", flexShrink: 0 }}>
-            <Stack $gap="md">
-              <Box>
-                <Text $variant="body2" $tone="muted">{state.data.title}</Text>
-                <Text $variant="body1" $weight="medium">Podgląd i konfiguracja testu</Text>
-              </Box>
-              <Button 
-                onClick={() => navigate(`/tests/${state.data?.test_id}`)} 
-                $variant="info"
-                $size="sm"
-              >
-                ← Wróć do edycji
-              </Button>
-            </Stack>
+          <BackLink onClick={() => navigate(`/tests/${state.data?.test_id}`)}>
+            ← Wróć do edycji
+          </BackLink>
+          <Box $mt="sm">
+            <Heading as="h2" $level="h3" style={{ lineHeight: 1.2 }}>
+              {state.data.title}
+            </Heading>
+            <Text $variant="body3" $tone="muted" style={{ marginTop: 4 }}>
+              Konfiguracja wydruku PDF
+            </Text>
           </Box>
+        </Box>
 
-          <Box $flex={1} $overflow="auto" $p="lg">
-            <ConfigSection
-              config={state.pdfConfig}
-              onChange={(updater) => actions.setPdfConfig((cfg) => updater(cfg))}
-              onReset={actions.resetPdfConfig}
-              onValidityChange={actions.setPdfConfigValid}
-            />
-          </Box>
-          
-          <Box $p="lg" $bg="#fafafa" style={{ borderTop: "1px solid #eee", flexShrink: 0 }}>
+        {/* Scrollable config area */}
+        <Box style={{ flex: 1, overflowY: "auto", padding: "20px 20px 8px" }}>
+          <ConfigSection
+            config={state.pdfConfig}
+            onChange={(updater) => actions.setPdfConfig((cfg) => updater(cfg))}
+            onValidityChange={actions.setPdfConfigValid}
+          />
+        </Box>
+
+        {/* Footer */}
+        <Box
+          $px="lg"
+          $pt="md"
+          $pb="lg"
+          style={{ borderTop: "1px solid #f0f0f0", flexShrink: 0 }}
+        >
+          <Stack $gap="sm">
             {state.downloadError && (
-              <Box $mb="sm">
-                <AlertBar variant="danger">
-                  {state.downloadError}
-                </AlertBar>
-              </Box>
+              <AlertBar variant="danger">{state.downloadError}</AlertBar>
             )}
-            <DownloadPDF 
+            <DownloadPDF
               onDownloadPdf={actions.handleDownloadCustomPdf}
               pdfDisabled={!state.pdfConfigValid}
-              pdfDisabledReason="Popraw błędy w konfiguracji powyżej."
             />
-          </Box>
+            <Divider />
+            <Button
+              $variant="ghost"
+              $size="sm"
+              $fullWidth
+              onClick={actions.resetPdfConfig}
+            >
+              Przywróć ustawienia domyślne
+            </Button>
+          </Stack>
         </Box>
-
-        <Box 
-          $flex={1} 
-          $bg="#525659" 
-          $overflow="auto" 
-          $p="2xl" 
-          style={{ position: "relative", height: "100%" }}
-        >
-          <Flex $justify="center" $align="flex-start" $minHeight="100%">
-            <Box>
-              <LiveTestPreview
-                data={state.data}
-                config={state.pdfConfig}
-              />
-            </Box>
-          </Flex>
-        </Box>
-
       </Box>
+
+      {/* Preview area */}
+      <Box
+        style={{
+          flex: 1,
+          background: "#525659",
+          overflowY: "auto",
+          padding: "32px",
+          position: "relative",
+          height: "100%",
+        }}
+      >
+        <Flex $justify="center" $align="flex-start" style={{ minHeight: "100%" }}>
+          <LiveTestPreview data={state.data} config={state.pdfConfig} />
+        </Flex>
+      </Box>
+    </Box>
   );
 };
 

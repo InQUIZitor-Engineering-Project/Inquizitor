@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import styled from "styled-components";
-import { Box, Flex, Input, Checkbox, Button, Stack, Text } from "../../../design-system/primitives";
+import { Box, Card, Flex, Input, Checkbox, Stack, Text, Heading, Divider } from "../../../design-system/primitives";
 import { FormField, CustomSelect } from "../../../design-system/patterns";
 import type { PdfExportConfig } from "../../../services/test";
 
@@ -8,17 +8,12 @@ const ConfigGrid = styled(Box)`
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: ${({ theme }) => theme.spacing.sm};
-  margin-bottom: ${({ theme }) => theme.spacing.sm};
-  
-  ${({ theme }) => theme.media.down("sm")} {
-    grid-template-columns: 1fr;
-  }
 `;
 
 const ErrorText = styled.span`
   position: absolute;
   left: 0;
-  bottom: -18px;
+  bottom: -16px;
   font-size: 11px;
   line-height: 12px;
   color: ${({ theme }) => theme.colors.danger.main};
@@ -28,51 +23,57 @@ const ErrorText = styled.span`
 const FieldWrapper = styled.div`
   position: relative;
   display: block;
-  margin-bottom: 10px;
 `;
 
+const ToggleLabel = styled.label`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 0;
+  cursor: pointer;
+  user-select: none;
 
-const SectionHeader: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <Text 
-    $variant="body2" 
-    $tone="muted" 
-    style={{ marginBottom: 12, display: 'block', fontWeight: 500 }}
-  >
-    {children}
-  </Text>
-);
+  &:hover span {
+    color: ${({ theme }) => theme.colors.neutral.black};
+  }
+`;
 
-interface ConfigCheckboxProps {
+const ToggleLabelText = styled.span`
+  font-size: 14px;
+  font-weight: 500;
+  color: ${({ theme }) => theme.colors.neutral.dGrey};
+  line-height: 1.4;
+  transition: color 0.1s ease;
+`;
+
+interface ToggleRowProps {
   id: string;
+  label: string;
   checked: boolean;
   onChange: (checked: boolean) => void;
-  label: string;
 }
 
-const ConfigCheckbox: React.FC<ConfigCheckboxProps> = ({ id, checked, onChange, label }) => (
-  <Flex $align="center" $gap="sm">
+const ToggleRow: React.FC<ToggleRowProps> = ({ id, label, checked, onChange }) => (
+  <ToggleLabel htmlFor={id}>
+    <ToggleLabelText>{label}</ToggleLabelText>
     <Checkbox
       id={id}
       checked={checked}
       onChange={(e) => onChange(e.target.checked)}
     />
-    <label htmlFor={id} style={{ cursor: "pointer", fontSize: 14 }}>
-      {label}
-    </label>
-  </Flex>
+  </ToggleLabel>
 );
 
-export interface PdfConfigSectionProps {
+export interface ConfigSectionProps {
   config: PdfExportConfig;
   onChange: (updater: (cfg: PdfExportConfig) => PdfExportConfig) => void;
-  onReset: () => void;
   onValidityChange?: (isValid: boolean) => void;
 }
 
-const ConfigSection: React.FC<PdfConfigSectionProps> = ({
+const ConfigSection: React.FC<ConfigSectionProps> = ({
   config,
   onChange,
-  onReset,
   onValidityChange,
 }) => {
   const MIN_SPACE_HEIGHT = 1;
@@ -102,110 +103,124 @@ const ConfigSection: React.FC<PdfConfigSectionProps> = ({
     setSpaceHeight(raw);
     const error = validateSpaceHeight(raw);
     setSpaceHeightError(error);
-    
     if (!error && raw !== "") {
       onChange((cfg) => ({ ...cfg, space_height_cm: Number(raw) }));
     }
   };
 
   const handleSpaceHeightBlur = () => {
-    if (spaceHeight === "") {
-      setSpaceHeightError("Podaj liczbę od 1 do 10.");
-      return;
-    }
     const error = validateSpaceHeight(spaceHeight);
-    if (!error) {
-       onChange((cfg) => ({ ...cfg, space_height_cm: Number(spaceHeight) }));
+    setSpaceHeightError(error);
+    if (!error && spaceHeight !== "") {
+      onChange((cfg) => ({ ...cfg, space_height_cm: Number(spaceHeight) }));
     }
   };
 
   const handleSpaceHeightKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
-       handleSpaceHeightBlur();
-       (e.target as HTMLInputElement).blur();
+      handleSpaceHeightBlur();
+      (e.target as HTMLInputElement).blur();
     }
   };
 
   return (
-    <Stack $gap="xl">
-      
-      <Box>
-        <SectionHeader>Wygląd arkusza</SectionHeader>
-        
-        <ConfigGrid>
-          <FormField label="Styl pola" fullWidth>
-            <CustomSelect
-              value={config.answer_space_style}
-              $fullWidth
-              options={[
-                { value: "blank", label: "Puste miejsce" },
-                { value: "lines", label: "Linie" },
-                { value: "grid", label: "Kratka" },
-              ]}
-              onChange={(value) =>
-                onChange((cfg) => ({ ...cfg, answer_space_style: value as any }))
-              }
-            />
-          </FormField>
+    <Stack $gap="md">
 
-          <FormField label="Wysokość pola (cm)" fullWidth>
-            <FieldWrapper style={spaceHeightError ? { paddingBottom: 14 } : undefined}>
-                <Input
-                    $size="md" $fullWidth type="number" inputMode="decimal" step="any"
-                    min={MIN_SPACE_HEIGHT} max={MAX_SPACE_HEIGHT} placeholder="1-10"
+      <Card $variant="elevated">
+        <Stack $gap="sm">
+          <Box>
+            <Heading as="h3" $level="h4">Pole odpowiedzi</Heading>
+            <Text $variant="body3" $tone="muted" style={{ marginTop: 2 }}>
+              Dotyczy pytań otwartych — styl i rozmiar miejsca na odpowiedź ucznia.
+            </Text>
+          </Box>
+
+          <Box $mt="xs">
+            <ConfigGrid>
+              <FormField label="Styl pola" fullWidth>
+                <CustomSelect
+                  value={config.answer_space_style}
+                  $fullWidth
+                  options={[
+                    { value: "blank", label: "Puste miejsce" },
+                    { value: "lines", label: "Linie do pisania" },
+                    { value: "grid", label: "Kratka" },
+                  ]}
+                  onChange={(value) =>
+                    onChange((cfg) => ({ ...cfg, answer_space_style: value as PdfExportConfig["answer_space_style"] }))
+                  }
+                />
+              </FormField>
+
+              <FormField label="Wysokość (cm)" fullWidth>
+                <FieldWrapper style={spaceHeightError ? { paddingBottom: 16 } : undefined}>
+                  <Input
+                    $size="md"
+                    $fullWidth
+                    type="number"
+                    inputMode="decimal"
+                    step="any"
+                    min={MIN_SPACE_HEIGHT}
+                    max={MAX_SPACE_HEIGHT}
+                    placeholder="1–10"
                     style={{ minHeight: 41.6 }}
                     value={spaceHeight}
-                    onChange={(e) => handleSpaceHeightChange(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      handleSpaceHeightChange(e.target.value)
+                    }
                     onBlur={handleSpaceHeightBlur}
                     onKeyDown={handleSpaceHeightKeyDown}
-                />
-            {spaceHeightError && <ErrorText>{spaceHeightError}</ErrorText>}
-            </FieldWrapper>
-          </FormField>
-        </ConfigGrid>
+                  />
+                  {spaceHeightError && <ErrorText>{spaceHeightError}</ErrorText>}
+                </FieldWrapper>
+              </FormField>
+            </ConfigGrid>
+          </Box>
 
-        <ConfigCheckbox 
-          id="pdf-mark-multi-choice"
-          label="Oznacz graficznie pytania wielokrotnego wyboru"
-          checked={config.mark_multi_choice}
-          onChange={(checked) => onChange(cfg => ({ ...cfg, mark_multi_choice: checked }))}
-        />
-      </Box>
+          <Divider />
 
-      <Box>
-        <SectionHeader>Ustawienia ogólne</SectionHeader>
-        <Stack $gap="md">
-          <ConfigCheckbox 
-             id="pdf-student-header"
-             label="Dodaj linię na imię i nazwisko ucznia"
-             checked={config.student_header}
-             onChange={(checked) => onChange(cfg => ({ ...cfg, student_header: checked }))}
-          />
-          <ConfigCheckbox 
-             id="pdf-scratchpad"
-             label="Dodaj brudnopis na końcu testu"
-             checked={config.use_scratchpad}
-             onChange={(checked) => onChange(cfg => ({ ...cfg, use_scratchpad: checked }))}
-          />
-          <ConfigCheckbox 
-             id="pdf-include-answer-key"
-             label="Dołącz klucz odpowiedzi do pytań zamkniętych"
-             checked={config.include_answer_key}
-             onChange={(checked) => onChange(cfg => ({ ...cfg, include_answer_key: checked }))}
+          <ToggleRow
+            id="pdf-mark-multi-choice"
+            label="Oznacz pytania wielokrotnego wyboru"
+            checked={config.mark_multi_choice}
+            onChange={(checked) => onChange((cfg) => ({ ...cfg, mark_multi_choice: checked }))}
           />
         </Stack>
-      </Box>
+      </Card>
 
-      <Box $mt="sm">
-        <Button 
-          $size="sm" 
-          $variant="outline"
-          onClick={onReset} 
-          style={{ width: "100%" }}
-        >
-          Przywróć ustawienia domyślne
-        </Button>
-      </Box>
+      <Card $variant="elevated">
+        <Stack $gap="sm">
+          <Box>
+            <Heading as="h3" $level="h4">Zawartość arkusza</Heading>
+            <Text $variant="body3" $tone="muted" style={{ marginTop: 2 }}>
+              Dodatkowe elementy na wydruku.
+            </Text>
+          </Box>
+
+          <Flex $direction="column">
+            <ToggleRow
+              id="pdf-student-header"
+              label="Linia na imię i nazwisko ucznia"
+              checked={config.student_header}
+              onChange={(checked) => onChange((cfg) => ({ ...cfg, student_header: checked }))}
+            />
+            <Divider />
+            <ToggleRow
+              id="pdf-scratchpad"
+              label="Brudnopis na końcu testu"
+              checked={config.use_scratchpad}
+              onChange={(checked) => onChange((cfg) => ({ ...cfg, use_scratchpad: checked }))}
+            />
+            <Divider />
+            <ToggleRow
+              id="pdf-include-answer-key"
+              label="Klucz odpowiedzi (pytania zamknięte)"
+              checked={config.include_answer_key}
+              onChange={(checked) => onChange((cfg) => ({ ...cfg, include_answer_key: checked }))}
+            />
+          </Flex>
+        </Stack>
+      </Card>
 
     </Stack>
   );
