@@ -1,0 +1,62 @@
+import { useLayoutEffect, useRef, useState } from "react";
+import { Segmented, SegmentedIndicator } from "../primitives";
+
+export interface SegmentedToggleOption<T extends string | number> {
+  label: string;
+  value: T;
+}
+
+interface SegmentedToggleProps<T extends string | number> {
+  options: SegmentedToggleOption<T>[];
+  value: T;
+  onChange: (v: T) => void;
+  activeClassName?: string;
+}
+
+const SegmentedToggle = <T extends string | number>({
+  options,
+  value,
+  onChange,
+  activeClassName = "is-active",
+}: SegmentedToggleProps<T>) => {
+  const [style, setStyle] = useState({ left: 0, width: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
+  const buttonsRef = useRef<Map<T, HTMLButtonElement>>(new Map());
+
+  useLayoutEffect(() => {
+    const activeButton = buttonsRef.current.get(value);
+    const container = containerRef.current;
+
+    if (activeButton && container) {
+      const containerRect = container.getBoundingClientRect();
+      const buttonRect = activeButton.getBoundingClientRect();
+
+      setStyle({
+        left: buttonRect.left - containerRect.left,
+        width: buttonRect.width,
+      });
+    }
+  }, [value, options]);
+
+  return (
+    <Segmented ref={containerRef}>
+      <SegmentedIndicator style={style} />
+      {options.map((opt) => (
+        <button
+          key={opt.value}
+          ref={(el) => {
+            if (el) buttonsRef.current.set(opt.value, el);
+            else buttonsRef.current.delete(opt.value);
+          }}
+          className={value === opt.value ? activeClassName : ""}
+          onClick={() => onChange(opt.value)}
+          type="button"
+        >
+          {opt.label}
+        </button>
+      ))}
+    </Segmented>
+  );
+};
+
+export default SegmentedToggle;

@@ -1,0 +1,92 @@
+import React from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { Flex, Stack, Text } from "../../design-system/primitives";
+import useDocumentTitle from "../../hooks/useDocumentTitle";
+import useDashboard from "./hooks/useDashboard";
+import EmptyState from "./components/EmptyState";
+import dashboardWelcome from "../../assets/dashboard_welcome.webp";
+import { PageContainer, PageSection, Modal, AlertBar } from "../../design-system/patterns";
+import { useAuth } from "../../hooks/useAuth";
+
+const EMPTY_ILLUSTRATION = dashboardWelcome;
+const HUB_ILLUSTRATION = dashboardWelcome;
+
+const DashboardPage: React.FC = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { tests, loading, testIdToDelete, closeDeleteModal, confirmDelete } = useDashboard();
+
+  useDocumentTitle("Panel główny | Inquizitor");
+
+  if (loading) return null; // could be spinner
+
+  const handleCreate = () => navigate(`/tests/new`);
+
+  const consentAlert = user && !user.terms_accepted && (
+    <AlertBar variant="danger" style={{ marginBottom: "2rem" }}>
+      <Flex $align="center" $gap="xs" $wrap="wrap">
+        <Text $variant="body2">
+          Nie zaakceptowałeś regulaminu. Funkcja generowania testów jest wyłączona.
+        </Text>
+        <Link to="/settings" style={{ fontWeight: "bold", textDecoration: "underline", color: "inherit" }}>
+          Przejdź do ustawień, aby zaakceptować regulamin.
+        </Link>
+      </Flex>
+    </AlertBar>
+  );
+
+  if (tests.length === 0) {
+    return (
+      <PageSection $py="xl">
+        <PageContainer>
+          {consentAlert}
+          <EmptyState
+            illustrationSrc={EMPTY_ILLUSTRATION}
+            illustrationAlt="Ilustracja powitalna panelu głównego"
+            title="Stwórz swój pierwszy test, aby zacząć!"
+            actionLabel="+ Utwórz nowy"
+            onAction={handleCreate}
+          />
+        </PageContainer>
+      </PageSection>
+    );
+  }
+
+  return (
+    <Flex $direction="column" $bg="transparent" style={{ minHeight: "100%" }}>
+      <PageSection $py="xl">
+        <PageContainer>
+          {consentAlert}
+          <Flex $flex={1} $width="100%" $justify="center">
+            <Stack style={{ width: "100%" }}>
+              <EmptyState
+                illustrationSrc={HUB_ILLUSTRATION}
+                illustrationAlt="Ilustracja powitalna panelu InQUIZitor"
+                title="Witaj w panelu InQUIZitor!"
+                description="Wybierz istniejący test z panelu bocznego, aby zobaczyć szczegóły, lub utwórz nowy."
+                actionLabel="+ Utwórz nowy"
+                onAction={handleCreate}
+                isHub
+              />
+            </Stack>
+          </Flex>
+        </PageContainer>
+      </PageSection>
+
+      {testIdToDelete !== null && (
+        <Modal
+          isOpen={true}
+          title="Usuń test"
+          onClose={closeDeleteModal}
+          onConfirm={confirmDelete}
+          variant="danger"
+          confirmLabel="Usuń"
+        >
+          Tej operacji nie można cofnąć. Wszystkie pytania w tym teście również zostaną usunięte.
+        </Modal>
+      )}
+    </Flex>
+  );
+};
+
+export default DashboardPage;
