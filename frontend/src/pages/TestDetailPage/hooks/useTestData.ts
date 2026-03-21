@@ -17,7 +17,9 @@ const useTestData = (): UseTestDataResult => {
   const { testId } = useParams<{ testId: string }>();
   const testIdNum = Number(testId);
   const navigate = useNavigate();
-  const { refreshSidebarTests } = useOutletContext<LayoutCtx>();
+  const context = useOutletContext<LayoutCtx | null>();
+  const refreshSidebarTests = context?.refreshSidebarTests || (async () => {});
+  // const { refreshSidebarTests } = useOutletContext<LayoutCtx>();
 
   const [data, setData] = useState<TestDetail | null>(null);
   const [loading, setLoading] = useState(true);

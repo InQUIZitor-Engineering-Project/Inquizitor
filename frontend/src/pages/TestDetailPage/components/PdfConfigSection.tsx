@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import styled from "styled-components";
+import { useNavigate } from 'react-router-dom'
 import { Box, Flex, Divider, Input, Checkbox, Button } from "../../../design-system/primitives";
 import { CollapsibleSection, FormField, CustomSelect } from "../../../design-system/patterns";
 import type { PdfExportConfig } from "../../../services/test";
@@ -31,9 +32,11 @@ const FieldWrapper = styled.div`
   display: block;
 `;
 
+
 export interface PdfConfigSectionProps {
   config: PdfExportConfig;
   isOpen: boolean;
+  testId: number;
   onToggle: () => void;
   onChange: (updater: (cfg: PdfExportConfig) => PdfExportConfig) => void;
   onReset: () => void;
@@ -43,6 +46,7 @@ export interface PdfConfigSectionProps {
 const PdfConfigSection: React.FC<PdfConfigSectionProps> = ({
   config,
   isOpen,
+  testId,
   onToggle,
   onChange,
   onReset,
@@ -50,6 +54,7 @@ const PdfConfigSection: React.FC<PdfConfigSectionProps> = ({
 }) => {
   const MIN_SPACE_HEIGHT = 1;
   const MAX_SPACE_HEIGHT = 10;
+  const navigate = useNavigate();
 
   const isActive =
     config.answer_space_style !== "blank" ||
@@ -191,17 +196,17 @@ const PdfConfigSection: React.FC<PdfConfigSectionProps> = ({
         <FormField fullWidth>
           <Flex $align="center" $gap="xs">
             <Checkbox
-              id="pdf-include-answer-key"
-              checked={config.include_answer_key}
+              id="pdf-mark-multi-choice"
+              checked={config.mark_multi_choice}
               onChange={(e) =>
                 onChange((cfg) => ({
                   ...cfg,
-                  include_answer_key: e.target.checked,
+                  mark_multi_choice: e.target.checked,
                 }))
               }
             />
-            <label htmlFor="pdf-include-answer-key" style={{ cursor: "pointer" }}>
-              Dołącz klucz odpowiedzi do pytań zamkniętych
+            <label htmlFor="pdf-mark-multi-choice" style={{ cursor: "pointer" }}>
+              Oznacz graficznie pytania wielokrotnego wyboru
             </label>
           </Flex>
         </FormField>
@@ -227,22 +232,30 @@ const PdfConfigSection: React.FC<PdfConfigSectionProps> = ({
         <FormField fullWidth>
           <Flex $align="center" $gap="xs">
             <Checkbox
-              id="pdf-mark-multi-choice"
-              checked={config.mark_multi_choice}
+              id="pdf-include-answer-key"
+              checked={config.include_answer_key}
               onChange={(e) =>
                 onChange((cfg) => ({
                   ...cfg,
-                  mark_multi_choice: e.target.checked,
+                  include_answer_key: e.target.checked,
                 }))
               }
             />
-            <label htmlFor="pdf-mark-multi-choice" style={{ cursor: "pointer" }}>
-              Oznacz graficznie pytania wielokrotnego wyboru
+            <label htmlFor="pdf-include-answer-key" style={{ cursor: "pointer" }}>
+              Dołącz klucz odpowiedzi do pytań zamkniętych
             </label>
           </Flex>
         </FormField>
 
-        <Flex $justify="flex-end" $gap="sm" $wrap="wrap" $mt="sm">
+        <Flex $justify="space-between" $align="center" $gap="sm" $wrap="wrap" $mt="sm">
+          <Button
+            $variant="outline"
+            type="button"
+            onClick={() => navigate(`/tests/${testId}/preview`)}
+          >
+            Ustawienia zaawansowane
+          </Button>
+
           <Button $variant="ghost" type="button" onClick={onReset}>
             Przywróć domyślne
           </Button>
