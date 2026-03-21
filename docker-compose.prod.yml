@@ -52,6 +52,35 @@ services:
     ports:
       - "127.0.0.1:8000:8000"
 
+  # React SPA — app.inquizitor.pl (served via nginx as static files)
+  app:
+    build:
+      context: .
+      dockerfile: apps/app/Dockerfile.prod
+    ports:
+      - "127.0.0.1:5173:80"
+    restart: unless-stopped
+
+  # Next.js content site — inquizitor.pl
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile.prod
+    environment:
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:?NEXT_PUBLIC_API_URL not set}
+      - NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL:?NEXT_PUBLIC_SITE_URL not set}
+      - NODE_ENV=production
+    env_file:
+      - .env
+    ports:
+      - "127.0.0.1:3000:3000"
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
   redis:
     image: redis:7-alpine
     restart: unless-stopped

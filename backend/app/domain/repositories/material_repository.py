@@ -37,6 +37,11 @@ class MaterialRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    def update_analysis(self, material: Material) -> Material:
+        """Update only analysis fields; preserves processing_status and thumbnail."""
+        raise NotImplementedError
+
+    @abstractmethod
     def list_without_thumbnail(self) -> Iterable[Material]:
         """List materials with no thumbnail and an associated file (backfill)."""
         raise NotImplementedError

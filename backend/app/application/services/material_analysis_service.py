@@ -65,7 +65,7 @@ class MaterialAnalysisService:
                     logger.warning(
                         "Material analysis failed for %s: %s", material.id, message
                     )
-                    updated = uow.materials.update(material)
+                    updated = uow.materials.update_analysis(material)
                     return dto.to_material_out(updated)
 
                 material.routing_tier = routing
@@ -73,7 +73,7 @@ class MaterialAnalysisService:
                 material.markdown_twin = markdown_twin
                 material.analysis_status = AnalysisStatus.DONE
 
-            updated = uow.materials.update(material)
+            updated = uow.materials.update_analysis(material)
 
         return dto.to_material_out(updated)
 

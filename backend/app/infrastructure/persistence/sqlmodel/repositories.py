@@ -398,6 +398,31 @@ class SqlModelMaterialRepository(MaterialRepository):
         self._session.refresh(db_material)
         return mappers.material_to_domain(db_material)
 
+    def update_analysis(self, material: Material) -> Material:
+        """Update only analysis fields; preserves processing_status and thumbnail."""
+        db_material = self._session.get(db_models.Material, material.id)
+        if not db_material:
+            raise ValueError(f"Material {material.id} not found")
+
+        db_material.mime_type = material.mime_type
+        db_material.analysis_status = db_models.AnalysisStatus(
+            material.analysis_status.value
+        )
+        db_material.routing_tier = (
+            db_models.RoutingTier(material.routing_tier.value)
+            if material.routing_tier
+            else None
+        )
+        db_material.analysis_version = material.analysis_version
+        db_material.markdown_twin = material.markdown_twin
+        if material.processing_error:
+            db_material.processing_error = material.processing_error
+
+        self._session.add(db_material)
+        self._session.commit()
+        self._session.refresh(db_material)
+        return mappers.material_to_domain(db_material)
+
     def remove(self, material_id: int) -> None:
         db_material = self._session.get(db_models.Material, material_id)
         if db_material:

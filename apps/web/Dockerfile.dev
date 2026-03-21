@@ -1,0 +1,20 @@
+FROM node:20-bullseye
+
+WORKDIR /usr/src/app
+
+# Install turbo globally for running workspace tasks
+RUN npm install -g turbo
+
+# Copy workspace manifests first to leverage layer cache
+COPY package*.json ./
+COPY apps/web/package.json ./apps/web/
+COPY packages/ui/package.json ./packages/ui/
+
+RUN npm ci
+
+# Source is bind-mounted in dev, copy for layer completeness
+COPY . .
+
+EXPOSE 3000
+
+CMD ["npm", "run", "dev", "--workspace=@inquizitor/web"]
