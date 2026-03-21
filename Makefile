@@ -1,16 +1,24 @@
 SHELL := /bin/bash
 
-.PHONY: start start.backend start.frontend start.db start.celery stop logs migrate rebuild new-migration \
-	start.prod start.prod.backend start.prod.db start.prod.celery stop.prod logs.prod migrate.prod rebuild.prod new-migration.prod
+.PHONY: start start.app start.web start.backend start.db start.celery stop logs \
+	migrate migration migration-check migrate-down \
+	check fix rebuild \
+	start.prod start.prod.app start.prod.web start.prod.backend \
+	start.prod.db start.prod.celery stop.prod logs.prod migrate.prod rebuild.prod
+
+# ─── Dev ──────────────────────────────────────────────────────────────────────
 
 start:
 	docker compose up --build
 
+start.app:
+	docker compose up app
+
+start.web:
+	docker compose up web
+
 start.backend:
 	docker compose up api
-
-start.frontend:
-	docker compose up web
 
 start.db:
 	docker compose up db adminer
@@ -23,6 +31,11 @@ stop:
 
 logs:
 	docker compose logs -f --tail=200
+
+rebuild:
+	docker compose up -d --build --force-recreate
+
+# ─── Database / Migrations ────────────────────────────────────────────────────
 
 migrate:
 	docker compose exec api alembic upgrade head
@@ -37,22 +50,32 @@ migrate-down:
 migration-check:
 	docker compose exec api alembic check
 
+# ─── Code Quality ─────────────────────────────────────────────────────────────
+
 check: migration-check
 	docker compose exec api ruff check .
 	docker compose exec api mypy .
-	docker compose exec web npm run lint
-	docker compose exec web npx tsc --noEmit
+	docker compose exec app npm run lint --workspace=@inquizitor/app
+	docker compose exec app npx tsc --noEmit --project apps/app/tsconfig.json
+	docker compose exec web npm run lint --workspace=@inquizitor/web
+	docker compose exec web npx tsc --noEmit --project apps/web/tsconfig.json
 	@echo "All checks passed!"
 
 fix:
 	docker compose exec api ruff check --fix .
-	docker compose exec web npm run lint -- --fix
+	docker compose exec app npm run lint --workspace=@inquizitor/app -- --fix
+	docker compose exec web npm run lint --workspace=@inquizitor/web -- --fix
 
-rebuild:
-	docker compose up -d --build --force-recreate
+# ─── Production ───────────────────────────────────────────────────────────────
 
 start.prod:
 	docker compose -f docker-compose.prod.yml up --build
+
+start.prod.app:
+	docker compose -f docker-compose.prod.yml up app
+
+start.prod.web:
+	docker compose -f docker-compose.prod.yml up web
 
 start.prod.backend:
 	docker compose -f docker-compose.prod.yml up api
@@ -74,7 +97,3 @@ migrate.prod:
 
 rebuild.prod:
 	docker compose -f docker-compose.prod.yml build --no-cache
-
-new-migration.prod:
-	@if [ -z "$(name)" ]; then echo "Error: provide name, e.g. make new-migration.prod name='add users table'"; exit 1; fi; \
-		docker compose -f docker-compose.prod.yml run --rm api alembic revision --autogenerate -m "$(name)"

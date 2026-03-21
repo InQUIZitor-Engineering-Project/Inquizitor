@@ -56,22 +56,43 @@ services:
     ports:
       - "8000:8000"
 
-  web:
+  # React SPA — app.inquizitor.pl
+  app:
     build:
-      context: ./frontend
-      dockerfile: Dockerfile.dev
-    command: npm run dev -- --host 0.0.0.0 --port 5173
+      context: .
+      dockerfile: apps/app/Dockerfile.dev
+    command: npm run dev --workspace=@inquizitor/app -- --host 0.0.0.0 --port 5173
     working_dir: /usr/src/app
     environment:
       - VITE_API_URL=http://localhost:8000
       - NODE_ENV=development
     env_file:
-      - ./frontend/.env
+      - ./apps/app/.env
     volumes:
-      - ./frontend:/usr/src/app:delegated
-      - node_modules:/usr/src/app/node_modules
+      - .:/usr/src/app:delegated
+      - app_node_modules:/usr/src/app/node_modules
     ports:
       - "5173:5173"
+    depends_on:
+      - api
+
+  # Next.js content site — inquizitor.pl
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile.dev
+    command: npm run dev --workspace=@inquizitor/web
+    working_dir: /usr/src/app
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - NEXT_PUBLIC_APP_URL=http://localhost:5173
+      - NEXT_PUBLIC_SITE_URL=http://localhost:3000
+      - NODE_ENV=development
+    volumes:
+      - .:/usr/src/app:delegated
+      - web_node_modules:/usr/src/app/node_modules
+    ports:
+      - "3000:3000"
     depends_on:
       - api
 
@@ -128,9 +149,9 @@ services:
 
 volumes:
   pgdata:
-  node_modules:
+  app_node_modules:
+  web_node_modules:
 
 networks:
   default:
     name: inquizitor
-

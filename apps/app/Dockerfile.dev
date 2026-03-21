@@ -1,0 +1,23 @@
+FROM node:20-bullseye
+
+WORKDIR /usr/src/app
+
+# Copy workspace manifests first to leverage layer cache
+COPY package*.json ./
+COPY apps/app/package.json ./apps/app/
+COPY packages/ui/package.json ./packages/ui/
+
+RUN npm ci
+
+# Copy entrypoint script
+COPY apps/app/docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+# Source is bind-mounted in dev, copy for layer completeness
+COPY . .
+
+EXPOSE 5173
+
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+
+CMD ["npm", "run", "dev", "--workspace=@inquizitor/app", "--", "--host", "0.0.0.0", "--port", "5173"]

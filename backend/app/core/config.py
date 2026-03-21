@@ -40,11 +40,14 @@ class Settings(BaseSettings):
     GUNICORN_TIMEOUT: int = 90
     BACKEND_CORS_ORIGINS: list[str] = Field(
         default_factory=lambda: [
+            # Local dev
+            "http://localhost:3000",
             "http://localhost:5173",
             "http://127.0.0.1:5173",
-            "http://www.localhost:5173",
+            # Production
             "https://inquizitor.pl",
             "https://www.inquizitor.pl",
+            "https://app.inquizitor.pl",
             "https://inquizitor.pages.dev",
         ]
     )
