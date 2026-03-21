@@ -1,20 +1,16 @@
-import React, { type JSX } from "react";
+import React, { useEffect, type JSX } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { useAuth } from "./hooks/useAuth";
 
 import Navbar from "./components/Navbar/Navbar";
 
-import HomePage from "./pages/HomePage";
 import RegisterPage from "./pages/RegisterPage/RegisterPage";
 import LoginPage from "./pages/LoginPage/LoginPage";
 import DashboardPage from "./pages/DashboardPage/DashboardPage";
 import PdfPreviewPage from "./pages/PdfPreviewPage/PdfPreviewPage"
 import ProfilePage from "./pages/ProfilePage/ProfilePage";
 import TestDetailPage from "./pages/TestDetailPage/TestDetailPage";
-import AboutUsPage from './pages/AboutUsPage/AboutUsPage';
-import HelpPage from './pages/HelpPage/HelpPage';
-import PrivacyPolicyPage from './pages/PrivacyPolicyPage/PrivacyPolicyPage';
 import CreateTestSelectionPage from "./pages/CreateTestSelectionPage/CreateTestSelectionPage";
 import CreateTestAIPage from "./pages/CreateTestAIPage/CreateTestAIPage";
 import CreateManualTestPage from "./pages/CreateManualTestPage/CreateManualTestPage";
@@ -28,26 +24,30 @@ import ResetPasswordPage from "./pages/ResetPasswordPage/ResetPasswordPage";
 import SettingsPage from "./pages/SettingsPage/SettingsPage";
 import ScrollToTop from "./components/ScrollToTop/ScrollToTop";
 
+const SITE_URL = import.meta.env.VITE_SITE_URL ?? "https://inquizitor.pl";
+
+const ExternalRedirect: React.FC<{ to: string }> = ({ to }) => {
+  useEffect(() => { window.location.replace(to); }, [to]);
+  return null;
+};
+
 const ProtectedRoute: React.FC<{ children: JSX.Element }> = ({ children }) => {
   const { user, loading } = useAuth();
-  if (loading) {
-    return null; 
-  }
-  return user ? children : <Navigate to="/login" replace />;
+  if (loading) return null;
+  return user ? children : <ExternalRedirect to={`${SITE_URL}/login`} />;
 };
 
 const PublicOnlyRoute: React.FC<{ children: JSX.Element }> = ({ children }) => {
   const { user, loading } = useAuth();
-  if (loading) {
-    return null;
-  }
+  if (loading) return null;
   return user ? <Navigate to="/dashboard" replace /> : children;
 };
 
 const FallbackRedirect: React.FC = () => {
   const { user, loading } = useAuth();
   if (loading) return null;
-  return <Navigate to={user ? "/dashboard" : "/login"} replace />;
+  if (!user) return <ExternalRedirect to={`${SITE_URL}/login`} />;
+  return <Navigate to="/dashboard" replace />;
 };
 
 const App: React.FC = () => {
@@ -58,20 +58,16 @@ const App: React.FC = () => {
         <ScrollToTop />
         <Routes>
           <Route element={<PublicLayout />}>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/about" element={<AboutUsPage />} />
-            <Route path="/pomoc" element={<HelpPage />} />
-            <Route path="/polityka-prywatnosci" element={<PrivacyPolicyPage />} />
-            <Route 
-              path="/register" 
+            <Route
+              path="/register"
               element={
                 <PublicOnlyRoute>
                   <RegisterPage />
                 </PublicOnlyRoute>
-              } 
+              }
             />
-            <Route 
-              path="/login" 
+            <Route
+              path="/login"
               element={
                 <PublicOnlyRoute>
                   <LoginPage />
@@ -79,21 +75,21 @@ const App: React.FC = () => {
               }
             />
             <Route path="/verify-email" element={<VerifyEmailPage />} />
-            <Route 
-              path="/forgot-password" 
+            <Route
+              path="/forgot-password"
               element={
                 <PublicOnlyRoute>
                   <ForgotPasswordPage />
                 </PublicOnlyRoute>
-              } 
+              }
             />
-            <Route 
-              path="/reset-password" 
+            <Route
+              path="/reset-password"
               element={
                 <PublicOnlyRoute>
                   <ResetPasswordPage />
                 </PublicOnlyRoute>
-              } 
+              }
             />
           </Route>
 
