@@ -28,6 +28,7 @@
   },
   "include": [
     "src",
-    "src/styles/styled.d.ts"
+    "src/styles/styled.d.ts",
+    "../../packages/ui/src/styled.d.ts"
   ]
 }
