@@ -308,7 +308,7 @@ const Navbar: React.FC = () => {
                 <ExternalStyledLink href={SITE_URL}>
                   Strona główna
                 </ExternalStyledLink>
-                <ExternalStyledLink href={`${SITE_URL}/o-nas`}>
+                <ExternalStyledLink href={`${SITE_URL}/about`}>
                   O nas
                 </ExternalStyledLink>
                 <ExternalStyledLink href={`${SITE_URL}/pomoc`}>
@@ -392,7 +392,7 @@ const Navbar: React.FC = () => {
                 <ExternalStyledLink href={SITE_URL}>
                   Strona główna
                 </ExternalStyledLink>
-                <ExternalStyledLink href={`${SITE_URL}/o-nas`}>
+                <ExternalStyledLink href={`${SITE_URL}/about`}>
                   O nas
                 </ExternalStyledLink>
                 <ExternalStyledLink href={`${SITE_URL}/pomoc`}>
