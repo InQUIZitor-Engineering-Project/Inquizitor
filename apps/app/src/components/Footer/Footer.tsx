@@ -1,8 +1,9 @@
 import React from "react";
-import { Link, useLocation } from "react-router-dom";
 import { Box, Flex, Text } from "../../design-system/primitives";
 import { PageContainer } from "../../design-system/patterns";
 import styled from "styled-components";
+
+const SITE_URL = import.meta.env.VITE_SITE_URL ?? "https://inquizitor.pl";
 
 const FooterWrapper = styled.footer`
   width: 100%;
@@ -23,12 +24,12 @@ const LinksRow = styled(Flex)`
   justify-content: center;
 `;
 
-const FooterLink = styled(Link)<{ $active?: boolean }>`
+const FooterLink = styled.a`
   font-family: ${({ theme }) => theme.typography.body.regular.body3.fontFamily};
   font-size: ${({ theme }) => theme.typography.body.regular.body3.fontSize};
   font-weight: 500;
   line-height: ${({ theme }) => theme.typography.body.regular.body3.lineHeight};
-  color: ${({ theme, $active }) => ($active ? theme.colors.brand.primary : theme.colors.neutral.dGrey)};
+  color: ${({ theme }) => theme.colors.neutral.dGrey};
   text-decoration: none;
   transition: color 0.15s ease;
 
@@ -57,24 +58,16 @@ const CopyrightRow = styled(Flex)`
 `;
 
 const Footer: React.FC = () => {
-  const { pathname } = useLocation();
-
   return (
     <FooterWrapper>
       <FooterInner>
         <Box as="div">
           <LinksRow $gap="lg" $align="center">
-            <FooterLink to="/about" $active={pathname === "/about"}>
-              O nas
-            </FooterLink>
+            <FooterLink href={`${SITE_URL}/o-nas`}>O nas</FooterLink>
             <Divider />
-            <FooterLink to="/pomoc" $active={pathname === "/pomoc"}>
-              Pomoc
-            </FooterLink>
+            <FooterLink href={`${SITE_URL}/pomoc`}>Pomoc</FooterLink>
             <Divider />
-            <FooterLink to="/polityka-prywatnosci" $active={pathname === "/polityka-prywatnosci"}>
-              Polityka prywatności
-            </FooterLink>
+            <FooterLink href={`${SITE_URL}/polityka-prywatnosci`}>Polityka prywatności</FooterLink>
           </LinksRow>
           <CopyrightRow $align="center">
             <Text $variant="body4" $tone="muted">
