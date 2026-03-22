@@ -15,3 +15,5 @@ export { default as Tooltip } from "./Tooltip";
 export type { TooltipProps } from "./Tooltip";
 export { PageContainer, PageSection } from "./Container";
 export { default as SegmentedToggle } from "./SegmentedToggle";
+export { HelpPage, FAQItemCard, SearchBar, useFaq, faqItems, categoriesOrder } from "./HelpPage";
+export type { FAQItem } from "./HelpPage";
