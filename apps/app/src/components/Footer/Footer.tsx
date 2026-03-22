@@ -63,7 +63,7 @@ const Footer: React.FC = () => {
       <FooterInner>
         <Box as="div">
           <LinksRow $gap="lg" $align="center">
-            <FooterLink href={`${SITE_URL}/o-nas`}>O nas</FooterLink>
+            <FooterLink href={`${SITE_URL}/about`}>O nas</FooterLink>
             <Divider />
             <FooterLink href={`${SITE_URL}/pomoc`}>Pomoc</FooterLink>
             <Divider />
