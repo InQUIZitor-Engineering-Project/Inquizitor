@@ -50,13 +50,19 @@ class MaterialAnalysisService:
                 # .docx → PDF so Gemini can process embedded images/charts
                 converted_pdf: Path | None = None
                 docx_text_fallback: str | None = None
-                is_docx = (file_record.filename or "").lower().endswith(".docx") or local.suffix.lower() == ".docx"
+                is_docx = (
+                    (file_record.filename or "").lower().endswith(".docx")
+                    or local.suffix.lower() == ".docx"
+                )
                 if is_docx:
                     try:
                         converted_pdf = convert_docx_to_pdf(local)
                         local = converted_pdf
                     except Exception as exc:
-                        logger.warning("DOCX→PDF conversion failed, falling back to text extraction: %s", exc)
+                        logger.warning(
+                            "DOCX→PDF conversion failed, using text fallback: %s",
+                            exc,
+                        )
                         try:
                             docx_text_fallback = _read_docx(local) or ""
                         except Exception:

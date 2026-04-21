@@ -77,7 +77,11 @@ class GeminiDocumentAnalyzer(DocumentAnalyzer):
 
         # When a file is attached, source_text is just a short hint — Gemini reads
         # the file directly. When there is no file, source_text IS the document.
-        hint_text = source_text if not file_path else (source_text[:1000] if source_text else "")
+        hint_text = (
+            source_text
+            if not file_path
+            else (source_text[:1000] if source_text else "")
+        )
         
         prompt = PromptBuilder.build_document_analysis_prompt(
             text=hint_text, filename=filename, mime_type=mime_type

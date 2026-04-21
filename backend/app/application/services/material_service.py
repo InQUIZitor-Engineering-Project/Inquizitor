@@ -435,13 +435,19 @@ class MaterialService:
                 # .docx → PDF so Gemini can process embedded images/charts
                 converted_pdf: Path | None = None
                 docx_text_fallback: str | None = None
-                is_docx = (file_record.filename or "").lower().endswith(".docx") or local.suffix.lower() == ".docx"
+                is_docx = (
+                    (file_record.filename or "").lower().endswith(".docx")
+                    or local.suffix.lower() == ".docx"
+                )
                 if is_docx:
                     try:
                         converted_pdf = convert_docx_to_pdf(local)
                         local = converted_pdf
                     except Exception as exc:
-                        logger.warning("DOCX→PDF conversion failed, falling back to text extraction: %s", exc)
+                        logger.warning(
+                            "DOCX→PDF conversion failed, using text fallback: %s",
+                            exc,
+                        )
                         try:
                             docx_text_fallback = _read_docx(local) or ""
                         except Exception:
@@ -482,7 +488,7 @@ class MaterialService:
                 is_txt = (file_record.filename or "").lower().endswith(".txt")
 
                 if docx_text_fallback is not None and self._analyzer:
-                    # PDF conversion failed; pass extracted text as source_text (no file upload)
+                    # PDF conversion failed; pass extracted text as source_text
                     try:
                         markdown_twin, routing, _usage, _title = self._analyzer.analyze(
                             source_text=docx_text_fallback,
@@ -575,12 +581,14 @@ class MaterialService:
             # Update material with all changes (including thumbnail_path).
             # Guard against the race condition where the user deleted the material
             # while the background task was processing it.
-            if uow.materials.get(material.id) is None:
+            if material.id is None or uow.materials.get(material.id) is None:
                 logger.warning(
                     "Material %s was deleted during processing — skipping update",
                     material.id,
                 )
-                return dto.to_material_out(material, cache_hit=False, duration_ocr_sec=None)
+                return dto.to_material_out(
+                    material, cache_hit=False, duration_ocr_sec=None
+                )
             updated = uow.materials.update(material)
 
         return dto.to_material_out(
