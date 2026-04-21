@@ -16,6 +16,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     fonts-roboto \
     fonts-dejavu-core \
     libmagic1 \
+    libreoffice \
     tesseract-ocr \
     tesseract-ocr-pol \
     tesseract-ocr-eng \
