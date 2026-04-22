@@ -37,6 +37,7 @@ from app.application.interfaces import (
     QuestionGenerator,
     UnitOfWork,
 )
+from app.core.config import get_settings
 from app.db.models import Question as QuestionRow
 from app.db.models import Test as TestRow
 from app.db.models import User as UserRow
@@ -179,7 +180,7 @@ class TestService:
         try:
             client = GeminiQuestionGenerator._client()
             response = client.models.generate_content(
-                model="gemini-2.5-flash",
+                model=get_settings().GEMINI_QUIZ_FAST_MODEL,
                 contents=prompt,
             )
             raw = (response.text or "").strip()
@@ -1298,7 +1299,7 @@ class TestService:
                 try:
                     client = GeminiQuestionGenerator._client()
                     response = client.models.generate_content(
-                        model="gemini-2.5-flash",
+                        model=get_settings().GEMINI_QUIZ_FAST_MODEL,
                         contents=prompt,
                     )
                     raw = (response.text or "").strip()
@@ -1361,7 +1362,7 @@ class TestService:
             try:
                 client = GeminiQuestionGenerator._client()
                 response = client.models.generate_content(
-                    model="gemini-2.5-flash",
+                    model=get_settings().GEMINI_QUIZ_FAST_MODEL,
                     contents=prompt,
                 )
                 raw = (response.text or "").strip()

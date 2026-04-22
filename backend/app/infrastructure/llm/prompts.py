@@ -15,7 +15,7 @@ class PromptBuilder:
         "dydaktycznych, który kładzie nacisk na rozumienie koncepcji i "
         "praktyczne zastosowanie wiedzy."
     )
-    
+
     LATEX_RULES = (
         "- Jeśli w treści pytania lub odpowiedzi pojawia się zapis matematyczny "
         "(wzór, równanie, wyrażenie), zapisuj go w składni LaTeX.\n"
@@ -29,6 +29,61 @@ class PromptBuilder:
         'in JSON (np. "$\\frac{1}{2}$").'
     )
 
+    SOURCE_MATERIAL_FRAMING = (
+        "### ROLA MATERIAŁU ŹRÓDŁOWEGO\n"
+        "Materiał źródłowy służy WYŁĄCZNIE jako:\n"
+        "  (a) baza merytoryczna wyznaczająca zakres tematu,\n"
+        "  (b) punkt odniesienia dla poziomu szczegółowości i trudności,\n"
+        "  (c) źródło koncepcji, reguł i zależności, które mają być sprawdzone.\n"
+        "Materiał NIE jest tekstem do analizy czytelniczej ani szablonem, "
+        "który należy odtworzyć. Pytania mają sprawdzać rozumienie zawartych "
+        "w nim koncepcji, a NIE rozpoznanie jego dosłownego brzmienia."
+    )
+
+    TRANSFER_PRINCIPLE = (
+        "### ZASADA TRANSFERU (PRIORYTET KRYTYCZNY)\n"
+        "Dobre pytanie sprawdza, czy uczeń potrafi ZASTOSOWAĆ wiedzę w nowej "
+        "sytuacji — nie czy zapamiętał dosłowne brzmienie materiału.\n"
+        "- BEZWZGLĘDNY ZAKAZ fraz typu: 'w tekście', 'według autora', "
+        "'zgodnie z materiałem', 'w rozdziale', 'na stronie', "
+        "'w podanym fragmencie', 'jak napisano powyżej'.\n"
+        "- Każde pytanie musi brzmieć jak samodzielny, autonomiczny problem, "
+        "zrozumiały dla osoby, która nie widziała materiału źródłowego.\n"
+        "- Preferuj scenariusze, przypadki praktyczne i zastosowania koncepcji "
+        "w nowych kontekstach (inna branża, inne dane, inny przykład) przy "
+        "zachowaniu tej samej koncepcji i poziomu trudności."
+    )
+
+    CONCEPT_VS_DATA_SEPARATION = (
+        "### ODDZIELENIE KONCEPCJI OD DANYCH (PRIORYTET KRYTYCZNY)\n"
+        "Kiedy tworzysz nowe pytanie na podstawie istniejącego "
+        "(regeneracja, wariant, transformacja), traktuj pytanie wejściowe "
+        "WYŁĄCZNIE jako specyfikację dwóch rzeczy:\n"
+        "  (1) KONCEPCJI / UMIEJĘTNOŚCI, która ma być sprawdzona,\n"
+        "  (2) POZIOMU TRUDNOŚCI.\n"
+        "Nowy wariant MUSI być całkowicie nowym zadaniem. "
+        "OBOWIĄZUJĄ BEZWZGLĘDNE ZAKAZY:\n"
+        "- ZAKAZ reużywania konkretnych liczb, wartości, wyników, procentów, "
+        "kwot, jednostek, pomiarów występujących w oryginale.\n"
+        "- ZAKAZ reużywania nazw własnych: imion, nazwisk, firm, miast, "
+        "krajów, produktów, marek, instytucji, dat.\n"
+        "- ZAKAZ reużywania tego samego scenariusza lub kontekstu "
+        "sytuacyjnego. Jeśli oryginał dotyczy sklepu — użyj fabryki, "
+        "szpitala, gospodarstwa rolnego. Jeśli dotyczy Kowalskiego — użyj "
+        "innej osoby. Jeśli dotyczy pociągu — użyj samolotu lub statku.\n"
+        "- ZAKAZ parafrazowania tej samej sytuacji innymi słowami — to nie "
+        "jest nowy wariant, to kopia.\n"
+        "- ZAKAZ zachowywania tej samej kolejności liczb, opcji lub kroków "
+        "rozumowania.\n"
+        "WYMAGANE:\n"
+        "- Zbuduj nowy przykład / scenariusz od zera.\n"
+        "- Jedyne, co łączy oryginał z wariantem, to KONCEPCJA (np. "
+        "'obliczanie procentu składanego', 'interpretacja wykresu funkcji "
+        "kwadratowej', 'rozpoznanie błędu logicznego') i POZIOM TRUDNOŚCI.\n"
+        "- Poprawna odpowiedź w nowym wariancie musi wynikać z treści "
+        "nowego pytania, nie z danych oryginału."
+    )
+
     GENERAL_CONSTRAINTS = (
         "- Każde pytanie i wszystkie odpowiedzi muszą być w języku polskim.\n"
         "- NIE numeruj treści pytań ani odpowiedzi: nie dodawaj prefiksów typu "
@@ -37,15 +92,25 @@ class PromptBuilder:
         "- Nie twórz pytań o strukturę dokumentu ani metapoziom (np. "
         "'co jest w treści 3 zadania', 'ile jest punktów', 'jaki jest tytuł "
         "sekcji'). Skup się wyłącznie na merytorycznej treści.\n"
-        "- Traktuj tekst źródłowy jako **bazę wiedzy i źródło merytoryczne**, "
-        "a nie jako treść do analizy czytelniczej.\n"
-        "- **ZAKAZ** używania fraz typu: 'w tekście', 'według autora', "
-        "'zgodnie z materiałem'. Pytanie musi brzmieć jak samodzielny problem.\n"
-        "- **Zasada Transferu**: Zamiast pytać o cytaty, twórz pytania oparte "
-        "na scenariuszach lub przykładach, które wymagają zastosowania wiedzy "
-        "z tekstu w nowej sytuacji.\n"
         "- Preferuj pytania sprawdzające zrozumienie pojęć, relacji i "
-        "wnioskowanie niż czyste zapamiętywanie faktów."
+        "wnioskowanie nad czystym zapamiętywaniem faktów.\n"
+        "- Pytania muszą być jednoznaczne, poprawne merytorycznie i mieć "
+        "jasno zdefiniowaną poprawną odpowiedź."
+    )
+
+    CITATIONS_SEMANTICS = (
+        "### ZNACZENIE POLA `citations`\n"
+        "Pole `citations` to WEWNĘTRZNE UZASADNIENIE poprawności odpowiedzi "
+        "dla nauczyciela — krótki fragment materiału (1-3 pozycje) "
+        "potwierdzający, że koncepcja sprawdzana w pytaniu faktycznie "
+        "występuje w źródle.\n"
+        "- `citations` NIE jest fragmentem, który uczeń ma rozpoznać, "
+        "zacytować ani odnaleźć w pytaniu.\n"
+        "- Treść pytania NIE MOŻE nawiązywać do istnienia tego cytatu ani "
+        "go powtarzać.\n"
+        "- Jeśli pytanie jest zastosowaniem koncepcji w nowym scenariuszu "
+        "(zgodnie z Zasadą Transferu), cytat ma potwierdzać KONCEPCJĘ, "
+        "nie konkretny scenariusz pytania."
     )
 
     @classmethod
@@ -63,66 +128,76 @@ class PromptBuilder:
                 f"zamkniętych, {params.num_open} pytań otwartych) na podstawie "
                 "dostarczonego materiału w formacie Markdown."
             ),
-            "Materiał ten jest 'cyfrowym bliźniakiem' oryginalnego dokumentu, "
-            "zawierającym pełną treść, opisy tabel, schematów i ilustracji.",
+            "",
+            cls.SOURCE_MATERIAL_FRAMING,
+            "",
+            cls.TRANSFER_PRINCIPLE,
+            "",
             (
-                "Struktura pytań zamkniętych:\n"
+                "### STRUKTURA TESTU\n"
+                "Pytania zamknięte:\n"
                 f"- Prawda/Fałsz: {closed_p.true_false}\n"
                 f"- Jednokrotnego wyboru: {closed_p.single_choice}\n"
-                "- Wielokrotnego wyboru (co najmniej dwie poprawne odpowiedzi): "
-                f"{closed_p.multi_choice}"
-            ),
-            (
+                "- Wielokrotnego wyboru (co najmniej dwie poprawne "
+                f"odpowiedzi): {closed_p.multi_choice}\n"
                 f"Rozkład trudności: {params.easy} łatwych, {params.medium} "
                 f"średnich, {params.hard} trudnych."
             ),
             "",
-            "### WYMAGANY FORMAT ODPOWIEDZI (JSON):",
+            "### WYMAGANY FORMAT ODPOWIEDZI (JSON)",
             "Zwróć WYŁĄCZNIE poprawny obiekt JSON o następującej strukturze:",
             "{",
             '  "title": "Krótki tytuł testu po polsku",',
             '  "questions": [',
-            '    {',
+            "    {",
             '      "text": "Przykładowe pytanie jednokrotnego wyboru",',
             '      "is_closed": true,',
             '      "difficulty": 1,',
             '      "choices": ["Opcja A", "Opcja B", "Opcja C", "Opcja D"],',
             '      "correct_choices": ["Opcja A"],',
-            '      "citations": ["dokładny cytat z tekstu źródłowego"]',
-            '    },',
-            '    {',
+            '      "citations": ["krótki fragment materiału potwierdzający '
+            'koncepcję sprawdzaną przez pytanie"]',
+            "    },",
+            "    {",
             '      "text": "Przykładowe pytanie wielokrotnego wyboru",',
             '      "is_closed": true,',
             '      "difficulty": 2,',
             '      "choices": ["Opcja A", "Opcja B", "Opcja C", "Opcja D"],',
-            '      "correct_choices": ["Opcja A", "Opcja C"]',
-            '    },',
-            '    {',
+            '      "correct_choices": ["Opcja A", "Opcja C"],',
+            '      "citations": ["fragment potwierdzający koncepcję"]',
+            "    },",
+            "    {",
             '      "text": "Przykładowe pytanie typu Prawda/Fałsz",',
             '      "is_closed": true,',
             '      "difficulty": 1,',
             '      "choices": ["Prawda", "Fałsz"],',
-            '      "correct_choices": ["Prawda"]',
-            '    },',
-            '    {',
-            '      "text": "Przykładowe pytanie otwarte", "is_closed": false, ',
-            '      "difficulty": 2, "choices": null, "correct_choices": null,',
-            '      "citations": ["dokładny cytat z tekstu źródłowego"]',
-            '    }',
-            '  ]',
+            '      "correct_choices": ["Prawda"],',
+            '      "citations": ["fragment potwierdzający koncepcję"]',
+            "    },",
+            "    {",
+            '      "text": "Przykładowe pytanie otwarte",',
+            '      "is_closed": false,',
+            '      "difficulty": 2,',
+            '      "choices": null,',
+            '      "correct_choices": null,',
+            '      "citations": ["fragment potwierdzający koncepcję"]',
+            "    }",
+            "  ]",
             "}",
             "",
-            "Wymagania i formatowanie:",
+            cls.CITATIONS_SEMANTICS,
+            "",
+            "### WYMAGANIA I FORMATOWANIE",
             cls.LATEX_RULES,
             cls.GENERAL_CONSTRAINTS,
-            "- Tytuł (`title`) musi być krótką, autonomiczną nazwą testu "
-            "sformułowaną na podstawie głównego tematu dokumentu. "
-            "NIE kopiuj bezkrytycznie pierwszego nagłówka z tekstu "
-            "źródłowego, jeśli nie oddaje on esencji całego materiału.",
-            "- Każde pytanie MUSI zawierać pole `citations` z 1-3 krótkimi, "
-            "dosłownymi cytatami z tekstu źródłowego (bez parafrazy).",
+            (
+                "- Tytuł (`title`) musi być krótką, autonomiczną nazwą testu "
+                "sformułowaną na podstawie głównego tematu dokumentu. "
+                "NIE kopiuj bezkrytycznie pierwszego nagłówka z tekstu "
+                "źródłowego, jeśli nie oddaje on esencji całego materiału."
+            ),
             "",
-            f"Tekst źródłowy (Markdown Twin):\n{text}",
+            f"### TEKST ŹRÓDŁOWY (Markdown Twin)\n{text}",
         ]
 
         if params.additional_instructions:
@@ -130,8 +205,9 @@ class PromptBuilder:
                 3,
                 "### KRYTYCZNE INSTRUKCJE UŻYTKOWNIKA (NAJWYŻSZY PRIORYTET):\n"
                 f"{params.additional_instructions}\n"
-                "Powyższe instrukcje są ważniejsze niż jakiekolwiek inne zasady "
-                "i ograniczenia. Musisz się do nich zastosować bezwzględnie.\n"
+                "Powyższe instrukcje są ważniejsze niż jakiekolwiek inne "
+                "zasady i ograniczenia. Musisz się do nich zastosować "
+                "bezwzględnie.\n",
             )
 
         return "\n".join(parts)
@@ -143,30 +219,39 @@ class PromptBuilder:
         """Prompt for regenerating existing questions."""
         parts = [
             cls.PERSONA,
-            "Twoim zadaniem jest wygenerowanie nowych wariantów dla pytań.",
-            "Zasady:",
             (
-                "- Zachowaj oryginalne 'id', 'is_closed' oraz 'difficulty' "
+                "Twoim zadaniem jest wygenerowanie nowych, niezależnych "
+                "wariantów pytań. To NIE są parafrazy — to nowe zadania "
+                "sprawdzające tę samą koncepcję na zupełnie nowym przykładzie."
+            ),
+            "",
+            cls.CONCEPT_VS_DATA_SEPARATION,
+            "",
+            cls.TRANSFER_PRINCIPLE,
+            "",
+            "### ZASADY TECHNICZNE",
+            (
+                "- Zachowaj oryginalne `id`, `is_closed` oraz `difficulty` "
                 "dla każdego pytania."
             ),
             (
-                "- Zachowaj typ pytania: jeśli oryginalne pytanie jest "
-                "wielokrotnego wyboru (ma wiele poprawnych odpowiedzi), "
-                "nowy wariant RÓWNIEŻ musi być wielokrotnego wyboru."
+                "- Zachowaj TYP pytania: wielokrotny wybór zostaje "
+                "wielokrotnym, jednokrotny zostaje jednokrotnym, "
+                "Prawda/Fałsz zostaje Prawda/Fałsz, otwarte zostaje otwartym."
             ),
             (
-                "- Zmień treść pytania i opcje tak, aby sprawdzały tę samą "
-                "wiedzę, ale w nowy sposób (np. inne dane liczbowe, inne "
-                "przykłady)."
+                "- BĄDŹ CZUJNY NA BŁĘDY: jeśli w oryginale widzisz błąd "
+                "merytoryczny, językowy lub logiczny, NAPRAW GO w nowym "
+                "wariancie — i tak zbuduj ten wariant na całkowicie nowych "
+                "danych."
             ),
             (
-                "- BĄDŹ CZUJNY NA BŁĘDY: Jeśli w wejściowym pytaniu widzisz "
-                "błąd merytoryczny, językowy lub logiczny, NAPRAW GO w nowym "
-                "wariancie."
+                "- Nowe pytania muszą być bezbłędne, jednoznaczne, "
+                "dydaktycznie wartościowe i mieć poprawną odpowiedź "
+                "wynikającą wyłącznie z treści nowego pytania."
             ),
-            "- Nowe pytania muszą być bezbłędne, jasne i dydaktycznie wartościowe.",
             "",
-            "### WYMAGANY FORMAT ODPOWIEDZI (JSON):",
+            "### WYMAGANY FORMAT ODPOWIEDZI (JSON)",
             "Zwróć WYŁĄCZNIE listę obiektów JSON (Array) o strukturze:",
             (
                 '[ {"id": 123, "text": "...", "is_closed": true, '
@@ -174,7 +259,7 @@ class PromptBuilder:
                 '"correct_choices": ["..."]} ]'
             ),
             "",
-            "Wymagania i formatowanie:",
+            "### WYMAGANIA I FORMATOWANIE",
             cls.LATEX_RULES,
             cls.GENERAL_CONSTRAINTS,
             "",
@@ -187,7 +272,14 @@ class PromptBuilder:
             )
 
         parts.append(
-            f"Pytania do regeneracji (JSON):\n"
+            "### PYTANIA WEJŚCIOWE\n"
+            "UWAGA: poniższe pytania potraktuj WYŁĄCZNIE jako specyfikację "
+            "koncepcji i poziomu trudności — NIE jako szablon do parafrazy. "
+            "Konkretne dane, liczby, nazwy własne i scenariusze z poniższego "
+            "JSON-a NIE MOGĄ wystąpić w Twojej odpowiedzi. Przed każdym "
+            "nowym wariantem mentalnie odpowiedz sobie: „jakiej koncepcji "
+            "i jakiego poziomu trudności dotyczy oryginał?” — i na tej "
+            "podstawie zbuduj nowe zadanie od zera.\n\n"
             f"{json.dumps(questions, ensure_ascii=False)}"
         )
         return "\n".join(parts)
@@ -199,27 +291,36 @@ class PromptBuilder:
             cls.PERSONA,
             (
                 "Twoim zadaniem jest przekształcenie pytań OTWARTYCH w pytania "
-                "ZAMKNIĘTE (wyboru)."
-            ),
-            "Zasady:",
-            "1. Stwórz 4 sensowne opcje wyboru (choices).",
-            "2. Wskaż co najmniej jedną poprawną odpowiedź (correct_choices).",
-            (
-                "3. MOŻESZ lekko zmodyfikować pole 'text', aby pasowało do "
-                "formatu pytania zamkniętego."
-            ),
-            "4. Zachowaj oryginalne 'id' i 'difficulty'.",
-            (
-                "5. UNIKAJ pytań o metodę rozwiązania lub teorię (np. 'Jak "
-                "należy obliczyć...', 'Który wzór jest poprawny...')."
-            ),
-            (
-                "6. ZAMIAST TEGO stwórz bezpośrednie pytanie o wynik, fakt lub "
-                "informację. Opcje wyboru powinny być konkretnymi wartościami, "
-                "nazwami lub odpowiedziami merytorycznymi."
+                "ZAMKNIĘTE (wyboru). To operacja zmiany FORMATU: przedmiot "
+                "merytoryczny pytania pozostaje ten sam, zmienia się tylko "
+                "sposób udzielania odpowiedzi."
             ),
             "",
-            "### WYMAGANY FORMAT ODPOWIEDZI (JSON):",
+            "### ZASADY",
+            "- Stwórz 4 sensowne opcje wyboru (`choices`).",
+            (
+                "- Wskaż co najmniej jedną poprawną odpowiedź "
+                "(`correct_choices`)."
+            ),
+            (
+                "- Możesz lekko zmodyfikować pole `text`, aby pasowało do "
+                "formatu pytania zamkniętego, ale ZACHOWAJ przedmiot pytania."
+            ),
+            "- Zachowaj oryginalne `id` i `difficulty`.",
+            (
+                "- UNIKAJ pytań o metodę rozwiązania lub teorię (np. 'Jak "
+                "należy obliczyć...', 'Który wzór jest poprawny...'). "
+                "ZAMIAST TEGO stwórz bezpośrednie pytanie o wynik, fakt lub "
+                "informację. Opcje wyboru powinny być konkretnymi "
+                "wartościami, nazwami lub odpowiedziami merytorycznymi."
+            ),
+            (
+                "- Dystraktory (niepoprawne opcje) muszą być wiarygodne: "
+                "prawdopodobne błędy ucznia lub typowe pomyłki obliczeniowe, "
+                "nie absurdy i nie opcje ewidentnie błędne."
+            ),
+            "",
+            "### WYMAGANY FORMAT ODPOWIEDZI (JSON)",
             "Zwróć WYŁĄCZNIE listę obiektów JSON (Array) o strukturze:",
             (
                 '[ {"id": 456, "text": "...", "is_closed": true, '
@@ -227,11 +328,11 @@ class PromptBuilder:
                 '"correct_choices": ["..."]} ]'
             ),
             "",
-            "Wymagania i formatowanie:",
+            "### WYMAGANIA I FORMATOWANIE",
             cls.LATEX_RULES,
             cls.GENERAL_CONSTRAINTS,
             "",
-            "Pytania do konwersji (JSON):\n"
+            "### PYTANIA DO KONWERSJI (JSON)",
             f"{json.dumps(questions, ensure_ascii=False)}",
         ]
         return "\n".join(parts)
@@ -245,39 +346,43 @@ class PromptBuilder:
             cls.PERSONA,
             (
                 "Twoim zadaniem jest przekształcenie pytań ZAMKNIĘTYCH "
-                "(wyboru) w pytania OTWARTE."
+                "(wyboru) w pytania OTWARTE. To operacja zmiany FORMATU: "
+                "przedmiot merytoryczny pytania pozostaje ten sam, zmienia "
+                "się tylko sposób udzielania odpowiedzi."
             ),
             (
                 "Otrzymasz treść pytania, opcje wyboru oraz poprawne "
                 "odpowiedzi jako kontekst."
             ),
             "",
-            "Zasady:",
+            "### ZASADY",
             (
-                "1. PRZEREDAGUJ treść pytania (field 'text') tak, aby było "
+                "- PRZEREDAGUJ treść pytania (pole `text`) tak, aby było "
                 "samodzielnym pytaniem otwartym."
             ),
             (
-                "2. USUŃ wszelkie nawiązania do wyboru opcji (np. 'Która z "
+                "- USUŃ wszelkie nawiązania do wyboru opcji (np. 'Która z "
                 "podanych...', 'Z poniższych odpowiedzi...', 'Wskaż...')."
             ),
             (
-                "3. WYKORZYSTAJ informacje z poprawnych odpowiedzi, aby "
-                "pytanie było precyzyjne."
+                "- WYKORZYSTAJ informacje z poprawnych odpowiedzi, aby "
+                "pytanie było precyzyjne i miało jednoznaczną odpowiedź."
             ),
-            "4. Zachowaj oryginalne 'id' i 'difficulty'.",
-            "5. Pytanie musi być sformułowane tak, aby uczeń musiał "
-            "samodzielnie sformułować odpowiedź.",
+            "- Zachowaj oryginalne `id` i `difficulty`.",
+            (
+                "- Pytanie musi być sformułowane tak, aby uczeń musiał "
+                "samodzielnie sformułować odpowiedź, nie tylko ją wybrać."
+            ),
             "",
-            "### WYMAGANY FORMAT ODPOWIEDZI (JSON):",
+            "### WYMAGANY FORMAT ODPOWIEDZI (JSON)",
             "Zwróć WYŁĄCZNIE listę obiektów JSON (Array) o strukturze:",
             '[ {"id": 789, "text": "...", "difficulty": 1} ]',
             "",
-            "Wymagania i formatowanie:",
+            "### WYMAGANIA I FORMATOWANIE",
             cls.LATEX_RULES,
             cls.GENERAL_CONSTRAINTS,
             "",
-            "Pytania do konwersji z kontekstem (JSON):\n"
+            "### PYTANIA DO KONWERSJI Z KONTEKSTEM (JSON)",
             f"{json.dumps(questions, ensure_ascii=False)}",
         ]
         return "\n".join(parts)
