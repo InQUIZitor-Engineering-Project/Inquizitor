@@ -395,7 +395,7 @@ const LiveTestPreview: React.FC<LiveTestPreviewProps> = ({ data, config }) => {
                     />
                   ))}
 
-                  {page.scratchpadHeightCm && (
+                  {page.scratchpadHeightCm && !page.isScratchpadOnly && (
                     <div style={{ marginTop: "auto", paddingTop: "20px" }}>
                       <h3 style={{ color: BRAND_COLOR, marginTop: 0 }}>Brudnopis</h3>
                       <AnswerGrid $heightCm={page.scratchpadHeightCm} />

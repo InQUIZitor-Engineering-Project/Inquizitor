@@ -29,7 +29,8 @@ from app.infrastructure.monitoring.posthog_client import analytics
 
 def normalize_frontend_base_url(url: str | None) -> str:
     """
-    Ensure FRONTEND_BASE_URL includes scheme and 'www.' prefix.
+    Ensure FRONTEND_BASE_URL includes scheme. Adds 'www.' only to root domains
+    (e.g. inquizitor.pl), not to subdomains (e.g. app.inquizitor.pl).
     """
     cleaned = (url or "").strip()
     if not cleaned:
@@ -38,11 +39,17 @@ def normalize_frontend_base_url(url: str | None) -> str:
         cleaned = f"https://{cleaned}"
     parsed = urlparse(cleaned)
     netloc = parsed.netloc
-    
-    # Don't add 'www.' to localhost or if it's already there
-    if netloc and not netloc.startswith("www.") and "localhost" not in netloc:
+
+    parts = netloc.split(".")
+    is_root_domain = len(parts) == 2
+    if (
+        netloc
+        and not netloc.startswith("www.")
+        and "localhost" not in netloc
+        and is_root_domain
+    ):
         netloc = f"www.{netloc}"
-        
+
     parsed = parsed._replace(netloc=netloc)
     return urlunparse(parsed)
 
