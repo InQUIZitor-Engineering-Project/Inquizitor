@@ -56,6 +56,7 @@ from app.infrastructure.exporting import (
     render_test_to_tex,
     test_to_xml_bytes,
 )
+from app.core.config import get_settings
 from app.infrastructure.llm.gemini import GeminiQuestionGenerator
 from app.infrastructure.llm.prompts import PromptBuilder
 from app.infrastructure.monitoring.posthog_client import analytics
@@ -179,7 +180,7 @@ class TestService:
         try:
             client = GeminiQuestionGenerator._client()
             response = client.models.generate_content(
-                model="gemini-2.5-flash",
+                model=get_settings().GEMINI_QUIZ_FAST_MODEL,
                 contents=prompt,
             )
             raw = (response.text or "").strip()
@@ -1298,7 +1299,7 @@ class TestService:
                 try:
                     client = GeminiQuestionGenerator._client()
                     response = client.models.generate_content(
-                        model="gemini-2.5-flash",
+                        model=get_settings().GEMINI_QUIZ_FAST_MODEL,
                         contents=prompt,
                     )
                     raw = (response.text or "").strip()
@@ -1361,7 +1362,7 @@ class TestService:
             try:
                 client = GeminiQuestionGenerator._client()
                 response = client.models.generate_content(
-                    model="gemini-2.5-flash",
+                    model=get_settings().GEMINI_QUIZ_FAST_MODEL,
                     contents=prompt,
                 )
                 raw = (response.text or "").strip()
