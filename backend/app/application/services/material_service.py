@@ -15,6 +15,8 @@ from app.application.interfaces import DocumentAnalyzer, FileStorage, UnitOfWork
 from app.domain.models import File as FileDomain
 from app.domain.models import Material as MaterialDomain
 from app.domain.models.enums import AnalysisStatus, ProcessingStatus
+from app.infrastructure.converters import convert_docx_to_pdf
+from app.infrastructure.extractors.text import _read_docx
 from app.infrastructure.thumbnails import (
     can_generate_thumbnail,
     generate_and_save_thumbnail,
@@ -429,6 +431,28 @@ class MaterialService:
                 stored_path=str(file_record.stored_path)
             ) as local_path:
                 local = Path(local_path)
+
+                # .docx → PDF so Gemini can process embedded images/charts
+                converted_pdf: Path | None = None
+                docx_text_fallback: str | None = None
+                is_docx = (
+                    (file_record.filename or "").lower().endswith(".docx")
+                    or local.suffix.lower() == ".docx"
+                )
+                if is_docx:
+                    try:
+                        converted_pdf = convert_docx_to_pdf(local)
+                        local = converted_pdf
+                    except Exception as exc:
+                        logger.warning(
+                            "DOCX→PDF conversion failed, using text fallback: %s",
+                            exc,
+                        )
+                        try:
+                            docx_text_fallback = _read_docx(local) or ""
+                        except Exception:
+                            docx_text_fallback = ""
+
                 mime_type = self._detect_mime(local)
                 material.mime_type = mime_type
                 material.size_bytes = local.stat().st_size if local.exists() else None
@@ -462,8 +486,39 @@ class MaterialService:
                 # 1. LLM Analysis (Multi-modal) - Gemini extracts from files.
                 # We skip local text extraction and rely on Gemini.
                 is_txt = (file_record.filename or "").lower().endswith(".txt")
-                
-                if is_txt:
+
+                if docx_text_fallback is not None and self._analyzer:
+                    # PDF conversion failed; pass extracted text as source_text
+                    try:
+                        markdown_twin, routing, _usage, _title = self._analyzer.analyze(
+                            source_text=docx_text_fallback,
+                            filename=file_record.filename,
+                            mime_type="text/plain",
+                            file_path=None,
+                            user_id=owner_id,
+                            ocr_cache_repository=uow.ocr_cache,
+                        )
+                        material.markdown_twin = markdown_twin
+                        material.routing_tier = routing
+                        material.analysis_status = AnalysisStatus.DONE
+                        material.analysis_version = "v1"
+                        if markdown_twin:
+                            import re
+                            plain_text = re.sub(r'[#*_`\[\]()]', '', markdown_twin)
+                            plain_text = re.sub(r'\n+', '\n', plain_text).strip()
+                            if plain_text:
+                                material.extracted_text = plain_text
+                                material.status = ProcessingStatus.DONE
+                                material.processing_error = None
+                            else:
+                                material.mark_failed("Gemini returned empty content")
+                        else:
+                            material.mark_failed("Gemini returned no content")
+                    except Exception as exc:
+                        material.analysis_status = AnalysisStatus.FAILED
+                        material.processing_error = f"LLM Analysis failed: {exc}"
+                        material.mark_failed(material.processing_error)
+                elif is_txt:
                     # For .txt files, read directly and use as markdown_twin
                     try:
                         raw_text: str | None = self._text_extractor(local, mime_type)
@@ -520,7 +575,20 @@ class MaterialService:
                     error_msg = "No analyzer available for this file type"
                     material.mark_failed(error_msg)
 
-            # Update material with all changes (including thumbnail_path)
+                if converted_pdf and converted_pdf.exists():
+                    converted_pdf.unlink()
+
+            # Update material with all changes (including thumbnail_path).
+            # Guard against the race condition where the user deleted the material
+            # while the background task was processing it.
+            if material.id is None or uow.materials.get(material.id) is None:
+                logger.warning(
+                    "Material %s was deleted during processing — skipping update",
+                    material.id,
+                )
+                return dto.to_material_out(
+                    material, cache_hit=False, duration_ocr_sec=None
+                )
             updated = uow.materials.update(material)
 
         return dto.to_material_out(

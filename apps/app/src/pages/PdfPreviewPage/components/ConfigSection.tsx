@@ -177,14 +177,6 @@ const ConfigSection: React.FC<ConfigSectionProps> = ({
             </ConfigGrid>
           </Box>
 
-          <Divider />
-
-          <ToggleRow
-            id="pdf-mark-multi-choice"
-            label="Oznacz pytania wielokrotnego wyboru"
-            checked={config.mark_multi_choice}
-            onChange={(checked) => onChange((cfg) => ({ ...cfg, mark_multi_choice: checked }))}
-          />
         </Stack>
       </Card>
 
@@ -198,6 +190,13 @@ const ConfigSection: React.FC<ConfigSectionProps> = ({
           </Box>
 
           <Flex $direction="column">
+            <ToggleRow
+              id="pdf-mark-multi-choice"
+              label="Oznacz pytania wielokrotnego wyboru"
+              checked={config.mark_multi_choice}
+              onChange={(checked) => onChange((cfg) => ({ ...cfg, mark_multi_choice: checked }))}
+            />
+            <Divider />
             <ToggleRow
               id="pdf-student-header"
               label="Linia na imię i nazwisko ucznia"

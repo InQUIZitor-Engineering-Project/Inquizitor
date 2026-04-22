@@ -75,10 +75,13 @@ class GeminiDocumentAnalyzer(DocumentAnalyzer):
                 logger.info("Cache hit for file: %s", file_path)
                 return cached_result
 
-        # If we have a file, we don't need to send the full source_text in the prompt
-        # Gemini will extract it better from the file itself.
-        # We only send a small snippet if available as a hint.
-        hint_text = source_text[:1000] if source_text else ""
+        # When a file is attached, source_text is just a short hint — Gemini reads
+        # the file directly. When there is no file, source_text IS the document.
+        hint_text = (
+            source_text
+            if not file_path
+            else (source_text[:1000] if source_text else "")
+        )
         
         prompt = PromptBuilder.build_document_analysis_prompt(
             text=hint_text, filename=filename, mime_type=mime_type

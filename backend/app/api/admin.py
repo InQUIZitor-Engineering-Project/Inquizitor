@@ -80,7 +80,14 @@ class NotificationAdmin(ModelView, model=SystemNotification):
         "id",
         "title",
         "type",
+        "recipient_id",
         "created_at",
+    ]
+    form_columns = [
+        "title",
+        "message",
+        "type",
+        "recipient_id",
     ]
     icon = "fa-solid fa-bell"
     name_plural = "Powiadomienia Systemowe"

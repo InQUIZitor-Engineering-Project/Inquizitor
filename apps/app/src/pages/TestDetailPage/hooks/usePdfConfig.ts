@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import type { PdfExportConfig } from "../../../services/test";
 import { exportCustomPdf } from "../../../services/test";
@@ -51,6 +51,8 @@ const usePdfConfig = (): UsePdfConfigResult => {
     }
   });
 
+  const testIdRef = useRef(testId);
+
   const [pdfConfigOpen, setPdfConfigOpen] = useState(false);
   const [pdfInProgress, setPdfInProgress] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
@@ -65,15 +67,29 @@ const usePdfConfig = (): UsePdfConfigResult => {
     reset: resetJobPolling,
   } = useJobPolling();
 
+  // Reload config from localStorage when navigating to a different test
   useEffect(() => {
+    testIdRef.current = testId;
     if (!testId) return;
-    const key = `pdf_config_${testId}`;
     try {
-      localStorage.setItem(key, JSON.stringify(pdfConfig));
+      const saved = localStorage.getItem(`pdf_config_${testId}`);
+      setPdfConfig(saved ? { ...defaultPdfConfig, ...JSON.parse(saved) } : defaultPdfConfig);
+    } catch (e) {
+      console.warn("Błąd odczytu konfiguracji PDF z localStorage", e);
+      setPdfConfig(defaultPdfConfig);
+    }
+  }, [testId]);
+
+  // Save config changes using ref so testId changes don't trigger a premature save
+  useEffect(() => {
+    const tid = testIdRef.current;
+    if (!tid) return;
+    try {
+      localStorage.setItem(`pdf_config_${tid}`, JSON.stringify(pdfConfig));
     } catch (e) {
       console.warn("Błąd zapisu konfiguracji PDF do localStorage", e);
     }
-  }, [pdfConfig, testId]);
+  }, [pdfConfig]);
 
   const updatePdfConfig = useCallback((updater: (cfg: PdfExportConfig) => PdfExportConfig) => {
     setPdfConfig((prev) => updater(prev));
