@@ -22,6 +22,7 @@ import VerifyEmailPage from "./pages/VerifyEmailPage/VerifyEmailPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage/ResetPasswordPage";
 import SettingsPage from "./pages/SettingsPage/SettingsPage";
+import HelpPage from "./pages/HelpPage/HelpPage";
 import ScrollToTop from "./components/ScrollToTop/ScrollToTop";
 
 const SITE_URL = import.meta.env.VITE_SITE_URL ?? "https://inquizitor.pl";
@@ -147,6 +148,14 @@ const App: React.FC = () => {
               element={
                 <ProtectedRoute>
                   <MaterialPreviewPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/pomoc"
+              element={
+                <ProtectedRoute>
+                  <HelpPage />
                 </ProtectedRoute>
               }
             />

@@ -61,7 +61,7 @@ const PrivacyPolicyPage: React.FC = () => {
                   Polityka Prywatności Aplikacji Inquizitor
                 </Heading>
                 <Text $variant="body2" $tone="muted">
-                  Ostatnia aktualizacja: 22.02.2025
+                  Ostatnia aktualizacja: 22.02.2026
                 </Text>
               </Stack>
 
