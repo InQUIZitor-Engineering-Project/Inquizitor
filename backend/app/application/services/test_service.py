@@ -37,6 +37,7 @@ from app.application.interfaces import (
     QuestionGenerator,
     UnitOfWork,
 )
+from app.core.config import get_settings
 from app.db.models import Question as QuestionRow
 from app.db.models import Test as TestRow
 from app.db.models import User as UserRow
@@ -56,7 +57,6 @@ from app.infrastructure.exporting import (
     render_test_to_tex,
     test_to_xml_bytes,
 )
-from app.core.config import get_settings
 from app.infrastructure.llm.gemini import GeminiQuestionGenerator
 from app.infrastructure.llm.prompts import PromptBuilder
 from app.infrastructure.monitoring.posthog_client import analytics
