@@ -42,7 +42,12 @@ def normalize_frontend_base_url(url: str | None) -> str:
 
     parts = netloc.split(".")
     is_root_domain = len(parts) == 2
-    if netloc and not netloc.startswith("www.") and "localhost" not in netloc and is_root_domain:
+    if (
+        netloc
+        and not netloc.startswith("www.")
+        and "localhost" not in netloc
+        and is_root_domain
+    ):
         netloc = f"www.{netloc}"
 
     parsed = parsed._replace(netloc=netloc)
