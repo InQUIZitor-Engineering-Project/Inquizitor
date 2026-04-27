@@ -25,19 +25,28 @@ import SettingsPage from "./pages/SettingsPage/SettingsPage";
 import HelpPage from "./pages/HelpPage/HelpPage";
 import ScrollToTop from "./components/ScrollToTop/ScrollToTop";
 import { Toaster } from "sonner";
+import { useTheme } from "styled-components";
 import { usePersonalization } from "./context/usePersonalization";
 
 const SITE_URL = import.meta.env.VITE_SITE_URL ?? "https://inquizitor.pl";
 
 const AppToaster: React.FC = () => {
   const { colorTheme } = usePersonalization();
+  const theme = useTheme();
   return (
     <Toaster
       position="bottom-right"
       richColors
       closeButton
       theme={colorTheme === "dark" ? "dark" : "light"}
-      toastOptions={{ style: { fontFamily: "inherit" } }}
+      toastOptions={{
+        style: { fontFamily: "inherit" },
+        actionButtonStyle: {
+          backgroundColor: theme.colors.brand.primary,
+          color: "#fff",
+          fontFamily: "inherit",
+        },
+      }}
     />
   );
 };
