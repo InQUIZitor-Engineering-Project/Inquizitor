@@ -74,7 +74,8 @@ def process_material_task(
                     )
                 except ValueError:
                     logger.warning(
-                        "Material %s not found when updating status — likely deleted during processing",
+                        "Material %s not found when updating status "
+                        "— likely deleted during processing",
                         material.id,
                     )
                     return material.id
