@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate, useOutletContext, useSearchParams } from "react-router-dom";
+import { useOutletContext, useSearchParams } from "react-router-dom";
 import { generateTest, getJobs, getTestConfig } from "../../../services/test";
 import {
   analyzeMaterials,
@@ -11,10 +11,13 @@ import {
 } from "../../../services/materials";
 import { useLoader } from "../../../components/Loader/GlobalLoader";
 import useDocumentTitle from "../../../hooks/useDocumentTitle";
-import { useJobPolling } from "../../../hooks/useJobPolling";
 import { MAX_QUESTIONS_TOTAL } from "../constants";
 
-type LayoutCtx = { refreshSidebarTests: () => Promise<void> };
+type LayoutCtx = {
+  refreshSidebarTests: () => Promise<void>;
+  startTestGeneration: (jobId: number) => void;
+  isGenerating?: boolean;
+};
 
 export interface UseGenerateTestFormResult {
   state: {
@@ -65,11 +68,6 @@ export interface UseGenerateTestFormResult {
     isEditing: boolean;
     editTestId: string | null;
   };
-  job: {
-    jobId: number | null;
-    jobStatus: string | null;
-    jobPolling: boolean;
-  };
   refs: {
     fileInputRef: React.RefObject<HTMLInputElement | null>;
   };
@@ -96,21 +94,11 @@ export interface UseGenerateTestFormResult {
 }
 
 const useGenerateTestForm = (): UseGenerateTestFormResult => {
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const fromTestId = searchParams.get("from");
   const materialIdsParam = searchParams.get("materialIds");
-  const { refreshSidebarTests } = useOutletContext<LayoutCtx>();
+  const { startTestGeneration, isGenerating = false } = useOutletContext<LayoutCtx>();
   const { startLoading, stopLoading } = useLoader();
-  const {
-    jobId,
-    status: jobStatus,
-    result: jobResult,
-    error: jobError,
-    isPolling: jobPolling,
-    startPolling,
-    reset: resetJobPolling,
-  } = useJobPolling();
 
   const [sourceType, setSourceType] = useState<"text" | "material">("text");
   const [sourceContent, setSourceContent] = useState("");
@@ -498,7 +486,6 @@ const useGenerateTestForm = (): UseGenerateTestFormResult => {
     const textPayload = sourceContent.trim();
 
     try {
-      startLoading();
       const enqueue = await generateTest({
         closed: {
           true_false: tfCount,
@@ -514,46 +501,14 @@ const useGenerateTestForm = (): UseGenerateTestFormResult => {
         additional_instructions: instructions.trim() || undefined,
       });
 
-      resetJobPolling();
-      startPolling(enqueue.job_id);
-    } catch (err: any) {
-      setGenError(err.message || "Wystąpił błąd przy generowaniu testu. Spróbuj ponownie.");
+      startTestGeneration(enqueue.job_id);
       setGenLoading(false);
-      stopLoading();
-      resetJobPolling();
+    } catch (err: any) {
+      const msg = err.message || "Wystąpił błąd przy generowaniu testu. Spróbuj ponownie.";
+      setGenError(msg);
+      setGenLoading(false);
     }
   };
-
-  useEffect(() => {
-    const normalized = (jobStatus || "").toLowerCase();
-    if (!normalized) return;
-
-    if (normalized === "done") {
-      const testId = (jobResult as any)?.test_id;
-      if (testId) {
-        void refreshSidebarTests();
-        navigate(`/tests/${testId}`);
-      } else {
-        setGenError("Zadanie zakończone, ale brak identyfikatora testu.");
-      }
-      setGenLoading(false);
-      stopLoading();
-      resetJobPolling();
-    } else if (normalized === "failed") {
-      setGenError(jobError || (jobResult as any)?.error || "Generowanie nie powiodło się.");
-      setGenLoading(false);
-      stopLoading();
-      resetJobPolling();
-    }
-  }, [
-    jobStatus,
-    jobResult,
-    jobError,
-    navigate,
-    refreshSidebarTests,
-    resetJobPolling,
-    stopLoading,
-  ]);
 
   // Keep ref in sync so polling callback always sees latest list without re-running effect
   useEffect(() => {
@@ -694,13 +649,12 @@ const useGenerateTestForm = (): UseGenerateTestFormResult => {
       onCloseLibraryModal: () => setLibraryModalOpen(false),
       onSelectMaterialsFromLibrary: handleSelectMaterialsFromLibrary,
     },
-    status: { 
-      genError, 
-      genLoading: genLoading || jobPolling,
+    status: {
+      genError,
+      genLoading: genLoading || isGenerating,
       isEditing: !!fromTestId,
-      editTestId: fromTestId
+      editTestId: fromTestId,
     },
-    job: { jobId, jobStatus, jobPolling },
     refs: { fileInputRef },
     actions: {
       setSourceType,

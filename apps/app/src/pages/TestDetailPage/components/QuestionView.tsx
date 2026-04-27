@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import styled, { useTheme } from "styled-components";
+import styled, { useTheme, keyframes } from "styled-components";
 import { MathText } from "../../../components/MathText/MathText";
 import { Badge, Flex, Text, Checkbox } from "../../../design-system/primitives";
 import { QuestionCard, IndexChip, Tooltip } from "../../../design-system/patterns";
@@ -30,10 +30,39 @@ export interface QuestionViewProps {
   onSelect?: (qid: number) => void;
   /** Optional drag handle for reordering (from useSortable). */
   dragHandle?: React.ReactNode;
+  /** When set, renders a loading overlay with this text (e.g. "Regeneruję…", "Zmieniam typ…"). */
+  overlayLabel?: string;
 }
+
+const spin = keyframes`
+  to { transform: rotate(360deg); }
+`;
 
 const CardWrapper = styled.div`
   position: relative;
+`;
+
+const RegeneratingOverlay = styled.div`
+  position: absolute;
+  inset: 0;
+  border-radius: ${({ theme }) => theme.radii.xl};
+  background: ${({ theme }) => `${theme.colors.neutral.white}D9`};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  z-index: 2;
+  backdrop-filter: blur(4px);
+`;
+
+const Spinner = styled.div`
+  width: 18px;
+  height: 18px;
+  border: 2px solid ${({ theme }) => theme.colors.neutral.greyBlue};
+  border-top-color: ${({ theme }) => theme.colors.brand.primary};
+  border-radius: 50%;
+  animation: ${spin} 0.7s linear infinite;
+  flex-shrink: 0;
 `;
 
 const GutterSpacer = styled.div`
@@ -112,6 +141,7 @@ const QuestionView: React.FC<QuestionViewProps> = ({
   isSelected,
   onSelect,
   dragHandle,
+  overlayLabel,
 }) => {
   const theme = useTheme();
   const [isCardHovered, setIsCardHovered] = useState(false);
@@ -194,6 +224,12 @@ const QuestionView: React.FC<QuestionViewProps> = ({
       onMouseEnter={() => setIsCardHovered(true)}
       onMouseLeave={() => setIsCardHovered(false)}
     >
+      {overlayLabel && (
+        <RegeneratingOverlay>
+          <Spinner />
+          <Text $variant="body3" $tone="muted">{overlayLabel}</Text>
+        </RegeneratingOverlay>
+      )}
       <QuestionCard
         className="ph-no-capture"
         style={

@@ -24,8 +24,23 @@ import ResetPasswordPage from "./pages/ResetPasswordPage/ResetPasswordPage";
 import SettingsPage from "./pages/SettingsPage/SettingsPage";
 import HelpPage from "./pages/HelpPage/HelpPage";
 import ScrollToTop from "./components/ScrollToTop/ScrollToTop";
+import { Toaster } from "sonner";
+import { usePersonalization } from "./context/usePersonalization";
 
 const SITE_URL = import.meta.env.VITE_SITE_URL ?? "https://inquizitor.pl";
+
+const AppToaster: React.FC = () => {
+  const { colorTheme } = usePersonalization();
+  return (
+    <Toaster
+      position="bottom-right"
+      richColors
+      closeButton
+      theme={colorTheme === "dark" ? "dark" : "light"}
+      toastOptions={{ style: { fontFamily: "inherit" } }}
+    />
+  );
+};
 
 const ExternalRedirect: React.FC<{ to: string }> = ({ to }) => {
   useEffect(() => { window.location.replace(to); }, [to]);
@@ -55,6 +70,7 @@ const App: React.FC = () => {
   return (
     <AuthProvider>
       <BrowserRouter>
+        <AppToaster />
         <Navbar />
         <ScrollToTop />
         <Routes>

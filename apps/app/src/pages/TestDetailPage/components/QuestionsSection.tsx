@@ -47,6 +47,8 @@ export interface QuestionsSectionProps {
   isAdding: boolean;
   draft: Partial<QuestionOut>;
   selectedIds: number[];
+  regeneratingIds?: number[];
+  convertingIds?: number[];
   summary: {
     total: number;
     easy: number;
@@ -143,6 +145,8 @@ const QuestionsSection: React.FC<QuestionsSectionProps> = ({
   isAdding,
   draft,
   selectedIds,
+  regeneratingIds = [],
+  convertingIds = [],
   summary,
   actions,
   stateFlags,
@@ -291,6 +295,13 @@ const QuestionsSection: React.FC<QuestionsSectionProps> = ({
                       isSelected={selectedIds.includes(q.id)}
                       onSelect={actions.toggleSelect}
                       dragHandle={dragHandle}
+                      overlayLabel={
+                        regeneratingIds.includes(q.id)
+                          ? "Regeneruję…"
+                          : convertingIds.includes(q.id)
+                            ? "Zmieniam typ…"
+                            : undefined
+                      }
                     />
                   )
                 }

@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useOutletContext, useParams, useSearchParams, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { useLoader } from "../../../components/Loader/GlobalLoader";
 import useDocumentTitle from "../../../hooks/useDocumentTitle";
 import useTestData from "./useTestData";
@@ -23,7 +24,7 @@ import {
   type GroupOut,
 } from "../../../services/test";
 
-type LayoutCtx = { refreshSidebarTests: () => Promise<void> };
+type LayoutCtx = { refreshSidebarTests: () => Promise<void>; isGenerating?: boolean };
 
 type UseTestDetailResult = {
   state: {
@@ -56,6 +57,9 @@ type UseTestDetailResult = {
     loading: boolean;
     error: string | null;
     selectedIds: number[];
+    regeneratingQuestionIds: number[];
+    convertingQuestionIds: number[];
+    isGenerating: boolean;
   };
   derived: {
     closedCount: number;
@@ -135,6 +139,7 @@ const useTestDetail = (): UseTestDetailResult => {
   // const { refreshSidebarTests } = useOutletContext<LayoutCtx>();
   const context = useOutletContext<LayoutCtx | null>();
   const refreshSidebarTests = context?.refreshSidebarTests || (async () => {});
+  const isGenerating = context?.isGenerating ?? false;
   const { withLoader, startLoading, stopLoading } = useLoader();
   const { data, loading, error, refresh, deleteCurrent, setData } = useTestData();
   const {
@@ -150,12 +155,16 @@ const useTestDetail = (): UseTestDetailResult => {
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const clearSelection = () => setSelectedIds([]);
   const pendingVariantOnSuccessRef = useRef<((newGroupId: number) => void) | null>(null);
+  const [regeneratingQuestionIds, setRegeneratingQuestionIds] = useState<number[]>([]);
+  const [convertingQuestionIds, setConvertingQuestionIds] = useState<number[]>([]);
 
   const pollingOptions = useMemo(() => ({
     onDone: async (job: any) => {
       await refresh();
       stopLoading();
       clearSelection();
+      setRegeneratingQuestionIds([]);
+      setConvertingQuestionIds([]);
       if (job?.result?.group_id != null && pendingVariantOnSuccessRef.current) {
         pendingVariantOnSuccessRef.current(job.result.group_id);
         pendingVariantOnSuccessRef.current = null;
@@ -163,6 +172,8 @@ const useTestDetail = (): UseTestDetailResult => {
     },
     onFail: (job: any) => {
       stopLoading();
+      setRegeneratingQuestionIds([]);
+      setConvertingQuestionIds([]);
       pendingVariantOnSuccessRef.current = null;
       alert(job.error || "Zadanie nie powiodło się");
     },
@@ -301,7 +312,7 @@ const useTestDetail = (): UseTestDetailResult => {
     setIsRegenerateModalOpen(false);
     setRegenerationInstruction("");
     setSingleQuestionRegenerateId(null);
-    startLoading();
+    setRegeneratingQuestionIds(ids);
 
     try {
       const res = await bulkRegenerateQuestions(data.test_id, {
@@ -310,7 +321,7 @@ const useTestDetail = (): UseTestDetailResult => {
       });
       jobPolling.startPolling(res.job_id);
     } catch (e: any) {
-      stopLoading();
+      setRegeneratingQuestionIds([]);
       alert(e.message || "Błąd podczas inicjowania regeneracji pytań");
     }
   };
@@ -357,7 +368,7 @@ const useTestDetail = (): UseTestDetailResult => {
 
     closeTypeModal();
     setSingleQuestionTypeChangeId(null);
-    startLoading();
+    setConvertingQuestionIds(ids);
 
     try {
       const res = await bulkConvertQuestions(data.test_id, {
@@ -366,7 +377,7 @@ const useTestDetail = (): UseTestDetailResult => {
       });
       jobPolling.startPolling(res.job_id);
     } catch (e: any) {
-      stopLoading();
+      setConvertingQuestionIds([]);
       alert(e.message || "Błąd podczas konwersji pytań");
     }
   };
@@ -393,19 +404,22 @@ const useTestDetail = (): UseTestDetailResult => {
     const filename = `test_${testIdNum}.xml`;
     const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
     if (!token) return;
-    await withLoader(async () => {
-      try {
-        const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-        if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-        const blob = await res.blob();
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = filename;
-        a.click();
-        URL.revokeObjectURL(a.href);
-      } catch (e: any) {
-        alert(`Nie udało się pobrać pliku: ${e.message || e}`);
-      }
+
+    const doDownload = async () => {
+      const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+      const blob = await res.blob();
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    };
+
+    toast.promise(doDownload(), {
+      loading: "Przygotowuję XML…",
+      success: "XML gotowy — pobieranie rozpoczęte.",
+      error: (e) => e?.message || "Nie udało się pobrać pliku XML.",
     });
   };
 
@@ -538,6 +552,9 @@ const useTestDetail = (): UseTestDetailResult => {
       loading,
       error,
       selectedIds,
+      regeneratingQuestionIds,
+      convertingQuestionIds,
+      isGenerating,
     },
     derived: {
       closedCount,
