@@ -75,6 +75,13 @@ const Footer: React.FC = () => {
             </FooterLink>
             <Divider />
             <FooterLink
+              href="/warunki-korzystania"
+              $active={pathname === "/warunki-korzystania"}
+            >
+              Warunki korzystania
+            </FooterLink>
+            <Divider />
+            <FooterLink
               href="/polityka-prywatnosci"
               $active={pathname === "/polityka-prywatnosci"}
             >

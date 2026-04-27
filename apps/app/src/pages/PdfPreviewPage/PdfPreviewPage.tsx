@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import styled from "styled-components";
+import styled, { useTheme } from "styled-components";
 import { useNavigate } from "react-router-dom";
 import { Box, Flex, Stack, Text, Heading, Button, Divider } from "../../design-system/primitives";
 import { AlertBar } from "../../design-system/patterns";
@@ -30,6 +30,7 @@ const NAVBAR_HEIGHT = "65px";
 
 const PdfPreviewPage: React.FC = () => {
   const navigate = useNavigate();
+  const theme = useTheme();
   const { state, actions } = usePdfPreview();
 
   useEffect(() => {
@@ -52,7 +53,7 @@ const PdfPreviewPage: React.FC = () => {
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: "#f5f6f8",
+        backgroundColor: theme.colors.neutral.silver,
         display: "flex",
         overflow: "hidden",
       }}
@@ -62,8 +63,8 @@ const PdfPreviewPage: React.FC = () => {
         style={{
           width: 420,
           flexShrink: 0,
-          background: "white",
-          borderRight: "1px solid #e8e8e8",
+          background: theme.colors.neutral.white,
+          borderRight: `1px solid ${theme.colors.neutral.whiteStroke}`,
           display: "flex",
           flexDirection: "column",
           height: "100%",
@@ -75,7 +76,7 @@ const PdfPreviewPage: React.FC = () => {
           $px="lg"
           $pt="lg"
           $pb="md"
-          style={{ borderBottom: "1px solid #f0f0f0", flexShrink: 0 }}
+          style={{ borderBottom: `1px solid ${theme.colors.neutral.whiteStroke}`, flexShrink: 0 }}
         >
           <BackLink onClick={() => navigate(`/tests/${state.data?.test_id}`)}>
             ← Wróć do edycji
@@ -104,7 +105,7 @@ const PdfPreviewPage: React.FC = () => {
           $px="lg"
           $pt="md"
           $pb="lg"
-          style={{ borderTop: "1px solid #f0f0f0", flexShrink: 0 }}
+          style={{ borderTop: `1px solid ${theme.colors.neutral.whiteStroke}`, flexShrink: 0 }}
         >
           <Stack $gap="sm">
             {state.downloadError && (

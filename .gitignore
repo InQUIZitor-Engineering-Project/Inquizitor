@@ -49,6 +49,7 @@ coverage.xml
 dist/
 build/
 node_modules/
+.vite/
 .next/
 *.tsbuildinfo
 

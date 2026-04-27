@@ -322,18 +322,18 @@ class TestService:
                 texts = []
                 base_title = "Z wielu plików"
                 routing_tiers: list[str] = []
-                for m_id in request.material_ids:
-                    m = uow.materials.get(m_id)
-                    if not m or m.owner_id != owner_id:
+                materials = uow.materials.get_many(request.material_ids)
+                for m in materials:
+                    if m.owner_id != owner_id:
                         continue
-                    
+
                     # Markdown twin is our source of truth
                     if m.markdown_twin:
                         texts.append(m.markdown_twin)
                     elif m.extracted_text:
                         # Fallback for old materials without twin
                         texts.append(m.extracted_text)
-                    
+
                     if m.routing_tier:
                         routing_tiers.append(m.routing_tier.value)
                     if len(request.material_ids) == 1:
@@ -440,8 +440,7 @@ class TestService:
             default_group = uow.tests.create_group(persisted_test.id, "Grupa A", 0)
             if default_group.id is None:
                 raise RuntimeError("Failed to create default group")
-            for question in questions:
-                uow.tests.add_question(persisted_test.id, question, default_group.id)
+            uow.tests.bulk_add_questions(persisted_test.id, questions, default_group.id)
 
             TestGenerated.create(
                 test_id=persisted_test.id,
@@ -490,7 +489,18 @@ class TestService:
             if persisted_test.id is None:
                 raise RuntimeError("Failed to create test")
             uow.tests.create_group(persisted_test.id, "Grupa A", 0)
-            return dto.to_test_out(persisted_test)
+
+        analytics.capture(
+            user_id=owner_id,
+            event="test_created",
+            properties={
+                "test_id": persisted_test.id,
+                "title": title,
+                "source": "manual",
+            },
+        )
+
+        return dto.to_test_out(persisted_test)
 
     def create_group(
         self, *, owner_id: int, test_id: int, label: str, position: int = 0

@@ -16,6 +16,12 @@ class TestRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    def bulk_add_questions(
+        self, test_id: int, questions: list[Question], group_id: int
+    ) -> list[Question]:
+        raise NotImplementedError
+
+    @abstractmethod
     def get(self, test_id: int) -> Test | None:
         raise NotImplementedError
 

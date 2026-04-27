@@ -9,7 +9,7 @@ SHELL := /bin/bash
 # ─── Dev ──────────────────────────────────────────────────────────────────────
 
 start:
-	docker compose up --build
+	docker compose up
 
 start.app:
 	docker compose up app

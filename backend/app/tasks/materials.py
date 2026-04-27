@@ -62,15 +62,23 @@ def process_material_task(
             if has_thumbnail or analysis_succeeded:
                 # Update material status to DONE since it has thumbnail or markdown_twin
                 # (it's usable even without text extraction)
-                material_service.update_material(
-                    owner_id=owner_id,
-                    material_id=material.id,
-                    payload=MaterialUpdate(processing_status="done"),
-                )
-                # Refresh material to get updated status
-                material = material_service.get_material(
-                    owner_id=owner_id, material_id=material.id
-                )
+                try:
+                    material_service.update_material(
+                        owner_id=owner_id,
+                        material_id=material.id,
+                        payload=MaterialUpdate(processing_status="done"),
+                    )
+                    # Refresh material to get updated status
+                    material = material_service.get_material(
+                        owner_id=owner_id, material_id=material.id
+                    )
+                except ValueError:
+                    logger.warning(
+                        "Material %s not found when updating status "
+                        "— likely deleted during processing",
+                        material.id,
+                    )
+                    return material.id
                 
                 job_service.update_job_status(
                     job_id=job_id,

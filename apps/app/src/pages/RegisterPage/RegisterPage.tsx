@@ -16,6 +16,8 @@ const MobileHide = styled.div`
   }
 `;
 
+const SITE_URL = import.meta.env.VITE_SITE_URL ?? "https://inquizitor.pl";
+
 const RegisterPage: React.FC = () => {
   const theme = useTheme();
 
@@ -255,10 +257,16 @@ const RegisterPage: React.FC = () => {
                     />
                     <Text $variant="body3" $tone="muted">
                       Akceptuję{" "}
-                      <Link to="/polityka-prywatnosci" target="_blank" rel="noopener noreferrer" style={{ color: theme.colors.brand.primary, textDecoration: "underline" }}>
-                        Warunki Użytkowania i Politykę Prywatności
-                      </Link>
-                      . * Oświadczam, że posiadam prawa do materiałów i wyrażam zgodę na ich przetworzenie przez AI.{" "}
+                      <a href={`${SITE_URL}/warunki-korzystania`} target="_blank" rel="noopener noreferrer" style={{ color: theme.colors.brand.primary, textDecoration: "underline" }}>
+                        Warunki korzystania
+                      </a>
+                      {" "}(w tym zasady korzystania z AI) oraz potwierdzam zapoznanie się z{" "}
+                      <a href={`${SITE_URL}/polityka-prywatnosci`} target="_blank" rel="noopener noreferrer" style={{ color: theme.colors.brand.primary, textDecoration: "underline" }}>
+                        Polityką prywatności
+                      </a>
+                      .{" "}
+                      <span style={{ color: theme.colors.danger.main, fontWeight: 700 }}>*</span>
+                      <br />
                       <button
                         type="button"
                         onClick={() => setIsModalOpen(true)}
@@ -269,6 +277,7 @@ const RegisterPage: React.FC = () => {
                           cursor: "pointer",
                           padding: 0,
                           textDecoration: "underline",
+                          marginTop: 4,
                         }}
                       >
                         Więcej informacji
@@ -307,11 +316,15 @@ const RegisterPage: React.FC = () => {
       >
         <Stack $gap="lg">
           <Text $variant="body3" $tone="muted">
-            Pełna{" "}
-            <Link to="/polityka-prywatnosci" target="_blank" rel="noopener noreferrer" style={{ color: theme.colors.brand.primary, textDecoration: "underline" }}>
+            Pełne dokumenty:{" "}
+            <a href={`${SITE_URL}/warunki-korzystania`} target="_blank" rel="noopener noreferrer" style={{ color: theme.colors.brand.primary, textDecoration: "underline" }}>
+              Warunki korzystania
+            </a>
+            {" "}oraz{" "}
+            <a href={`${SITE_URL}/polityka-prywatnosci`} target="_blank" rel="noopener noreferrer" style={{ color: theme.colors.brand.primary, textDecoration: "underline" }}>
               Polityka prywatności
-            </Link>
-            {" "}dostępna jest na osobnej stronie.
+            </a>
+            .
           </Text>
           <Stack $gap="sm">
             <Heading $level="h4" as="h4">
