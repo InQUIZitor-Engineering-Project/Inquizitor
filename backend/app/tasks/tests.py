@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+from celery.exceptions import SoftTimeLimitExceeded
 from fastapi import HTTPException
 
 from app.api.schemas.tests import (
@@ -57,6 +58,14 @@ def generate_test_task(
         )
         analytics.flush()
         return response.test_id
+    except SoftTimeLimitExceeded:
+        logger.exception("Job %s timed out (SoftTimeLimitExceeded)", job_id)
+        job_service.update_job_status(
+            job_id=job_id,
+            status=JobStatus.FAILED,
+            error="Generowanie testu trwało zbyt długo. Spróbuj z krótszym materiałem.",
+        )
+        raise
     except HTTPException as exc:
         logger.exception("Job %s failed: %s", job_id, exc)
         job_service.update_job_status(

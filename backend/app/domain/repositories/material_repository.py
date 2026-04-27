@@ -16,6 +16,10 @@ class MaterialRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    def get_many(self, material_ids: list[int]) -> list[Material]:
+        raise NotImplementedError
+
+    @abstractmethod
     def list_for_user(self, user_id: int) -> Iterable[Material]:
         raise NotImplementedError
 

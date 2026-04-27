@@ -136,7 +136,6 @@ const ProfilePage: React.FC = () => {
                 firstName={profile?.first_name}
                 lastName={profile?.last_name}
                 email={profile?.email}
-                userId={profile?.id}
               />
               <StatsCard stats={stats} />
             </Stack>

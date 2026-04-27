@@ -97,7 +97,6 @@ class SqlModelTestRepository(TestRepository):
         db_question = mappers.question_to_row(
             question, test_id=test_id, group_id=group_id
         )
-        # Append at end: position = current count within this group
         count_stmt = select(func.count()).select_from(db_models.Question).where(
             db_models.Question.group_id == group_id
         )
@@ -106,6 +105,24 @@ class SqlModelTestRepository(TestRepository):
         self._session.commit()
         self._session.refresh(db_question)
         return mappers.question_to_domain(db_question)
+
+    def bulk_add_questions(
+        self, test_id: int, questions: list[Question], group_id: int
+    ) -> list[Question]:
+        count_stmt = select(func.count()).select_from(db_models.Question).where(
+            db_models.Question.group_id == group_id
+        )
+        base_position = self._session.exec(count_stmt).one() or 0
+        rows = []
+        for i, question in enumerate(questions):
+            row = mappers.question_to_row(question, test_id=test_id, group_id=group_id)
+            row.position = base_position + i
+            rows.append(row)
+        self._session.add_all(rows)
+        self._session.commit()
+        for row in rows:
+            self._session.refresh(row)
+        return [mappers.question_to_domain(row) for row in rows]
 
     def get(self, test_id: int) -> Test | None:
         db_test = self._session.get(db_models.Test, test_id)
@@ -305,7 +322,23 @@ class SqlModelMaterialRepository(MaterialRepository):
         )
         db_material = cast(Any, self._session).exec(stmt).first()
         return mappers.material_to_domain(db_material) if db_material else None
-    
+
+    def get_many(self, material_ids: list[int]) -> list[Material]:
+        if not material_ids:
+            return []
+        stmt = (
+            select(db_models.Material)
+            .where(cast(Any, db_models.Material.id).in_(material_ids))
+            .options(joinedload(db_models.Material.file))
+        )
+        rows = cast(Any, self._session).exec(stmt).all()
+        by_id = {r.id: r for r in rows}
+        return [
+            mappers.material_to_domain(by_id[mid])
+            for mid in material_ids
+            if mid in by_id
+        ]
+
     def get_by_file_id(self, file_id: int) -> Material | None:
         stmt = (
             select(db_models.Material)
