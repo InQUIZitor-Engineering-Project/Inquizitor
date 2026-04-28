@@ -140,7 +140,7 @@ const useTestDetail = (): UseTestDetailResult => {
   const context = useOutletContext<LayoutCtx | null>();
   const refreshSidebarTests = context?.refreshSidebarTests || (async () => {});
   const isGenerating = context?.isGenerating ?? false;
-  const { withLoader, startLoading, stopLoading } = useLoader();
+  const { withLoader, stopLoading } = useLoader();
   const { data, loading, error, refresh, deleteCurrent, setData } = useTestData();
   const {
     state: draftState,
