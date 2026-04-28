@@ -187,6 +187,7 @@ const TestDetailPage: React.FC = () => {
                   onCancel={actions.cancelTitle}
                   onBeginEdit={() => actions.beginTitleEdit(data.title)}
                   onEditConfig={actions.handleEditConfig}
+                  editConfigDisabled={state.isGenerating}
                 />
               </Box>
 
@@ -258,6 +259,8 @@ const TestDetailPage: React.FC = () => {
                   isAdding={state.isAdding}
                   draft={state.draft}
                   selectedIds={state.selectedIds}
+                  regeneratingIds={state.regeneratingQuestionIds}
+                  convertingIds={state.convertingQuestionIds}
                   summary={{
                     total: questionsForActiveGroup.length,
                     easy: questionsForActiveGroup.filter((q) => q.difficulty === 1).length,

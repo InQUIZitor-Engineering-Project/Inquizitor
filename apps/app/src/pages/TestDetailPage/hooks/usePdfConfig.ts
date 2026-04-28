@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
+import { toast } from "sonner";
 import type { PdfExportConfig } from "../../../services/test";
 import { exportCustomPdf } from "../../../services/test";
-import { useLoader } from "../../../components/Loader/GlobalLoader";
 import { useJobPolling } from "../../../hooks/useJobPolling";
 
 const API_BASE = import.meta.env.VITE_API_URL || "";
@@ -20,23 +20,17 @@ export interface UsePdfConfigResult {
   state: {
     pdfConfig: PdfExportConfig;
     pdfConfigOpen: boolean;
-    pdfJobStatus: string | null;
-    pdfJobId: number | null;
-    pdfInProgress: boolean;
-    exportError: string | null;
   };
   actions: {
     setPdfConfigOpen: (next: boolean) => void;
     updatePdfConfig: (updater: (cfg: PdfExportConfig) => PdfExportConfig) => void;
     resetPdfConfig: () => void;
     downloadCustomPdf: (testId: number) => Promise<void>;
-    clearExportError: () => void;
   };
 }
 
 const usePdfConfig = (): UsePdfConfigResult => {
   const { testId } = useParams<{ testId: string }>();
-  const { startLoading, stopLoading } = useLoader();
 
   const [pdfConfig, setPdfConfig] = useState<PdfExportConfig>(() => {
     if (!testId) return defaultPdfConfig;
@@ -52,17 +46,14 @@ const usePdfConfig = (): UsePdfConfigResult => {
   });
 
   const testIdRef = useRef(testId);
+  const pdfToastIdRef = useRef<string | number | undefined>(undefined);
 
   const [pdfConfigOpen, setPdfConfigOpen] = useState(false);
-  const [pdfInProgress, setPdfInProgress] = useState(false);
-  const [exportError, setExportError] = useState<string | null>(null);
-  
+
   const {
-    jobId,
     status: jobStatus,
     result: jobResult,
     error: jobError,
-    isPolling,
     startPolling,
     reset: resetJobPolling,
   } = useJobPolling();
@@ -123,21 +114,18 @@ const usePdfConfig = (): UsePdfConfigResult => {
     URL.revokeObjectURL(a.href);
   };
 
-  const clearExportError = useCallback(() => setExportError(null), []);
-
   const downloadCustomPdf = async (targetTestId: number) => {
     if (!targetTestId) return;
-    setExportError(null);
-    setPdfInProgress(true);
+    pdfToastIdRef.current = toast.loading("Przygotowuję PDF…");
     try {
-      startLoading();
       const enqueue = await exportCustomPdf(targetTestId, pdfConfig);
       resetJobPolling();
       startPolling(enqueue.job_id);
     } catch (e: any) {
-      setPdfInProgress(false);
-      stopLoading();
-      setExportError(e.message || "Nie udało się zainicjować eksportu PDF.");
+      toast.error(e.message || "Nie udało się zainicjować eksportu PDF.", {
+        id: pdfToastIdRef.current,
+      });
+      pdfToastIdRef.current = undefined;
       resetJobPolling();
     }
   };
@@ -150,43 +138,40 @@ const usePdfConfig = (): UsePdfConfigResult => {
       const fileUrl = (jobResult as any)?.file_url || (jobResult as any)?.file_path;
       const filename = (jobResult as any)?.filename || `test_${(jobResult as any)?.test_id || "export"}.pdf`;
       if (!fileUrl) {
-        setExportError("Brak ścieżki do pliku w wyniku zadania.");
-        stopLoading();
+        toast.error("Brak ścieżki do pliku w wyniku zadania.", { id: pdfToastIdRef.current });
+        pdfToastIdRef.current = undefined;
       } else {
         const resolved = resolveUrl(fileUrl);
         downloadFromUrl(resolved, filename)
-          .catch((err) => {
-            setExportError(err.message || "Nie udało się pobrać pliku PDF.");
+          .then(() => {
+            toast.success("PDF gotowy — pobieranie rozpoczęte.", { id: pdfToastIdRef.current });
+            pdfToastIdRef.current = undefined;
           })
-          .finally(() => {
-            stopLoading();
+          .catch((err) => {
+            toast.error(err.message || "Nie udało się pobrać pliku PDF.", { id: pdfToastIdRef.current });
+            pdfToastIdRef.current = undefined;
           });
       }
-      setPdfInProgress(false);
       resetJobPolling();
     } else if (normalized === "failed") {
-      setExportError(jobError || (jobResult as any)?.error || "Eksport PDF nie powiódł się.");
-      setPdfInProgress(false);
-      stopLoading();
+      toast.error(jobError || (jobResult as any)?.error || "Eksport PDF nie powiódł się.", {
+        id: pdfToastIdRef.current,
+      });
+      pdfToastIdRef.current = undefined;
       resetJobPolling();
     }
-  }, [jobStatus, jobResult, jobError, resetJobPolling, stopLoading]);
+  }, [jobStatus, jobResult, jobError, resetJobPolling]);
 
   return {
     state: {
       pdfConfig,
       pdfConfigOpen,
-      pdfJobStatus: jobStatus || null,
-      pdfJobId: jobId,
-      pdfInProgress: pdfInProgress || isPolling,
-      exportError,
     },
     actions: {
       setPdfConfigOpen,
       updatePdfConfig,
       resetPdfConfig,
       downloadCustomPdf,
-      clearExportError,
     },
   };
 };

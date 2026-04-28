@@ -2,7 +2,6 @@ import React, { useEffect } from "react";
 import styled, { useTheme } from "styled-components";
 import { useNavigate } from "react-router-dom";
 import { Box, Flex, Stack, Text, Heading, Button, Divider } from "../../design-system/primitives";
-import { AlertBar } from "../../design-system/patterns";
 import usePdfPreview from "./hooks/usePdfPreview";
 import ConfigSection from "./components/ConfigSection";
 import DownloadPDF from "./components/DownloadPDF";
@@ -108,9 +107,6 @@ const PdfPreviewPage: React.FC = () => {
           style={{ borderTop: `1px solid ${theme.colors.neutral.whiteStroke}`, flexShrink: 0 }}
         >
           <Stack $gap="sm">
-            {state.downloadError && (
-              <AlertBar variant="danger">{state.downloadError}</AlertBar>
-            )}
             <DownloadPDF
               onDownloadPdf={actions.handleDownloadCustomPdf}
               pdfDisabled={!state.pdfConfigValid}

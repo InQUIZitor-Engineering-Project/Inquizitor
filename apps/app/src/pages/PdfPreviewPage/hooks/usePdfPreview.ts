@@ -10,14 +10,12 @@ export interface UsePdfPreviewResult {
     error: string | null;
     pdfConfig: PdfExportConfig;
     pdfConfigValid: boolean;
-    downloadError: string | null;
   };
   actions: {
     setPdfConfig: (updater: (cfg: PdfExportConfig) => PdfExportConfig) => void;
     resetPdfConfig: () => void;
     setPdfConfigValid: (valid: boolean) => void;
     handleDownloadCustomPdf: () => Promise<void>;
-    clearDownloadError: () => void;
   };
 }
 
@@ -28,7 +26,6 @@ const usePdfPreview = (): UsePdfPreviewResult => {
 
   const handleDownloadCustomPdf = async () => {
     if (!data?.test_id) return;
-    pdfActions.clearExportError();
     if (!pdfConfigValid) return;
     await pdfActions.downloadCustomPdf(data.test_id);
   };
@@ -40,14 +37,12 @@ const usePdfPreview = (): UsePdfPreviewResult => {
       error,
       pdfConfig: pdfState.pdfConfig,
       pdfConfigValid,
-      downloadError: pdfState.exportError,
     },
     actions: {
       setPdfConfig: pdfActions.updatePdfConfig,
       resetPdfConfig: pdfActions.resetPdfConfig,
       setPdfConfigValid,
       handleDownloadCustomPdf,
-      clearDownloadError: pdfActions.clearExportError,
     },
   };
 };

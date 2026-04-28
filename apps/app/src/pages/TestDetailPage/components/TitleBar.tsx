@@ -12,6 +12,7 @@ export interface TitleBarProps {
   onCancel: () => void;
   onBeginEdit: () => void;
   onEditConfig?: () => void;
+  editConfigDisabled?: boolean;
 }
 
 const ActionButton = styled(Button)`
@@ -35,6 +36,7 @@ const TitleBar: React.FC<TitleBarProps> = ({
   onCancel,
   onBeginEdit,
   onEditConfig,
+  editConfigDisabled = false,
 }) => {
   return (
     <Flex $align="center" $gap="sm" $wrap="wrap">
@@ -66,7 +68,12 @@ const TitleBar: React.FC<TitleBarProps> = ({
               Edytuj tytuł
             </ActionButton>
             {onEditConfig && (
-              <ActionButton $variant="ghost" onClick={onEditConfig} title="Dostosuj konfigurację">
+              <ActionButton
+                $variant="ghost"
+                onClick={onEditConfig}
+                disabled={editConfigDisabled}
+                title={editConfigDisabled ? "Poczekaj na zakończenie generowania" : "Dostosuj konfigurację"}
+              >
                 <Box as="span" style={{ fontSize: "16px", lineHeight: 1 }}>⚙️</Box>
                 Wróć do konfiguracji
               </ActionButton>

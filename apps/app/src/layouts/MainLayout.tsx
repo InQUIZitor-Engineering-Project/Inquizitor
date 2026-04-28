@@ -1,10 +1,12 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import styled from "styled-components";
+import { toast } from "sonner";
 import Sidebar from "../components/Sidebar/Sidebar";
 import { Modal } from "../design-system/patterns";
 import { getMyTests, deleteTest } from "../services/test";
 import type { TestOut } from "../services/test";
+import { useJobPolling } from "../hooks/useJobPolling";
 import { NAVBAR_HEIGHT, NAVBAR_HEIGHT_MOBILE } from "../components/Navbar/Navbar.styles";
 
 export const LayoutWrapper = styled.div`
@@ -80,6 +82,41 @@ const MainLayout: React.FC = () => {
     } catch (e) {
       console.error("Błąd pobierania testów do sidebara", e);
     }
+  };
+
+  const genToastIdRef = useRef<string | number | undefined>(undefined);
+
+  const genPolling = useJobPolling({
+    onDone: async (job) => {
+      const testId = (job.result as any)?.test_id;
+      await refreshSidebarTests();
+      if (testId) {
+        toast.success("Test gotowy!", {
+          id: genToastIdRef.current,
+          duration: 8000,
+          action: {
+            label: "Otwórz",
+            onClick: () => navigate(`/tests/${testId}`),
+          },
+        });
+      } else {
+        toast.error("Zadanie zakończone, ale brak identyfikatora testu.", {
+          id: genToastIdRef.current,
+        });
+      }
+      genToastIdRef.current = undefined;
+    },
+    onFail: (job) => {
+      toast.error(job.error || "Generowanie nie powiodło się.", {
+        id: genToastIdRef.current,
+      });
+      genToastIdRef.current = undefined;
+    },
+  });
+
+  const startTestGeneration = (jobId: number) => {
+    genToastIdRef.current = toast.loading("Generuję test…");
+    genPolling.startPolling(jobId);
   };
 
   useEffect(() => {
@@ -163,7 +200,7 @@ const MainLayout: React.FC = () => {
       <ContentArea id="main-content-area">
         <ScrollableContent>
           <PageContentWrapper>
-            <Outlet context={{ refreshSidebarTests }} /> 
+            <Outlet context={{ refreshSidebarTests, startTestGeneration, isGenerating: genPolling.isPolling }} /> 
           </PageContentWrapper>
         </ScrollableContent>
       </ContentArea>
