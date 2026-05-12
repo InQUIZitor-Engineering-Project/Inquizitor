@@ -10,6 +10,7 @@ const API_BASE = import.meta.env.VITE_API_URL || "";
 const defaultPdfConfig: PdfExportConfig = {
   answer_space_style: "blank",
   space_height_cm: 3,
+  font_size: 11,
   include_answer_key: false,
   student_header: true,
   use_scratchpad: false,

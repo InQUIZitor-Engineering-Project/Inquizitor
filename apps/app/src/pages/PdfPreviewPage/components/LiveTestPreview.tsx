@@ -20,12 +20,11 @@ const BRAND_COLOR = "#4CAF4F";
 
 const PREVIEW_TYPOGRAPHY = `
   font-family: 'Roboto', sans-serif;
-  font-size: 11pt;
   line-height: 1.2;
   color: #000;
 `;
 
-const A4Page = styled.div`
+const A4Page = styled.div<{ $fontSize: number }>`
   width: 210mm;
   height: 297mm;
   background: white;
@@ -36,14 +35,16 @@ const A4Page = styled.div`
   position: relative;
   box-sizing: border-box;
   ${PREVIEW_TYPOGRAPHY}
+  font-size: ${({ $fontSize }) => $fontSize}pt;
   display: flex;
   flex-direction: column;
 `;
 
 // Typografia musi być identyczna z A4Page — inaczej pomiary są przeszacowane
-const MeasureContainer = styled.div`
+const MeasureContainer = styled.div<{ $fontSize: number }>`
   position: absolute; top: 0; left: 0; width: 210mm; visibility: hidden; pointer-events: none; z-index: -1000; padding: 2cm;
   ${PREVIEW_TYPOGRAPHY}
+  font-size: ${({ $fontSize }) => $fontSize}pt;
 `;
 
 const QuestionContainer = styled.div` margin-bottom: 15px; break-inside: avoid; `;
@@ -289,7 +290,7 @@ const LiveTestPreview: React.FC<LiveTestPreviewProps> = ({ data, config }) => {
   return (
     <>
       {/* Kontener pomiarowy — niewidoczny, renderuje wszystkie elementy do mierzenia */}
-      <MeasureContainer ref={measureRef}>
+      <MeasureContainer ref={measureRef} $fontSize={config.font_size ?? 11}>
         <div id="measure-page-header" style={{ overflow: "hidden" }}>
           <Header>
             <div />
@@ -326,7 +327,7 @@ const LiveTestPreview: React.FC<LiveTestPreviewProps> = ({ data, config }) => {
       {/* Widoczne strony */}
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
         {pages.map((page, pageIdx) => (
-          <A4Page key={pageIdx}>
+          <A4Page key={pageIdx} $fontSize={config.font_size ?? 11}>
             {page.isAnswerKey ? (
               <>
                 <h3 style={{ color: BRAND_COLOR, marginTop: 0 }}>Klucz odpowiedzi</h3>

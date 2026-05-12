@@ -245,6 +245,7 @@ class PdfExportConfig(BaseModel):
 
     answer_space_style: Literal["grid", "lines", "blank"] = "blank"
     space_height_cm: float = 3.0
+    font_size: Literal[10, 11, 12] = 11
 
     include_answer_key: bool = False
     generate_variants: bool = False

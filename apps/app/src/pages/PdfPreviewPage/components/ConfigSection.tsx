@@ -183,6 +183,34 @@ const ConfigSection: React.FC<ConfigSectionProps> = ({
       <Card $variant="elevated">
         <Stack $gap="sm">
           <Box>
+            <Heading as="h3" $level="h4">Typografia</Heading>
+            <Text $variant="body3" $tone="muted" style={{ marginTop: 2 }}>
+              Rozmiar bazowy czcionki w wygenerowanym PDF.
+            </Text>
+          </Box>
+          <FormField label="Rozmiar czcionki" fullWidth>
+            <CustomSelect
+              value={String(config.font_size ?? 11)}
+              $fullWidth
+              options={[
+                { value: "10", label: "Mały" },
+                { value: "11", label: "Normalny" },
+                { value: "12", label: "Duży" },
+              ]}
+              onChange={(value) =>
+                onChange((cfg) => ({
+                  ...cfg,
+                  font_size: Number(value) as PdfExportConfig["font_size"],
+                }))
+              }
+            />
+          </FormField>
+        </Stack>
+      </Card>
+
+      <Card $variant="elevated">
+        <Stack $gap="sm">
+          <Box>
             <Heading as="h3" $level="h4">Zawartość arkusza</Heading>
             <Text $variant="body3" $tone="muted" style={{ marginTop: 2 }}>
               Dodatkowe elementy na wydruku.

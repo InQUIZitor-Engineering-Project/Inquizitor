@@ -51,6 +51,7 @@ export type AnswerSpaceStyle = "grid" | "lines" | "blank";
 export interface PdfExportConfig {
   answer_space_style: AnswerSpaceStyle;
   space_height_cm: number;
+  font_size: 10 | 11 | 12;
   include_answer_key: boolean;
   student_header: boolean;
   use_scratchpad: boolean;
